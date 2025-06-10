@@ -1,11 +1,23 @@
-import React, { useState } from 'react';
-import { View, ScrollView, StyleSheet, Alert } from 'react-native';
+import React, { useEffect } from 'react';
+import { View, ScrollView, StyleSheet } from 'react-native';
+import { useDispatch, useSelector } from 'react-redux';
+import { RootState } from '../../redux/store';
+import {
+  setCartItems,
+  increaseQuantity,
+  decreaseQuantity,
+  clearCart,
+} from '../../redux/slices/cartSlice';
 
 import { CartItem } from '../../components/cart/CartItem';
 import { PromoCodeInput } from '../../components/cart/PromoCodeInput';
 import { CartSummary } from '../../components/cart/CartSummary';
 import { CartFooter } from '../../components/cart/CartFooter';
 import CartHeader from '../../components/cart/CardHeader';
+
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { CustomerStackParamList } from '../../navigation/CustomerStackNavigator';
 
 const mockData = [
   {
@@ -34,34 +46,32 @@ const mockData = [
   },
 ];
 
+
+
+
 const CartScreen = () => {
-  const [items, setItems] = useState(mockData);
-  const deliveryFee = 5000;
 
-  const handleIncrease = (id: number) => {
-    setItems(prev =>
-      prev.map(item => (item.id === id ? { ...item, quantity: item.quantity + 1 } : item))
-    );
-  };
+  
+const navigation = useNavigation<NativeStackNavigationProp<CustomerStackParamList>>();
 
-  const handleDecrease = (id: number) => {
-    setItems(prev =>
-      prev.map(item =>
-        item.id === id && item.quantity > 1 ? { ...item, quantity: item.quantity - 1 } : item
-      )
-    );
-  };
+  const dispatch = useDispatch();
+  const { items, delivery } = useSelector((state: RootState) => state.cart);
+
+  useEffect(() => {
+    dispatch(setCartItems(mockData));
+  }, []);
 
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const total = subtotal + deliveryFee;
+  const total = subtotal + delivery;
 
   const handleCheckout = () => {
-    Alert.alert('Thông báo', 'Chức năng Checkout đang được phát triển.');
+    navigation.navigate('Checkout');
   };
+  
 
   return (
     <View style={styles.wrapper}>
-      <CartHeader onClearCart={() => setItems([])} />
+      <CartHeader onClearCart={() => dispatch(clearCart())} />
 
       <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 100 }}>
         {items.map(item => (
@@ -72,13 +82,13 @@ const CartScreen = () => {
             price={item.price}
             quantity={item.quantity}
             image={item.image}
-            onIncrease={() => handleIncrease(item.id)}
-            onDecrease={() => handleDecrease(item.id)}
+            onIncrease={() => dispatch(increaseQuantity(item.id))}
+            onDecrease={() => dispatch(decreaseQuantity(item.id))}
           />
         ))}
 
         <PromoCodeInput />
-        <CartSummary subtotal={subtotal} delivery={deliveryFee} />
+        <CartSummary subtotal={subtotal} delivery={delivery} />
         <CartFooter total={total} onCheckout={handleCheckout} />
       </ScrollView>
     </View>
