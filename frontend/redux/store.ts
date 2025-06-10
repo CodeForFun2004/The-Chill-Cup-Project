@@ -1,11 +1,13 @@
 import { configureStore } from '@reduxjs/toolkit';
 import authReducer from './slices/authSlice';
+import cartReducer from './slices/cartSlice'; 
 
 const store = configureStore({
   reducer: {
     auth: authReducer,
-    // Thêm reducer khác ở đây
+    cart: cartReducer, // <-- Thêm dòng này
   },
+  
 });
 
 export type RootState = ReturnType<typeof store.getState>;

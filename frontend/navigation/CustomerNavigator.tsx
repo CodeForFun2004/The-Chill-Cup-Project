@@ -9,13 +9,15 @@ import CustomerHomeScreen from "../screens/Customer/CustomerHomeScreen";
 import StoreScreen from "../screens/Customer/StoreScreen";
 import PromotionScreen from "../screens/Customer/PromotionScreen";
 import CartScreen from "../screens/Customer/CartScreen";
+import CheckoutScreen from "../screens/Customer/CheckoutScreen";
+import CustomerStackNavigator from "./CustomerStackNavigator";
 
 export type CustomerTabParamList = {
   CustomerHomeScreen: undefined;
   Store: undefined;
   Promotion: undefined;
   Profile: undefined;
-  Cart: undefined;
+  CartStack: undefined;
 };
 
 const Tab = createBottomTabNavigator<CustomerTabParamList>();
@@ -42,7 +44,7 @@ const CustomerNavigator = () => (
           case "Profile":
             icon = <MaterialCommunityIcons name="account-outline" size={22} color={focused ? '#4AA366' : '#888'} />;
             break;
-            case "Cart":
+            case "CartStack":
             icon = <MaterialCommunityIcons name="cart" size={22} color={focused ? '#4AA366' : '#888'} />;
             break;
         }
@@ -55,7 +57,7 @@ const CustomerNavigator = () => (
     <Tab.Screen name="Store" component={StoreScreen} />
     <Tab.Screen name="Promotion" component={PromotionScreen} />
     <Tab.Screen name="Profile" component={ProfileScreen} />
-    <Tab.Screen name="Cart" component={CartScreen} />
+    <Tab.Screen name="CartStack" component={CustomerStackNavigator} />
   </Tab.Navigator>
 );
 
