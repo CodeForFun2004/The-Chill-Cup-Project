@@ -42,7 +42,9 @@ const ProfileScreen = () => {
             navigation.dispatch(
               CommonActions.reset({
                 index: 0,
-                routes: [{ name: 'CustomerHomeScreen' }],
+                routes: [
+                  { name: 'CustomerHomeStack' }
+                ],
               })
             );
           },
@@ -123,7 +125,7 @@ const ProfileScreen = () => {
     return (
       <View style={styles.container}>
         <Text style={styles.title}>Please login to view your profile</Text>
-        <TouchableOpacity style={styles.loginButton} onPress={() => navigation.navigate('CustomerHomeScreen')}>
+        <TouchableOpacity style={styles.loginButton} onPress={() => navigation.navigate('CustomerHomeStack')}>
           <Text style={styles.loginButtonText}>Login</Text>
         </TouchableOpacity>
       </View>
