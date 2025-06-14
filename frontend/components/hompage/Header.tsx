@@ -1,19 +1,24 @@
-// Header.js
+// components/homepage/Header.tsx
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { Feather, Entypo } from '@expo/vector-icons';
+import { useSelector } from 'react-redux';
+import { RootState } from '../../redux/store';
 
 const Header = () => {
+  const userInfo = useSelector((state: RootState) => state.auth.userInfo);
+  const greetingName = userInfo?.name?.trim() || 'bạn mới';
+
   return (
     <View style={styles.container}>
-      <Text style={styles.greeting}>Chào bạn mới 👋</Text>
+      <Text style={styles.greeting}>Chào {greetingName} 👋</Text>
       <View style={styles.icons}>
-        <TouchableOpacity style={styles.iconWrapper}>
+        <Pressable style={styles.iconWrapper}>
           <Entypo name="ticket" size={18} color="#000" />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.iconWrapper}>
+        </Pressable>
+        <Pressable style={styles.iconWrapper}>
           <Feather name="bell" size={18} color="#000" />
-        </TouchableOpacity>
+        </Pressable>
       </View>
     </View>
   );

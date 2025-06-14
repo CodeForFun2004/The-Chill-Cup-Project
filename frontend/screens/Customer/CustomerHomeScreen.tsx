@@ -1,17 +1,18 @@
 import React from "react";
-import { View, ScrollView, StyleSheet } from "react-native";
+import { View, ScrollView, StyleSheet, Text } from "react-native";
 import Header from "../../components/hompage/Header";
 import LoginBanner from "../../components/hompage/LoginBanner";
 import PromoBanner from "../../components/hompage/PromoBanner";
-import CategoryCardBlock from "../../components/hompage/searchcard/CategoryCardBlock";
+import CategoryCardBlock from "../../components/hompage/search-card/CategoryCardBlock";
 import ProductSection from "../../components/hompage/ProductSection";
+import AfterLoginBanner from "../../components/hompage/AfterLoginBanner";
 
-const HomeScreen = () => {
+const CustomerHomeScreen = () => {
   return (
     <View style={styles.container}>
       <Header />
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <LoginBanner />
+        <AfterLoginBanner/>
         <PromoBanner />
         <CategoryCardBlock />
 
@@ -225,13 +226,13 @@ const HomeScreen = () => {
             },
           ]}
         />
-
+         <View style={{ height: 80 }} />
       </ScrollView>
     </View>
   );
 };
 
-export default HomeScreen;
+export default CustomerHomeScreen;
 
 const styles = StyleSheet.create({
   container: {

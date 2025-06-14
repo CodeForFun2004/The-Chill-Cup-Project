@@ -1,11 +1,15 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+// components/homepage/LoginBanner.tsx
+import React from 'react';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '../../navigation/RootNavigator';
 
 const LoginBanner = () => {
-  const [isPressed, setIsPressed] = useState(false);
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
-  const handlePress = () => {
-    setIsPressed(!isPressed);
+  const handleLoginPress = () => {
+    navigation.navigate('Auth'); // ✅ Chuyển sang AuthNavigator, hiển thị LoginScreen
   };
 
   return (
@@ -14,14 +18,9 @@ const LoginBanner = () => {
       <Text style={styles.description}>
         Sử dụng app để tích điểm và đổi những ưu đãi chỉ dành riêng cho thành viên bạn nhé!
       </Text>
-      <TouchableOpacity style={styles.button}>
+      <Pressable style={styles.button} onPress={handleLoginPress}>
         <Text style={styles.buttonText}>Đăng nhập</Text>
-      </TouchableOpacity>
-      <TouchableOpacity onPress={handlePress} style={styles.linkContainer}>
-        <Text style={[styles.link, isPressed && styles.linkPressed]}>
-          The Coffee House's Reward →
-        </Text>
-      </TouchableOpacity>
+      </Pressable>
     </View>
   );
 };
@@ -35,19 +34,19 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginVertical: 10,
     elevation: 2,
-    alignItems: 'center', // Center all elements inside the container
+    alignItems: 'center',
   },
   title: {
     fontWeight: 'bold',
     fontSize: 18,
     marginBottom: 6,
-    textAlign: 'center', // Center the title
+    textAlign: 'center',
   },
   description: {
     color: '#444',
     marginBottom: 10,
     fontSize: 14,
-    textAlign: 'center', // Center the description
+    textAlign: 'center',
   },
   button: {
     backgroundColor: '#4AA366',
@@ -55,22 +54,10 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: 'center',
     marginBottom: 8,
-    width: '80%', // Ensures the button doesn't span the whole screen
+    width: '80%',
   },
   buttonText: {
     color: '#fff',
     fontWeight: '600',
-  },
-  linkContainer: {
-    marginTop: 10, // Adds space between the link and the button
-  },
-  link: {
-    color: '#000',
-    fontSize: 14,
-    fontStyle: 'normal', // Removed underline
-    textAlign: 'center', // Center the link
-  },
-  linkPressed: {
-    fontWeight: 'bold', // Make the link bold when pressed
   },
 });
