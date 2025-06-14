@@ -1,29 +1,25 @@
-// navigation/CustomerStackNavigator.tsx
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import CartScreen from '../screens/Customer/CartScreen';
-import CheckoutScreen from '../screens/Customer/CheckoutScreen';
+import CustomerHomeScreen from '../screens/Customer/CustomerHomeScreen';
 import VouchersScreen from '../screens/Customer/VouchersScreen';
 import LoyaltyScreen from '../screens/Customer/LoyaltyScreen';
 
-export type CustomerStackParamList = {
-  Cart: undefined;
-  Checkout: undefined;
+export type CustomerHomeStackParamList = {
+  CustomerHomeScreen: undefined;
   Vouchers: undefined;
   LoyaltyScreen: undefined;
 };
 
-const Stack = createNativeStackNavigator<CustomerStackParamList>();
+const Stack = createNativeStackNavigator<CustomerHomeStackParamList>();
 
-const CustomerStackNavigator = () => {
+const CustomerHomeStack = () => {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="Cart" component={CartScreen} />
-      <Stack.Screen name="Checkout" component={CheckoutScreen} />
+      <Stack.Screen name="CustomerHomeScreen" component={CustomerHomeScreen} />
       <Stack.Screen name="Vouchers" component={VouchersScreen} />
       <Stack.Screen name="LoyaltyScreen" component={LoyaltyScreen} />
     </Stack.Navigator>
   );
 };
 
-export default CustomerStackNavigator;
+export default CustomerHomeStack; 
