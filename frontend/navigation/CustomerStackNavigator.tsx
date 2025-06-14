@@ -5,12 +5,14 @@ import CartScreen from '../screens/Customer/CartScreen';
 import CheckoutScreen from '../screens/Customer/CheckoutScreen';
 import VouchersScreen from '../screens/Customer/VouchersScreen';
 import LoyaltyScreen from '../screens/Customer/LoyaltyScreen';
+import OrderSuccessScreen from '../screens/Customer/OrderSuccessScreen';
 
 export type CustomerStackParamList = {
   Cart: undefined;
   Checkout: undefined;
   Vouchers: undefined;
   LoyaltyScreen: undefined;
+  OrderSuccess: undefined;
 };
 
 const Stack = createNativeStackNavigator<CustomerStackParamList>();
@@ -22,6 +24,7 @@ const CustomerStackNavigator = () => {
       <Stack.Screen name="Checkout" component={CheckoutScreen} />
       <Stack.Screen name="Vouchers" component={VouchersScreen} />
       <Stack.Screen name="LoyaltyScreen" component={LoyaltyScreen} />
+      <Stack.Screen name="OrderSuccess" component={OrderSuccessScreen} />
     </Stack.Navigator>
   );
 };
