@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, FlatList } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
 import { MaterialIcons, Feather } from '@expo/vector-icons';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../redux/store';
@@ -15,12 +15,25 @@ const LoyaltyScreen = () => {
   const bean = userInfo?.bean ?? 0;
   const name = userInfo?.name || 'Thành viên';
   const memberId = userInfo?.id || 'M123456';
-  const nextReward = 1000; // ví dụ
+  const nextReward = 1000;
   const progress = Math.min(bean / nextReward, 1);
   const inviteCode = memberId;
 
-  return (
-    <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 120 }}>
+  const renderItem = ({ item }: { item: typeof mockActivities[0] }) => (
+    <View style={styles.activityItem}>
+      <MaterialIcons name="history" size={20} color="#4AA366" style={{ marginRight: 12 }} />
+      <View style={{ flex: 1 }}>
+        <Text style={styles.activityText}>{item.title}</Text>
+        <Text style={styles.activityDesc}>{item.desc}</Text>
+      </View>
+      <Text style={[styles.activityPoints, { color: item.points.startsWith('+') ? '#4AA366' : '#FF3B30' }]}>
+        {item.points}
+      </Text>
+    </View>
+  );
+
+  const ListHeader = () => (
+    <>
       <View style={styles.card}>
         <View style={styles.rowBetween}>
           <Text style={styles.cardTitle}>Điểm BEAN</Text>
@@ -47,31 +60,26 @@ const LoyaltyScreen = () => {
       </View>
 
       <Text style={styles.activityTitle}>Hoạt động gần đây</Text>
-      <FlatList
-        data={mockActivities}
-        keyExtractor={item => item.id}
-        renderItem={({ item }) => (
-          <View style={styles.activityItem}>
-            <MaterialIcons name="history" size={20} color="#4AA366" style={{ marginRight: 12 }} />
-            <View style={{ flex: 1 }}>
-              <Text style={styles.activityText}>{item.title}</Text>
-              <Text style={styles.activityDesc}>{item.desc}</Text>
-            </View>
-            <Text style={[styles.activityPoints, { color: item.points.startsWith('+') ? '#4AA366' : '#FF3B30' }]}>{item.points}</Text>
-          </View>
-        )}
-        style={{ marginTop: 8 }}
-        contentContainerStyle={{ paddingBottom: 40 }}
-      />
-    </ScrollView>
+    </>
+  );
+
+  return (
+    <FlatList
+      data={mockActivities}
+      keyExtractor={(item) => item.id}
+      renderItem={renderItem}
+      ListHeaderComponent={ListHeader}
+      contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
+    />
   );
 };
+
+export default LoyaltyScreen;
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F4F4F4',
-    padding: 16,
   },
   card: {
     backgroundColor: '#fff',
@@ -211,5 +219,3 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 });
-
-export default LoyaltyScreen; 
