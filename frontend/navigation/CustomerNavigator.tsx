@@ -1,18 +1,16 @@
 import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 
-import { View, StyleSheet } from "react-native";
+
 import {
   Ionicons,
   MaterialCommunityIcons,
   FontAwesome,
 } from "@expo/vector-icons";
 
-import CustomerHomeScreen from "../screens/Customer/CustomerHomeScreen";
-import StoreScreen from "../screens/Customer/StoreScreen";
+
 
 import { View, Text, StyleSheet, Platform } from "react-native";
-import { Ionicons, MaterialCommunityIcons, Entypo, FontAwesome } from "@expo/vector-icons"; // Expo default icons
 import { NavigatorScreenParams } from "@react-navigation/native";
 
 import CustomerHomeStack from "./CustomerHomeStack";
@@ -89,8 +87,8 @@ const CustomerNavigator = () => {
       })}
     />
   </Tab.Navigator>
-);
->>>>>>> main
+)};
+
 
 export default CustomerNavigator;
 
