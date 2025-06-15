@@ -225,13 +225,12 @@ const GuestHomeScreen = () => {
             },
           ]}
         />
-
+         <View style={{ height: 80 }} />
       </ScrollView>
-
-      <View style={{ height: 80 }} /> 
     </View>
   );
 };
+
 
 export default GuestHomeScreen;
 
@@ -244,3 +243,4 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
   },
 });
+

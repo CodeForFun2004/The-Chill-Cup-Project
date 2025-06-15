@@ -1,13 +1,16 @@
 import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { View, Text, StyleSheet, Platform } from "react-native";
-import { Ionicons, MaterialCommunityIcons, Entypo, FontAwesome } from "@expo/vector-icons"; // Expo default icons
+import { View, StyleSheet } from "react-native";
+import {
+  Ionicons,
+  MaterialCommunityIcons,
+  FontAwesome,
+} from "@expo/vector-icons";
 
-
-import ProfileScreen from "../screens/Customer/ProfileScreen";
 import CustomerHomeScreen from "../screens/Customer/CustomerHomeScreen";
 import StoreScreen from "../screens/Customer/StoreScreen";
 import PromotionScreen from "../screens/Customer/PromotionScreen";
+import ProfileScreen from "../screens/Customer/ProfileScreen";
 
 export type CustomerTabParamList = {
   CustomerHomeScreen: undefined;
@@ -18,40 +21,66 @@ export type CustomerTabParamList = {
 
 const Tab = createBottomTabNavigator<CustomerTabParamList>();
 
-const CustomerNavigator = () => (
-  <Tab.Navigator
-    screenOptions={({ route }) => ({
-      headerShown: false,
-      tabBarShowLabel: false,
-      tabBarStyle: styles.tabBar,
-      tabBarIcon: ({ focused, color, size }) => {
-        let icon;
+const CustomerNavigator = () => {
+  return (
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        headerShown: false,
+        tabBarShowLabel: false,
+        tabBarStyle: styles.tabBar,
+        tabBarIcon: ({ focused }) => {
+          let icon;
 
-        switch (route.name) {
-          case "CustomerHomeScreen":
-            icon = <Ionicons name="home-outline" size={22} color={focused ? "#4AA366" : "#888"} />;
-            break;
-          case "Store":
-            icon = <MaterialCommunityIcons name="storefront-outline" size={22} color={focused ? '#4AA366' : '#888'} />;
-            break;
-          case "Promotion":
-            icon = <FontAwesome name="credit-card" size={20} color={focused ? "#4AA366" : "#888"} />;
-            break;
-          case "Profile":
-            icon = <MaterialCommunityIcons name="account-outline" size={22} color={focused ? '#4AA366' : '#888'} />;
-            break;
-        }
+          switch (route.name) {
+            case "CustomerHomeScreen":
+              icon = (
+                <Ionicons
+                  name="home-outline"
+                  size={22}
+                  color={focused ? "#4AA366" : "#888"}
+                />
+              );
+              break;
+            case "Store":
+              icon = (
+                <MaterialCommunityIcons
+                  name="storefront-outline"
+                  size={22}
+                  color={focused ? "#4AA366" : "#888"}
+                />
+              );
+              break;
+            case "Promotion":
+              icon = (
+                <FontAwesome
+                  name="credit-card"
+                  size={20}
+                  color={focused ? "#4AA366" : "#888"}
+                />
+              );
+              break;
+            case "Profile":
+              icon = (
+                <MaterialCommunityIcons
+                  name="account-outline"
+                  size={22}
+                  color={focused ? "#4AA366" : "#888"}
+                />
+              );
+              break;
+          }
 
-        return <View style={styles.iconWrapper}>{icon}</View>;
-      },
-    })}
-  >
-    <Tab.Screen name="CustomerHomeScreen" component={CustomerHomeScreen} />
-    <Tab.Screen name="Store" component={StoreScreen} />
-    <Tab.Screen name="Promotion" component={PromotionScreen} />
-    <Tab.Screen name="Profile" component={ProfileScreen} />
-  </Tab.Navigator>
-);
+          return <View style={styles.iconWrapper}>{icon}</View>;
+        },
+      })}
+    >
+      <Tab.Screen name="CustomerHomeScreen" component={CustomerHomeScreen} />
+      <Tab.Screen name="Store" component={StoreScreen} />
+      <Tab.Screen name="Promotion" component={PromotionScreen} />
+      <Tab.Screen name="Profile" component={ProfileScreen} />
+    </Tab.Navigator>
+  );
+};
 
 export default CustomerNavigator;
 
@@ -63,7 +92,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 20,
     borderTopWidth: 0,
     position: "absolute",
-    bottom: 0,       // ✅ SÁT ĐÁY
+    bottom: 0,
     left: 0,
     right: 0,
     elevation: 10,
