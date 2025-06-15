@@ -2,21 +2,34 @@ import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { View, Text, StyleSheet, Platform } from "react-native";
 import { Ionicons, MaterialCommunityIcons, Entypo, FontAwesome } from "@expo/vector-icons"; // Expo default icons
-
-
 import ProfileScreen from "../screens/Customer/ProfileScreen";
 import CustomerHomeScreen from "../screens/Customer/CustomerHomeScreen";
 import StoreScreen from "../screens/Customer/StoreScreen";
 import PromotionScreen from "../screens/Customer/PromotionScreen";
+import DrinkCategoryScreen from '../screens/Customer/DrinkCategoryScreen';
 
 export type CustomerTabParamList = {
   CustomerHomeScreen: undefined;
+  DrinkCategoryScreen: undefined;
   Store: undefined;
   Promotion: undefined;
   Profile: undefined;
+  SearchScreen: undefined;
+  DrinkDetailScreen: {
+    drink: {
+      id: number;
+      name: string;
+      description: string;
+      price: number;
+      image: string;
+      category: string;
+      popular: boolean;
+    };
+    category: string;
+  };
 };
 
-const Tab = createBottomTabNavigator<CustomerTabParamList>();
+const Tab = createBottomTabNavigator<CustomerTabParamList>(); 
 
 const CustomerNavigator = () => (
   <Tab.Navigator
@@ -30,6 +43,9 @@ const CustomerNavigator = () => (
         switch (route.name) {
           case "CustomerHomeScreen":
             icon = <Ionicons name="home-outline" size={22} color={focused ? "#4AA366" : "#888"} />;
+            break;
+          case 'DrinkCategoryScreen':
+            icon = <Ionicons name="cafe-outline" size={22} color={focused ? '#4AA366' : '#888'} />;
             break;
           case "Store":
             icon = <MaterialCommunityIcons name="storefront-outline" size={22} color={focused ? '#4AA366' : '#888'} />;
@@ -47,6 +63,7 @@ const CustomerNavigator = () => (
     })}
   >
     <Tab.Screen name="CustomerHomeScreen" component={CustomerHomeScreen} />
+    <Tab.Screen name="DrinkCategoryScreen" component={DrinkCategoryScreen} />
     <Tab.Screen name="Store" component={StoreScreen} />
     <Tab.Screen name="Promotion" component={PromotionScreen} />
     <Tab.Screen name="Profile" component={ProfileScreen} />
