@@ -1,7 +1,6 @@
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
-import HomeScreen from './screens/Guest/GuestHomeScreen';
 import { Provider } from 'react-redux';
 import store from './redux/store';
 import AppNavigator from './navigation';
