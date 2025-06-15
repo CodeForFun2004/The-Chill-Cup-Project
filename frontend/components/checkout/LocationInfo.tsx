@@ -4,11 +4,16 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import InformationModal from './InformationModal';
 
-const LocationInfo = () => {
+type Props = {
+  location: string;
+  phone: string;
+  setLocation: (val: string) => void;
+  setPhone: (val: string) => void;
+};
+
+const LocationInfo: React.FC<Props> = ({ location, phone, setLocation, setPhone }) => {
   const [modalVisible, setModalVisible] = useState(false);
   const [field, setField] = useState<'location' | 'phone' | null>(null);
-  const [location, setLocation] = useState('123 Sakura Street, Downtown City Center, 5 miles away');
-  const [phone, setPhone] = useState('+84 123 456 789');
 
   const openModal = (target: 'location' | 'phone') => {
     setField(target);
@@ -49,6 +54,7 @@ const LocationInfo = () => {
     </View>
   );
 };
+
 
 export default LocationInfo;
 
