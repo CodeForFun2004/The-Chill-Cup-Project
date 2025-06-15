@@ -1,4 +1,3 @@
-// components/homepage/LoginBanner.tsx
 import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
@@ -9,17 +8,18 @@ const LoginBanner = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   const handleLoginPress = () => {
-    navigation.navigate('Auth'); // ✅ Chuyển sang AuthNavigator, hiển thị LoginScreen
+    // ✅ Sử dụng getParent() để điều hướng lên RootNavigator
+    navigation.getParent()?.navigate('WelcomeScreen');
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Đăng nhập</Text>
+      <Text style={styles.title}>Wellcome to ChillCup</Text>
       <Text style={styles.description}>
         Sử dụng app để tích điểm và đổi những ưu đãi chỉ dành riêng cho thành viên bạn nhé!
       </Text>
       <Pressable style={styles.button} onPress={handleLoginPress}>
-        <Text style={styles.buttonText}>Đăng nhập</Text>
+        <Text style={styles.buttonText}>Đăng nhập/Đăng ký</Text>
       </Pressable>
     </View>
   );

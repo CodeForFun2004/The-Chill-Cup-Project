@@ -1,7 +1,16 @@
 import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+
+
+import {
+  Ionicons,
+  MaterialCommunityIcons,
+  FontAwesome,
+} from "@expo/vector-icons";
+
+
+
 import { View, Text, StyleSheet, Platform } from "react-native";
-import { Ionicons, MaterialCommunityIcons, Entypo, FontAwesome } from "@expo/vector-icons"; // Expo default icons
 import { NavigatorScreenParams } from "@react-navigation/native";
 
 import CustomerHomeStack from "./CustomerHomeStack";
@@ -13,6 +22,7 @@ import CustomerStackNavigator from "./CustomerStackNavigator";
 import ProfileNavigator from "./ProfileNavigator";
 import { ProfileStackParamList } from "./ProfileNavigator";
 
+
 export type CustomerTabParamList = {
   CustomerHomeStack: undefined;
   Store: undefined;
@@ -23,14 +33,16 @@ export type CustomerTabParamList = {
 
 const Tab = createBottomTabNavigator<CustomerTabParamList>();
 
-const CustomerNavigator = () => (
-  <Tab.Navigator
-    screenOptions={({ route }) => ({
-      headerShown: false,
-      tabBarShowLabel: false,
-      tabBarStyle: styles.tabBar,
-      tabBarIcon: ({ focused, color, size }) => {
-        let icon;
+const CustomerNavigator = () => {
+  return (
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        headerShown: false,
+        tabBarShowLabel: false,
+        tabBarStyle: styles.tabBar,
+        tabBarIcon: ({ focused }) => {
+          let icon;
+
 
         switch (route.name) {
           case "CustomerHomeStack":
@@ -75,7 +87,8 @@ const CustomerNavigator = () => (
       })}
     />
   </Tab.Navigator>
-);
+)};
+
 
 export default CustomerNavigator;
 
@@ -87,7 +100,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 20,
     borderTopWidth: 0,
     position: "absolute",
-    bottom: 0,       // ✅ SÁT ĐÁY
+    bottom: 0,
     left: 0,
     right: 0,
     elevation: 10,
