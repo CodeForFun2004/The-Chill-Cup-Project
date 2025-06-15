@@ -1,21 +1,24 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 
-const PaymentMethod = () => {
-  const [selected, setSelected] = useState<'vnpay' | 'cod'>('cod');
+type Props = {
+  selected: 'vnpay' | 'cod';
+  onSelect: (method: 'vnpay' | 'cod') => void;
+};
 
+const PaymentMethod: React.FC<Props> = ({ selected, onSelect }) => {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Payment Method</Text>
 
       <TouchableOpacity
         style={[styles.card, selected === 'vnpay' && styles.selected]}
-        onPress={() => setSelected('vnpay')}
+        onPress={() => onSelect('vnpay')}
       >
         <View style={styles.row}>
           <Image
-            source={require('../../assets/images/vn-pay/vnpay-logo.png')} 
+            source={require('../../assets/images/vn-pay/vnpay-logo.png')}
             style={styles.icon}
             resizeMode="contain"
           />
@@ -26,7 +29,7 @@ const PaymentMethod = () => {
 
       <TouchableOpacity
         style={[styles.card, selected === 'cod' && styles.selected]}
-        onPress={() => setSelected('cod')}
+        onPress={() => onSelect('cod')}
       >
         <View style={styles.row}>
           <Text style={styles.method}>💵 Cash on Delivery</Text>
