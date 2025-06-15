@@ -8,14 +8,19 @@ const OrderSuccessActions = () => {
 
   const handleBackToHome = () => {
     const parentNav = navigation.getParent();
-    parentNav?.navigate('CustomerHomeScreen'); // ✅ điều hướng tab home
+    parentNav?.navigate('CustomerHomeStack', {
+      screen: 'CustomerHomeScreen',
+    });
   };
+  
 
   const handleTrackOrder = () => {
     const parentNav = navigation.getParent();
-    parentNav?.navigate('Cart'); // ✅ điều hướng tab CartStack
+    parentNav?.navigate('CartStack', {
+      screen: 'Cart',
+    });
   };
-
+  
   return (
     <View>
       <TouchableOpacity
