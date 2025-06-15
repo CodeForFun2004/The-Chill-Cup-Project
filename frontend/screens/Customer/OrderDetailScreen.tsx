@@ -1,3 +1,4 @@
+// screens/Customer/OrderDetailScreen.tsx
 import React from 'react';
 import {
   View,
@@ -12,13 +13,16 @@ import {
   ImageSourcePropType
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RouteProp } from '@react-navigation/native';
+import { CustomerStackParamList } from '../../navigation/CustomerStackNavigator';
 
 // Import types
 interface OrderItem {
   name: string;
   quantity: number;
   price: number;
-  image: ImageSourcePropType;
+  image?: ImageSourcePropType;
 }
 
 interface Order {
@@ -26,21 +30,24 @@ interface Order {
   orderNumber: string;
   date: string;
   time: string;
-  status: 'Completed' | 'Cancelled' | 'Pending' | 'Processing';
+  status: 'Completed' | 'Cancelled' | 'Pending' | 'Processing' | 'Preparing' | 'Ready' | 'Delivering';
   total: number;
   items: OrderItem[];
+  estimatedDelivery?: string;
+  deliveryAddress?: string;
+  phoneNumber?: string;
 }
 
+type OrderDetailScreenNavigationProp = NativeStackNavigationProp<
+  CustomerStackParamList,
+  'OrderDetail'
+>;
+
+type OrderDetailScreenRouteProp = RouteProp<CustomerStackParamList, 'OrderDetail'>;
+
 interface OrderDetailScreenProps {
-  route: {
-    params: {
-      order: Order;
-    };
-  };
-  navigation: {
-    navigate: (screen: string, params?: any) => void;
-    goBack: () => void;
-  };
+  navigation: OrderDetailScreenNavigationProp;
+  route: OrderDetailScreenRouteProp;
 }
 
 const OrderDetailScreen: React.FC<OrderDetailScreenProps> = ({ route, navigation }) => {
@@ -55,6 +62,9 @@ const OrderDetailScreen: React.FC<OrderDetailScreenProps> = ({ route, navigation
       case 'pending':
         return '#FF9800';
       case 'processing':
+      case 'preparing':
+      case 'ready':
+      case 'delivering':
         return '#2196F3';
       default:
         return '#757575';
@@ -77,6 +87,15 @@ const OrderDetailScreen: React.FC<OrderDetailScreenProps> = ({ route, navigation
 
   const handleGetReceipt = (): void => {
     Alert.alert('Receipt', 'Receipt will be sent to your email.');
+  };
+
+  const handleTrackOrder = (): void => {
+    navigation.navigate('OrderTracking', { order });
+  };
+
+  const canTrackOrder = (): boolean => {
+    const trackableStatuses = ['processing', 'preparing', 'ready', 'delivering'];
+    return trackableStatuses.includes(order.status.toLowerCase());
   };
 
   return (
@@ -116,7 +135,7 @@ const OrderDetailScreen: React.FC<OrderDetailScreenProps> = ({ route, navigation
               <View style={styles.itemInfo}>
                 <Text style={styles.itemName}>{item.name}</Text>
                 <Text style={styles.itemQuantity}>Qty: {item.quantity}</Text>
-                <Image source={item.image} style={styles.image}></Image>
+                {item.image && <Image source={item.image} style={styles.image} />}
               </View>
               <Text style={styles.itemPrice}>${item.price.toFixed(2)}</Text>
             </View>
@@ -173,18 +192,28 @@ const OrderDetailScreen: React.FC<OrderDetailScreenProps> = ({ route, navigation
       </ScrollView>
 
       {/* Action Buttons */}
-      {order.status.toLowerCase() === 'completed' && (
-        <View style={styles.actionButtons}>
+      <View style={styles.actionButtons}>
+        {/* Track Order Button - for orders in progress */}
+        {canTrackOrder() && (
+          <TouchableOpacity style={styles.trackButton} onPress={handleTrackOrder}>
+            <Ionicons name="location-outline" size={20} color="#FFFFFF" />
+            <Text style={styles.trackButtonText}>Track Order</Text>
+          </TouchableOpacity>
+        )}
+        
+        {/* Reorder Button - for completed orders */}
+        {order.status.toLowerCase() === 'completed' && (
           <TouchableOpacity style={styles.reorderButton} onPress={handleReorder}>
             <Ionicons name="refresh-outline" size={20} color="#FFFFFF" />
             <Text style={styles.reorderButtonText}>Reorder</Text>
           </TouchableOpacity>
-        </View>
-      )}
+        )}
+      </View>
     </SafeAreaView>
   );
 };
 
+// Styles (keeping existing styles and adding new ones)
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -359,6 +388,21 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderTopWidth: 1,
     borderTopColor: '#E5E5EA',
+    gap: 8,
+  },
+  trackButton: {
+    backgroundColor: '#FF9800',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    borderRadius: 12,
+    gap: 8,
+  },
+  trackButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFFFFF',
   },
   reorderButton: {
     backgroundColor: '#007AFF',
@@ -378,6 +422,7 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 8,
+    marginTop: 8,
   },
 });
 

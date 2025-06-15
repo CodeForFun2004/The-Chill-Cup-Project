@@ -1,19 +1,16 @@
-// navigation/CustomerStackNavigator.tsx
+// navigation/TestOrderNavigator.tsx
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import CartScreen from '../screens/Customer/CartScreen';
-import CheckoutScreen from '../screens/Customer/CheckoutScreen';
-import OrderSuccessScreen from '../screens/Customer/OrderSuccessScreen';
 import OrderHistoryScreen from '../screens/Customer/OrderHistoryScreen';
 import OrderDetailScreen from '../screens/Customer/OrderDetailScreen';
 import OrderTrackingScreen from '../screens/Customer/OrderTrackingScreen';
 
-// Types for Order data
+// Types
 interface OrderItem {
   name: string;
   quantity: number;
   price: number;
-  image?: any; // ImageSourcePropType
+  image?: any;
 }
 
 interface Order {
@@ -29,10 +26,7 @@ interface Order {
   phoneNumber?: string;
 }
 
-export type CustomerStackParamList = {
-  Cart: undefined;
-  Checkout: undefined;
-  OrderSuccess: undefined;
+export type TestOrderStackParamList = {
   OrderHistory: undefined;
   OrderDetail: {
     order: Order;
@@ -42,14 +36,14 @@ export type CustomerStackParamList = {
   };
 };
 
-const Stack = createNativeStackNavigator<CustomerStackParamList>();
+const Stack = createNativeStackNavigator<TestOrderStackParamList>();
 
-const CustomerStackNavigator = () => {
+const TestOrderNavigator = () => {
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="Cart" component={CartScreen} />
-      <Stack.Screen name="Checkout" component={CheckoutScreen} />
-      <Stack.Screen name="OrderSuccess" component={OrderSuccessScreen} />
+    <Stack.Navigator 
+      initialRouteName="OrderHistory"
+      screenOptions={{ headerShown: false }}
+    >
       <Stack.Screen name="OrderHistory" component={OrderHistoryScreen} />
       <Stack.Screen name="OrderDetail" component={OrderDetailScreen} />
       <Stack.Screen name="OrderTracking" component={OrderTrackingScreen} />
@@ -57,4 +51,4 @@ const CustomerStackNavigator = () => {
   );
 };
 
-export default CustomerStackNavigator;
+export default TestOrderNavigator;

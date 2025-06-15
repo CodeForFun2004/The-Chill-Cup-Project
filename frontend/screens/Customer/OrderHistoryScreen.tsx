@@ -8,16 +8,17 @@ import {
   SafeAreaView,
   StatusBar,
   ListRenderItem,
-  ImageSourcePropType,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { CustomerStackParamList } from '../../navigation/CustomerStackNavigator';
 
-// Import types
+// Updated types - consistent với OrderDetail và OrderTracking
 interface OrderItem {
   name: string;
   quantity: number;
   price: number;
-  
+  image?: any;
 }
 
 interface Order {
@@ -25,72 +26,116 @@ interface Order {
   orderNumber: string;
   date: string;
   time: string;
-  status: 'Completed' | 'Cancelled' | 'Pending' | 'Processing';
+  status: 'Completed' | 'Cancelled' | 'Pending' | 'Processing' | 'Preparing' | 'Ready' | 'Delivering'; // 👈 Updated
   total: number;
   items: OrderItem[];
+  estimatedDelivery?: string;
+  deliveryAddress?: string;
+  phoneNumber?: string;
 }
+
+type OrderHistoryScreenNavigationProp = NativeStackNavigationProp<
+  CustomerStackParamList,
+  'OrderHistory'
+>;
 
 interface OrderHistoryScreenProps {
-  navigation: {
-    navigate: (screen: string, params?: any) => void;
-    goBack: () => void;
-  };
+  navigation: OrderHistoryScreenNavigationProp;
 }
 
-// Mock data - replace with your API data later
+// Updated mock data với các status mới
 const mockOrderHistory: Order[] = [
   {
     id: '1',
     orderNumber: '#ORD-001',
     date: '2024-01-15',
     time: '10:30 AM',
-    status: 'Completed',
+    status: 'Delivering', // 👈 New status
     total: 15.50,
     items: [
       { name: 'Cappuccino', quantity: 2, price: 4.50 },
       { name: 'Croissant', quantity: 1, price: 6.50 },
     ],
+    estimatedDelivery: '11:00 AM',
+    deliveryAddress: '123 Coffee Street, Brew City',
   },
   {
     id: '2',
     orderNumber: '#ORD-002',
     date: '2024-01-14',
     time: '2:15 PM',
-    status: 'Completed',
+    status: 'Preparing', // 👈 New status
     total: 8.75,
     items: [
       { name: 'Latte', quantity: 1, price: 5.25 },
       { name: 'Blueberry Muffin', quantity: 1, price: 3.50 },
     ],
+    estimatedDelivery: '2:45 PM',
   },
   {
     id: '3',
     orderNumber: '#ORD-003',
     date: '2024-01-13',
     time: '8:45 AM',
-    status: 'Cancelled',
+    status: 'Completed',
     total: 12.25,
     items: [
       { name: 'Americano', quantity: 1, price: 3.75 },
       { name: 'Sandwich', quantity: 1, price: 8.50 },
     ],
   },
+  {
+    id: '4',
+    orderNumber: '#ORD-004',
+    date: '2024-01-12',
+    time: '3:20 PM',
+    status: 'Ready', // 👈 New status
+    total: 7.50,
+    items: [
+      { name: 'Espresso', quantity: 2, price: 3.75 },
+    ],
+  },
+  {
+    id: '5',
+    orderNumber: '#ORD-005',
+    date: '2024-01-11',
+    time: '10:15 AM',
+    status: 'Cancelled',
+    total: 18.00,
+    items: [
+      { name: 'Frappuccino', quantity: 1, price: 6.50 },
+      { name: 'Cake', quantity: 1, price: 11.50 },
+    ],
+  },
 ];
 
 const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({ navigation }) => {
+  // Updated getStatusColor để handle tất cả status
   const getStatusColor = (status: Order['status']): string => {
     switch (status.toLowerCase()) {
       case 'completed':
-        return '#4CAF50';
+        return '#4CAF50'; // Green
       case 'cancelled':
-        return '#F44336';
+        return '#F44336'; // Red
       case 'pending':
-        return '#FF9800';
+        return '#FF9800'; // Orange
       case 'processing':
-        return '#2196F3';
+        return '#2196F3'; // Blue
+      case 'preparing':
+        return '#9C27B0'; // Purple
+      case 'ready':
+        return '#00BCD4'; // Cyan
+      case 'delivering':
+        return '#FF5722'; // Deep Orange
       default:
-        return '#757575';
+        return '#757575'; // Gray
     }
+  };
+
+  // Helper function để check xem có thể track không
+  const canTrackOrder = (status: Order['status']): boolean => {
+    const trackableStatuses = ['processing', 'preparing', 'ready', 'delivering'];
+    return trackableStatuses.includes(status.toLowerCase());
   };
 
   const renderOrderItem: ListRenderItem<Order> = ({ item }) => (
@@ -117,10 +162,26 @@ const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({ navigation }) =
         </Text>
         <Text style={styles.totalText}>${item.total.toFixed(2)}</Text>
       </View>
+
+      {/* Show estimated delivery for active orders */}
+      {item.estimatedDelivery && canTrackOrder(item.status) && (
+        <View style={styles.estimatedDeliveryContainer}>
+          <Ionicons name="time-outline" size={14} color="#8E8E93" />
+          <Text style={styles.estimatedDeliveryText}>
+            Est. delivery: {item.estimatedDelivery}
+          </Text>
+        </View>
+      )}
       
       <View style={styles.orderFooter}>
-        <Text style={styles.viewDetailsText}>Tap to view details</Text>
-        <Ionicons name="chevron-forward" size={16} color="#8E8E93" />
+        <Text style={styles.viewDetailsText}>
+          {canTrackOrder(item.status) ? 'Tap to track order' : 'Tap to view details'}
+        </Text>
+        <Ionicons 
+          name={canTrackOrder(item.status) ? 'location-outline' : 'chevron-forward'} 
+          size={16} 
+          color="#8E8E93" 
+        />
       </View>
     </TouchableOpacity>
   );
@@ -160,6 +221,7 @@ const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({ navigation }) =
   );
 };
 
+// Updated styles với thêm styles mới
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -236,7 +298,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 8,
   },
   itemsText: {
     fontSize: 14,
@@ -246,6 +308,21 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     color: '#000',
+  },
+  // 👈 New styles
+  estimatedDeliveryContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#F2F2F7',
+  },
+  estimatedDeliveryText: {
+    fontSize: 12,
+    color: '#8E8E93',
+    marginLeft: 4,
+    fontStyle: 'italic',
   },
   orderFooter: {
     flexDirection: 'row',
