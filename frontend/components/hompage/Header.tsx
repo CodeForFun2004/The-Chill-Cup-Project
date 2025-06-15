@@ -4,16 +4,21 @@ import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { Feather, Entypo } from '@expo/vector-icons';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../redux/store';
+import { useNavigation } from '@react-navigation/native';
 
 const Header = () => {
   const userInfo = useSelector((state: RootState) => state.auth.userInfo);
   const greetingName = userInfo?.name?.trim() || 'bạn mới';
+  const navigation = useNavigation();
 
   return (
     <View style={styles.container}>
       <Text style={styles.greeting}>Chào {greetingName} 👋</Text>
       <View style={styles.icons}>
-        <Pressable style={styles.iconWrapper}>
+        <Pressable 
+          style={styles.iconWrapper}
+          onPress={() => (navigation as any).navigate('CustomerHomeStack', { screen: 'Vouchers' })}
+        >
           <Entypo name="ticket" size={18} color="#000" />
         </Pressable>
         <Pressable style={styles.iconWrapper}>
