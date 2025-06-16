@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -8,12 +8,13 @@ import {
   SafeAreaView,
   StatusBar,
   ListRenderItem,
+  ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { CustomerStackParamList } from '../../navigation/CustomerStackNavigator';
 
-// Updated types - consistent với OrderDetail và OrderTracking
+// Types
 interface OrderItem {
   name: string;
   quantity: number;
@@ -26,7 +27,7 @@ interface Order {
   orderNumber: string;
   date: string;
   time: string;
-  status: 'Completed' | 'Cancelled' | 'Pending' | 'Processing' | 'Preparing' | 'Ready' | 'Delivering'; // 👈 Updated
+  status: 'Completed' | 'Cancelled' | 'Pending' | 'Processing' | 'Preparing' | 'Ready' | 'Delivering';
   total: number;
   items: OrderItem[];
   estimatedDelivery?: string;
@@ -43,14 +44,17 @@ interface OrderHistoryScreenProps {
   navigation: OrderHistoryScreenNavigationProp;
 }
 
-// Updated mock data với các status mới
+// Tab types
+type TabType = 'Preparing' | 'Delivering' | 'Completed' | 'Cancelled';
+
+// Mock data với nhiều orders để test tabs
 const mockOrderHistory: Order[] = [
   {
     id: '1',
     orderNumber: '#ORD-001',
     date: '2024-01-15',
     time: '10:30 AM',
-    status: 'Delivering', // 👈 New status
+    status: 'Delivering',
     total: 15.50,
     items: [
       { name: 'Cappuccino', quantity: 2, price: 4.50 },
@@ -64,7 +68,7 @@ const mockOrderHistory: Order[] = [
     orderNumber: '#ORD-002',
     date: '2024-01-14',
     time: '2:15 PM',
-    status: 'Preparing', // 👈 New status
+    status: 'Preparing',
     total: 8.75,
     items: [
       { name: 'Latte', quantity: 1, price: 5.25 },
@@ -89,7 +93,7 @@ const mockOrderHistory: Order[] = [
     orderNumber: '#ORD-004',
     date: '2024-01-12',
     time: '3:20 PM',
-    status: 'Ready', // 👈 New status
+    status: 'Ready',
     total: 7.50,
     items: [
       { name: 'Espresso', quantity: 2, price: 3.75 },
@@ -107,35 +111,167 @@ const mockOrderHistory: Order[] = [
       { name: 'Cake', quantity: 1, price: 11.50 },
     ],
   },
+  {
+    id: '6',
+    orderNumber: '#ORD-006',
+    date: '2024-01-10',
+    time: '9:30 AM',
+    status: 'Processing',
+    total: 9.25,
+    items: [
+      { name: 'Mocha', quantity: 1, price: 5.75 },
+      { name: 'Cookie', quantity: 1, price: 3.50 },
+    ],
+  },
+  {
+    id: '7',
+    orderNumber: '#ORD-007',
+    date: '2024-01-09',
+    time: '4:45 PM',
+    status: 'Pending',
+    total: 6.50,
+    items: [
+      { name: 'Green Tea', quantity: 1, price: 3.25 },
+      { name: 'Donut', quantity: 1, price: 3.25 },
+    ],
+  },
+  {
+    id: '8',
+    orderNumber: '#ORD-008',
+    date: '2024-01-08',
+    time: '11:20 AM',
+    status: 'Completed',
+    total: 14.75,
+    items: [
+      { name: 'Caramel Latte', quantity: 1, price: 6.25 },
+      { name: 'Bagel', quantity: 1, price: 8.50 },
+    ],
+  },
 ];
 
 const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({ navigation }) => {
-  // Updated getStatusColor để handle tất cả status
-  const getStatusColor = (status: Order['status']): string => {
-    switch (status.toLowerCase()) {
-      case 'completed':
-        return '#4CAF50'; // Green
-      case 'cancelled':
-        return '#F44336'; // Red
-      case 'pending':
-        return '#FF9800'; // Orange
-      case 'processing':
-        return '#2196F3'; // Blue
-      case 'preparing':
-        return '#9C27B0'; // Purple
-      case 'ready':
-        return '#00BCD4'; // Cyan
-      case 'delivering':
-        return '#FF5722'; // Deep Orange
+  const [activeTab, setActiveTab] = useState<TabType>('Preparing');
+
+  // Tab configuration
+  const tabs: { key: TabType; title: string; icon: keyof typeof Ionicons.glyphMap }[] = [
+    { key: 'Preparing', title: 'Preparing', icon: 'restaurant-outline' },
+    { key: 'Delivering', title: 'Delivering', icon: 'bicycle-outline' },
+    { key: 'Completed', title: 'Completed', icon: 'checkmark-circle-outline' },
+    { key: 'Cancelled', title: 'Cancelled', icon: 'close-circle-outline' },
+  ];
+
+  // Filter orders based on active tab
+  const getFilteredOrders = (): Order[] => {
+    switch (activeTab) {
+      case 'Preparing':
+        return mockOrderHistory.filter(order => 
+          ['Processing', 'Preparing', 'Ready', 'Pending'].includes(order.status)
+        );
+      case 'Delivering':
+        return mockOrderHistory.filter(order => order.status === 'Delivering');
+      case 'Completed':
+        return mockOrderHistory.filter(order => order.status === 'Completed');
+      case 'Cancelled':
+        return mockOrderHistory.filter(order => order.status === 'Cancelled');
       default:
-        return '#757575'; // Gray
+        return mockOrderHistory;
     }
   };
 
-  // Helper function để check xem có thể track không
+  // Get count for each tab
+  const getTabCount = (tabKey: TabType): number => {
+    switch (tabKey) {
+      case 'Preparing':
+        return mockOrderHistory.filter(order => 
+          ['Processing', 'Preparing', 'Ready', 'Pending'].includes(order.status)
+        ).length;
+      case 'Delivering':
+        return mockOrderHistory.filter(order => order.status === 'Delivering').length;
+      case 'Completed':
+        return mockOrderHistory.filter(order => order.status === 'Completed').length;
+      case 'Cancelled':
+        return mockOrderHistory.filter(order => order.status === 'Cancelled').length;
+      default:
+        return 0;
+    }
+  };
+
+  const getStatusColor = (status: Order['status']): string => {
+    switch (status.toLowerCase()) {
+      case 'completed':
+        return '#4CAF50';
+      case 'cancelled':
+        return '#F44336';
+      case 'pending':
+        return '#FF9800';
+      case 'processing':
+        return '#2196F3';
+      case 'preparing':
+        return '#9C27B0';
+      case 'ready':
+        return '#00BCD4';
+      case 'delivering':
+        return '#FF5722';
+      default:
+        return '#757575';
+    }
+  };
+
+  const getTabColor = (tabKey: TabType): string => {
+    switch (tabKey) {
+      case 'Preparing':
+        return '#9C27B0';
+      case 'Delivering':
+        return '#FF5722';
+      case 'Completed':
+        return '#4CAF50';
+      case 'Cancelled':
+        return '#F44336';
+      default:
+        return '#007AFF';
+    }
+  };
+
   const canTrackOrder = (status: Order['status']): boolean => {
     const trackableStatuses = ['processing', 'preparing', 'ready', 'delivering'];
     return trackableStatuses.includes(status.toLowerCase());
+  };
+
+  const renderTabItem = (tab: { key: TabType; title: string; icon: keyof typeof Ionicons.glyphMap }) => {
+    const isActive = activeTab === tab.key;
+    const count = getTabCount(tab.key);
+    const tabColor = getTabColor(tab.key);
+
+    return (
+      <TouchableOpacity
+        key={tab.key}
+        style={[
+          styles.tabItem,
+          isActive && { backgroundColor: tabColor + '15', borderBottomColor: tabColor }
+        ]}
+        onPress={() => setActiveTab(tab.key)}
+        activeOpacity={0.7}
+      >
+        <View style={styles.tabContent}>
+          <Ionicons 
+            name={tab.icon} 
+            size={20} 
+            color={isActive ? tabColor : '#8E8E93'} 
+          />
+          <Text style={[
+            styles.tabText,
+            { color: isActive ? tabColor : '#8E8E93' }
+          ]}>
+            {tab.title}
+          </Text>
+          {count > 0 && (
+            <View style={[styles.tabBadge, { backgroundColor: tabColor }]}>
+              <Text style={styles.tabBadgeText}>{count}</Text>
+            </View>
+          )}
+        </View>
+      </TouchableOpacity>
+    );
   };
 
   const renderOrderItem: ListRenderItem<Order> = ({ item }) => (
@@ -163,7 +299,6 @@ const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({ navigation }) =
         <Text style={styles.totalText}>${item.total.toFixed(2)}</Text>
       </View>
 
-      {/* Show estimated delivery for active orders */}
       {item.estimatedDelivery && canTrackOrder(item.status) && (
         <View style={styles.estimatedDeliveryContainer}>
           <Ionicons name="time-outline" size={14} color="#8E8E93" />
@@ -186,10 +321,13 @@ const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({ navigation }) =
     </TouchableOpacity>
   );
 
+  const filteredOrders = getFilteredOrders();
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
       
+      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
           onPress={() => navigation.goBack()}
@@ -201,18 +339,42 @@ const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({ navigation }) =
         <View style={styles.placeholder} />
       </View>
 
+      {/* Tabs */}
+      <View style={styles.tabsContainer}>
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.tabsScrollContent}
+        >
+          {tabs.map(renderTabItem)}
+        </ScrollView>
+      </View>
+
+      {/* Orders List */}
       <FlatList
-        data={mockOrderHistory}
+        data={filteredOrders}
         renderItem={renderOrderItem}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContainer}
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Ionicons name="receipt-outline" size={64} color="#C7C7CC" />
-            <Text style={styles.emptyTitle}>No Orders Yet</Text>
+            <Ionicons 
+              name={
+                activeTab === 'Preparing' ? 'restaurant-outline' :
+                activeTab === 'Delivering' ? 'bicycle-outline' :
+                activeTab === 'Completed' ? 'checkmark-circle-outline' :
+                'close-circle-outline'
+              } 
+              size={64} 
+              color="#C7C7CC" 
+            />
+            <Text style={styles.emptyTitle}>No {activeTab} Orders</Text>
             <Text style={styles.emptySubtitle}>
-              Your order history will appear here once you make your first purchase.
+              {activeTab === 'Preparing' && 'No orders are currently being prepared.'}
+              {activeTab === 'Delivering' && 'No orders are currently being delivered.'}
+              {activeTab === 'Completed' && 'No completed orders found.'}
+              {activeTab === 'Cancelled' && 'No cancelled orders found.'}
             </Text>
           </View>
         }
@@ -221,7 +383,6 @@ const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({ navigation }) =
   );
 };
 
-// Updated styles với thêm styles mới
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -248,8 +409,54 @@ const styles = StyleSheet.create({
   placeholder: {
     width: 40,
   },
+  // Tab Styles
+  tabsContainer: {
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E5EA',
+  },
+  tabsScrollContent: {
+    paddingHorizontal: 16,
+  },
+  tabItem: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    marginRight: 8,
+    borderRadius: 8,
+    borderBottomWidth: 2,
+    borderBottomColor: 'transparent',
+    minWidth: 80,
+  },
+  tabContent: {
+    alignItems: 'center',
+    position: 'relative',
+  },
+  tabText: {
+    fontSize: 12,
+    fontWeight: '500',
+    marginTop: 4,
+    textAlign: 'center',
+  },
+  tabBadge: {
+    position: 'absolute',
+    top: -8,
+    right: -8,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+  },
+  tabBadgeText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  // Order List Styles
   listContainer: {
     padding: 16,
+    flexGrow: 1,
   },
   orderCard: {
     backgroundColor: '#FFFFFF',
@@ -309,7 +516,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#000',
   },
-  // 👈 New styles
   estimatedDeliveryContainer: {
     flexDirection: 'row',
     alignItems: 'center',
