@@ -1,17 +1,34 @@
 // screens/Customer/ProfileScreen.tsx
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Image,
+  ScrollView,
+  Alert,
+} from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '../../redux/slices/authSlice';
 import { RootState } from '../../redux/store';
-import { useNavigation, CommonActions } from '@react-navigation/native';
+import {
+  useNavigation,
+  CommonActions,
+} from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { ProfileStackParamList } from '../../navigation/ProfileNavigator';
-import { MaterialIcons, MaterialCommunityIcons, Ionicons, Feather } from '@expo/vector-icons';
+import {
+  MaterialIcons,
+  MaterialCommunityIcons,
+  Ionicons,
+  Feather,
+} from '@expo/vector-icons';
 import { CompositeNavigationProp } from '@react-navigation/native';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { CustomerTabParamList } from '../../navigation/CustomerNavigator';
 
+// Combine stack and tab navigation props
 type ProfileScreenNavigationProp = CompositeNavigationProp<
   NativeStackNavigationProp<ProfileStackParamList>,
   BottomTabNavigationProp<CustomerTabParamList>
@@ -30,28 +47,22 @@ const ProfileScreen = () => {
   const userInfo = useSelector((state: RootState) => state.auth.userInfo);
 
   const handleLogout = () => {
-    Alert.alert(
-      'Logout',
-      'Are you sure you want to logout?',
-      [
-        { text: 'Cancel' },
-        {
-          text: 'Logout',
-          onPress: () => {
-            dispatch(logout());
-            navigation.dispatch(
-              CommonActions.reset({
-                index: 0,
-                routes: [
-                  { name: 'CustomerHomeStack' }
-                ],
-              })
-            );
-          },
-          style: 'destructive',
+    Alert.alert('Logout', 'Are you sure you want to logout?', [
+      { text: 'Cancel' },
+      {
+        text: 'Logout',
+        onPress: () => {
+          dispatch(logout());
+          navigation.dispatch(
+            CommonActions.reset({
+              index: 0,
+              routes: [{ name: 'CustomerHomeStack' }],
+            })
+          );
         },
-      ]
-    );
+        style: 'destructive',
+      },
+    ]);
   };
 
   const menuItems: MenuItemType[] = [
@@ -125,7 +136,10 @@ const ProfileScreen = () => {
     return (
       <View style={styles.container}>
         <Text style={styles.title}>Please login to view your profile</Text>
-        <TouchableOpacity style={styles.loginButton} onPress={() => navigation.navigate('CustomerHomeStack')}>
+        <TouchableOpacity
+          style={styles.loginButton}
+          onPress={() => navigation.getParent()?.navigate('WelcomeScreen')}
+        >
           <Text style={styles.loginButtonText}>Login</Text>
         </TouchableOpacity>
       </View>
@@ -137,10 +151,7 @@ const ProfileScreen = () => {
       <View style={styles.header}>
         <View style={styles.profileInfo}>
           {userInfo.avatar ? (
-            <Image
-              source={{ uri: userInfo.avatar }}
-              style={styles.avatar}
-            />
+            <Image source={{ uri: userInfo.avatar }} style={styles.avatar} />
           ) : (
             <View style={[styles.avatar, styles.placeholderAvatar]}>
               <MaterialIcons name="person" size={30} color="#ccc" />
