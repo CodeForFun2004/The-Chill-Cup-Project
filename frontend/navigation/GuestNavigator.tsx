@@ -10,12 +10,14 @@ import PromotionScreen from '../screens/Customer/PromotionScreen';
 import ProfileScreen from '../screens/Customer/ProfileScreen';
 import DrinkCategoryScreen from '../screens/Customer/DrinkCategoryScreen';
 
+
 export type GuestTabParamList = {
   GuestHomeScreen: undefined;
   DrinkCategoryScreen: undefined;
   Store: undefined;
   Promotion: undefined;
   Profile: undefined;
+  Cart: undefined;
 };
 
 const Tab = createBottomTabNavigator<GuestTabParamList>();
@@ -45,6 +47,8 @@ const GuestNavigator = () => (
           case 'Profile':
             icon = <MaterialCommunityIcons name="account-outline" size={22} color={focused ? '#4AA366' : '#888'} />;
             break;
+
+           
         }
 
         return <View style={styles.iconWrapper}>{icon}</View>;
@@ -56,6 +60,7 @@ const GuestNavigator = () => (
     <Tab.Screen name="Store" component={StoreScreen} />
     <Tab.Screen name="Promotion" component={PromotionScreen} />
     <Tab.Screen name="Profile" component={ProfileScreen} />
+    
   </Tab.Navigator>
 );
 

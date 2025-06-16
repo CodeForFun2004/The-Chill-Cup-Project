@@ -1,33 +1,37 @@
 // components/homepage/AfterLoginBanner.tsx
 import React from 'react';
-import { View, Text, StyleSheet, Image } from 'react-native';
+import { View, Text, StyleSheet, Image, Pressable } from 'react-native';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../redux/store';
+import { useNavigation } from '@react-navigation/native';
 
 const AfterLoginBanner = () => {
   const userInfo = useSelector((state: RootState) => state.auth.userInfo);
   const name = userInfo?.name?.trim() || 'Thành viên';
   const memberId = userInfo?.id || 'M162445270';
+  const navigation = useNavigation();
 
   return (
     <View style={styles.container}>
-      <View style={styles.headerRow}>
-        <View style={styles.userInfo}>
-          <Image
-            source={require('../../assets/images/search-box/new.png')} // hoặc URL avatar từ userInfo
-            style={styles.avatar}
-          />
-          <View>
-            <Text style={styles.name}>{name}</Text>
-            <Text style={styles.tag}>Thành viên mới</Text>
+      <Pressable style={{ flex: 1 }} onPress={() => (navigation as any).navigate('CustomerHomeStack', { screen: 'LoyaltyScreen' })}>
+        <View style={styles.headerRow}>
+          <View style={styles.userInfo}>
+            <Image
+              source={require('../../assets/images/search-box/new.png')} // hoặc URL avatar từ userInfo
+              style={styles.avatar}
+            />
+            <View>
+              <Text style={styles.name}>{name}</Text>
+              <Text style={styles.tag}>Thành viên mới</Text>
+            </View>
+          </View>
+          <View style={styles.rightBox}>
+            <Text style={styles.beanText}>Đổi</Text>
+            <Text style={styles.beanCount}>0 BEAN</Text>
           </View>
         </View>
-        <View style={styles.rightBox}>
-          <Text style={styles.beanText}>Đổi</Text>
-          <Text style={styles.beanCount}>0 BEAN</Text>
-        </View>
-      </View>
-      <Text style={styles.memberId}>Mã thành viên: {memberId}</Text>
+        <Text style={styles.memberId}>Mã thành viên: {memberId}</Text>
+      </Pressable>
     </View>
   );
 };
