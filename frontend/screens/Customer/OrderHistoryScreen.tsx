@@ -8,11 +8,15 @@ import {
   SafeAreaView,
   StatusBar,
   ListRenderItem,
-  ScrollView,
+  Dimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { CustomerStackParamList } from '../../navigation/CustomerStackNavigator';
+
+// Get screen width for tab calculations
+const { width: screenWidth } = Dimensions.get('window');
+const TAB_WIDTH = (screenWidth - 32) / 4; // 32 = padding left + right
 
 // Types
 interface OrderItem {
@@ -47,7 +51,7 @@ interface OrderHistoryScreenProps {
 // Tab types
 type TabType = 'Preparing' | 'Delivering' | 'Completed' | 'Cancelled';
 
-// Mock data với nhiều orders để test tabs
+// Mock data
 const mockOrderHistory: Order[] = [
   {
     id: '1',
@@ -152,7 +156,7 @@ const mockOrderHistory: Order[] = [
 const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({ navigation }) => {
   const [activeTab, setActiveTab] = useState<TabType>('Preparing');
 
-  // Tab configuration
+  // Tab configuration - Fixed 4 tabs
   const tabs: { key: TabType; title: string; icon: keyof typeof Ionicons.glyphMap }[] = [
     { key: 'Preparing', title: 'Preparing', icon: 'restaurant-outline' },
     { key: 'Delivering', title: 'Delivering', icon: 'bicycle-outline' },
@@ -247,28 +251,35 @@ const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({ navigation }) =
         key={tab.key}
         style={[
           styles.tabItem,
-          isActive && { backgroundColor: tabColor + '15', borderBottomColor: tabColor }
+          { width: TAB_WIDTH },
+          isActive && { 
+            backgroundColor: tabColor + '15', 
+            borderBottomColor: tabColor,
+            borderBottomWidth: 3,
+          }
         ]}
         onPress={() => setActiveTab(tab.key)}
         activeOpacity={0.7}
       >
         <View style={styles.tabContent}>
-          <Ionicons 
-            name={tab.icon} 
-            size={20} 
-            color={isActive ? tabColor : '#8E8E93'} 
-          />
+          <View style={styles.tabIconContainer}>
+            <Ionicons 
+              name={tab.icon} 
+              size={20} 
+              color={isActive ? tabColor : '#8E8E93'} 
+            />
+            {count > 0 && (
+              <View style={[styles.tabBadge, { backgroundColor: tabColor }]}>
+                <Text style={styles.tabBadgeText}>{count}</Text>
+              </View>
+            )}
+          </View>
           <Text style={[
             styles.tabText,
             { color: isActive ? tabColor : '#8E8E93' }
           ]}>
             {tab.title}
           </Text>
-          {count > 0 && (
-            <View style={[styles.tabBadge, { backgroundColor: tabColor }]}>
-              <Text style={styles.tabBadgeText}>{count}</Text>
-            </View>
-          )}
         </View>
       </TouchableOpacity>
     );
@@ -339,15 +350,11 @@ const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({ navigation }) =
         <View style={styles.placeholder} />
       </View>
 
-      {/* Tabs */}
+      {/* Fixed Tabs - No ScrollView */}
       <View style={styles.tabsContainer}>
-        <ScrollView 
-          horizontal 
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.tabsScrollContent}
-        >
+        <View style={styles.tabsRow}>
           {tabs.map(renderTabItem)}
-        </ScrollView>
+        </View>
       </View>
 
       {/* Orders List */}
@@ -409,47 +416,50 @@ const styles = StyleSheet.create({
   placeholder: {
     width: 40,
   },
-  // Tab Styles
+  // Fixed Tab Styles
   tabsContainer: {
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
     borderBottomColor: '#E5E5EA',
-  },
-  tabsScrollContent: {
     paddingHorizontal: 16,
+  },
+  tabsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
   },
   tabItem: {
     paddingVertical: 12,
-    paddingHorizontal: 16,
-    marginRight: 8,
-    borderRadius: 8,
-    borderBottomWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderBottomWidth: 3,
     borderBottomColor: 'transparent',
-    minWidth: 80,
   },
   tabContent: {
     alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tabIconContainer: {
     position: 'relative',
+    marginBottom: 4,
   },
   tabText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '500',
-    marginTop: 4,
     textAlign: 'center',
   },
   tabBadge: {
     position: 'absolute',
-    top: -8,
-    right: -8,
-    minWidth: 18,
-    height: 18,
-    borderRadius: 9,
+    top: -6,
+    right: -6,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 4,
   },
   tabBadgeText: {
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: '600',
     color: '#FFFFFF',
   },
