@@ -449,8 +449,8 @@ const styles = StyleSheet.create({
   },
   tabBadge: {
     position: 'absolute',
-    top: -6,
-    right: -6,
+    top: -10,
+    right: -9,
     minWidth: 16,
     height: 16,
     borderRadius: 8,
