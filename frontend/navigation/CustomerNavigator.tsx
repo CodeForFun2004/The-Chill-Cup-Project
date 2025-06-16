@@ -12,8 +12,8 @@ import {
 
 import { View, Text, StyleSheet, Platform } from "react-native";
 import { NavigatorScreenParams } from "@react-navigation/native";
-
 import CustomerHomeStack from "./CustomerHomeStack";
+import DrinkCategoryScreen from '../screens/Customer/DrinkCategoryScreen';
 import StoreScreen from "../screens/Customer/StoreScreen";
 import PromotionScreen from "../screens/Customer/PromotionScreen";
 import CartScreen from "../screens/Customer/CartScreen";
@@ -25,13 +25,27 @@ import { ProfileStackParamList } from "./ProfileNavigator";
 
 export type CustomerTabParamList = {
   CustomerHomeStack: undefined;
+  DrinkCategoryScreen: undefined;
   Store: undefined;
   Promotion: undefined;
   Profile: NavigatorScreenParams<ProfileStackParamList>;
+  SearchScreen: undefined;
+  DrinkDetailScreen: {
+    drink: {
+      id: number;
+      name: string;
+      description: string;
+      price: number;
+      image: string;
+      category: string;
+      popular: boolean;
+    };
+    category: string;
+  };
   CartStack: undefined;
 };
 
-const Tab = createBottomTabNavigator<CustomerTabParamList>();
+const Tab = createBottomTabNavigator<CustomerTabParamList>(); 
 
 const CustomerNavigator = () => {
   return (
@@ -47,6 +61,9 @@ const CustomerNavigator = () => {
         switch (route.name) {
           case "CustomerHomeStack":
             icon = <Ionicons name="home-outline" size={22} color={focused ? "#4AA366" : "#888"} />;
+            break;
+          case 'DrinkCategoryScreen':
+            icon = <Ionicons name="cafe-outline" size={22} color={focused ? '#4AA366' : '#888'} />;
             break;
           case "Store":
             icon = <MaterialCommunityIcons name="storefront-outline" size={22} color={focused ? "#4AA366" : "#888"} />;
@@ -66,7 +83,9 @@ const CustomerNavigator = () => {
       },
     })}
   >
-    <Tab.Screen name="CustomerHomeStack" component={CustomerHomeStack} />
+
+    <Tab.Screen name="CustomerHomeStack" component={CustomerHomeStack} /> 
+    <Tab.Screen name="DrinkCategoryScreen" component={DrinkCategoryScreen} />
     <Tab.Screen name="Store" component={StoreScreen} />
     <Tab.Screen name="Promotion" component={PromotionScreen} />
     <Tab.Screen 

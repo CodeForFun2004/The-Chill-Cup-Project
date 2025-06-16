@@ -8,10 +8,12 @@ import GuestHomeScreen from '../screens/Guest/GuestHomeScreen';
 import StoreScreen from '../screens/Customer/StoreScreen';
 import PromotionScreen from '../screens/Customer/PromotionScreen';
 import ProfileScreen from '../screens/Customer/ProfileScreen';
+import DrinkCategoryScreen from '../screens/Customer/DrinkCategoryScreen';
 
 
 export type GuestTabParamList = {
   GuestHomeScreen: undefined;
+  DrinkCategoryScreen: undefined;
   Store: undefined;
   Promotion: undefined;
   Profile: undefined;
@@ -33,6 +35,9 @@ const GuestNavigator = () => (
           case 'GuestHomeScreen':
             icon = <Ionicons name="home-outline" size={22} color={focused ? '#4AA366' : '#888'} />;
             break;
+          case 'DrinkCategoryScreen':
+            icon = <Ionicons name="cafe-outline" size={22} color={focused ? '#4AA366' : '#888'} />;
+            break;
           case 'Store':
             icon = <MaterialCommunityIcons name="storefront-outline" size={22} color={focused ? '#4AA366' : '#888'} />;
             break;
@@ -51,6 +56,7 @@ const GuestNavigator = () => (
     })}
   >
     <Tab.Screen name="GuestHomeScreen" component={GuestHomeScreen} />
+    <Tab.Screen name="DrinkCategoryScreen" component={DrinkCategoryScreen} />
     <Tab.Screen name="Store" component={StoreScreen} />
     <Tab.Screen name="Promotion" component={PromotionScreen} />
     <Tab.Screen name="Profile" component={ProfileScreen} />
