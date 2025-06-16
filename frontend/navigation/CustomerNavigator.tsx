@@ -1,42 +1,72 @@
 import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+
+
+import {
+  Ionicons,
+  MaterialCommunityIcons,
+  FontAwesome,
+} from "@expo/vector-icons";
+
+
+
 import { View, Text, StyleSheet, Platform } from "react-native";
-import { Ionicons, MaterialCommunityIcons, Entypo, FontAwesome } from "@expo/vector-icons"; // Expo default icons
-
-
-import ProfileScreen from "../screens/Customer/ProfileScreen";
-import CustomerHomeScreen from "../screens/Customer/CustomerHomeScreen";
+import { NavigatorScreenParams } from "@react-navigation/native";
+import CustomerHomeStack from "./CustomerHomeStack";
+import DrinkCategoryScreen from '../screens/Customer/DrinkCategoryScreen';
 import StoreScreen from "../screens/Customer/StoreScreen";
 import PromotionScreen from "../screens/Customer/PromotionScreen";
 import CartScreen from "../screens/Customer/CartScreen";
 import CheckoutScreen from "../screens/Customer/CheckoutScreen";
 import CustomerStackNavigator from "./CustomerStackNavigator";
+import ProfileNavigator from "./ProfileNavigator";
+import { ProfileStackParamList } from "./ProfileNavigator";
+
 
 export type CustomerTabParamList = {
-  CustomerHomeScreen: undefined;
+  CustomerHomeStack: undefined;
+  DrinkCategoryScreen: undefined;
   Store: undefined;
   Promotion: undefined;
-  Profile: undefined;
+  Profile: NavigatorScreenParams<ProfileStackParamList>;
+  SearchScreen: undefined;
+  DrinkDetailScreen: {
+    drink: {
+      id: number;
+      name: string;
+      description: string;
+      price: number;
+      image: string;
+      category: string;
+      popular: boolean;
+    };
+    category: string;
+  };
   CartStack: undefined;
 };
 
-const Tab = createBottomTabNavigator<CustomerTabParamList>();
+const Tab = createBottomTabNavigator<CustomerTabParamList>(); 
 
-const CustomerNavigator = () => (
-  <Tab.Navigator
-    screenOptions={({ route }) => ({
-      headerShown: false,
-      tabBarShowLabel: false,
-      tabBarStyle: styles.tabBar,
-      tabBarIcon: ({ focused, color, size }) => {
-        let icon;
+const CustomerNavigator = () => {
+  return (
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        headerShown: false,
+        tabBarShowLabel: false,
+        tabBarStyle: styles.tabBar,
+        tabBarIcon: ({ focused }) => {
+          let icon;
+
 
         switch (route.name) {
-          case "CustomerHomeScreen":
+          case "CustomerHomeStack":
             icon = <Ionicons name="home-outline" size={22} color={focused ? "#4AA366" : "#888"} />;
             break;
+          case 'DrinkCategoryScreen':
+            icon = <Ionicons name="cafe-outline" size={22} color={focused ? '#4AA366' : '#888'} />;
+            break;
           case "Store":
-            icon = <MaterialCommunityIcons name="storefront-outline" size={22} color={focused ? '#4AA366' : '#888'} />;
+            icon = <MaterialCommunityIcons name="storefront-outline" size={22} color={focused ? "#4AA366" : "#888"} />;
             break;
           case "Promotion":
             icon = <FontAwesome name="credit-card" size={20} color={focused ? "#4AA366" : "#888"} />;
@@ -44,7 +74,7 @@ const CustomerNavigator = () => (
           case "Profile":
             icon = <MaterialCommunityIcons name="account-outline" size={22} color={focused ? '#4AA366' : '#888'} />;
             break;
-            case "CartStack":
+          case "CartStack":
             icon = <MaterialCommunityIcons name="cart" size={22} color={focused ? '#4AA366' : '#888'} />;
             break;
         }
@@ -53,13 +83,31 @@ const CustomerNavigator = () => (
       },
     })}
   >
-    <Tab.Screen name="CustomerHomeScreen" component={CustomerHomeScreen} />
+
+    <Tab.Screen name="CustomerHomeStack" component={CustomerHomeStack} /> 
+    <Tab.Screen name="DrinkCategoryScreen" component={DrinkCategoryScreen} />
     <Tab.Screen name="Store" component={StoreScreen} />
     <Tab.Screen name="Promotion" component={PromotionScreen} />
-    <Tab.Screen name="Profile" component={ProfileScreen} />
-    <Tab.Screen name="CartStack" component={CustomerStackNavigator} />
+    <Tab.Screen 
+      name="Profile" 
+      component={ProfileNavigator}
+      options={{
+        headerShown: false
+      }}
+    />
+    <Tab.Screen
+      name="CartStack"
+      component={CustomerStackNavigator}
+      listeners={({ navigation, route }) => ({
+        tabPress: e => {
+          e.preventDefault();
+          (navigation as any).navigate('CartStack', { screen: 'Cart' });
+        },
+      })}
+    />
   </Tab.Navigator>
-);
+)};
+
 
 export default CustomerNavigator;
 
@@ -71,7 +119,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 20,
     borderTopWidth: 0,
     position: "absolute",
-    bottom: 0,       // ✅ SÁT ĐÁY
+    bottom: 0,
     left: 0,
     right: 0,
     elevation: 10,

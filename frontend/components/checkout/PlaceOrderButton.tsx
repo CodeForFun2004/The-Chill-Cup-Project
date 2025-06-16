@@ -7,7 +7,15 @@ import { setOrderInfo } from '../../redux/slices/orderSlice';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { CustomerStackParamList } from '../../navigation/CustomerStackNavigator';
 
-const PlaceOrderButton = () => {
+const PlaceOrderButton = ({
+  paymentMethod,
+  location,
+  phone,
+}: {
+  paymentMethod: 'vnpay' | 'cod';
+  location: string;
+  phone: string;
+}) => {
   const navigation = useNavigation<NativeStackNavigationProp<CustomerStackParamList>>();
   const dispatch = useDispatch();
 
@@ -23,12 +31,16 @@ const PlaceOrderButton = () => {
       orderId: Math.random().toString(36).substr(2, 8).toUpperCase(),
       items: formattedItems,
       total,
-      address: '123 Sakura Street, Downtown', // sau này có thể lấy từ location state
-      paymentMethod: 'VNPay', // sau này có thể lấy từ PaymentMethod state
+      address: location,
+      paymentMethod: paymentMethod === 'vnpay' ? 'VNPay' : 'Cash on Delivery',
       deliveryTime: '25–35 mins',
     }));
 
-    navigation.navigate('OrderSuccess');
+    if (paymentMethod === 'vnpay') {
+      navigation.navigate('VNPayGateway');
+    } else {
+      navigation.navigate('OrderSuccess');
+    }
   };
 
   return (
@@ -37,6 +49,7 @@ const PlaceOrderButton = () => {
     </TouchableOpacity>
   );
 };
+
 
 export default PlaceOrderButton;
 
