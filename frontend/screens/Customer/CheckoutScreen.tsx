@@ -30,12 +30,15 @@ const CheckoutScreen = () => {
         />
         <OrderSummary subtotal={subtotal} delivery={delivery} tax={tax} />
         <PaymentMethod selected={paymentMethod} onSelect={setPaymentMethod} />
-        <PlaceOrderButton paymentMethod={paymentMethod} location={location} phone={phone} />
+        <PlaceOrderButton
+          paymentMethod={paymentMethod}
+          location={location}
+          phone={phone}
+        />
       </ScrollView>
     </View>
   );
 };
-
 
 export default CheckoutScreen;
 

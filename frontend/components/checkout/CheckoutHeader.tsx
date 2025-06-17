@@ -14,7 +14,7 @@ const CheckoutHeader = () => {
 
       <Text style={styles.headerTitle}>Checkout</Text>
 
-      <View style={{ width: 24 }} /> {/* giữ cân bằng bên phải */}
+      <View style={{ width: 24 }} /> 
     </View>
   );
 };
