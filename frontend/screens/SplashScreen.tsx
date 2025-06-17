@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
-import { View, Image, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import { Image } from 'expo-image';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/RootNavigator';
@@ -13,7 +14,7 @@ const SplashScreen = () => {
         index: 0,
         routes: [{ name: 'Main' }],
       });
-    }, 1850); // Thay đổi thời gian nếu cần
+    }, 1850); 
 
     return () => clearTimeout(timeout);
   }, []);
@@ -21,9 +22,9 @@ const SplashScreen = () => {
   return (
     <View style={styles.container}>
       <Image
-        source={require('../assets/splash.gif')} // 🎯 dùng ảnh gif bạn tải
+        source={require('../assets/splash.gif')}
         style={styles.logo}
-        resizeMode="contain"
+        contentFit="contain"
       />
     </View>
   );

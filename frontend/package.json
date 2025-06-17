@@ -29,7 +29,8 @@
     "react-native-uuid": "^2.0.3",
     "react-native-vector-icons": "^10.2.0",
     "react-redux": "^9.2.0",
-    "uuid": "^11.1.0"
+    "uuid": "^11.1.0",
+    "expo-image": "~2.3.0"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
