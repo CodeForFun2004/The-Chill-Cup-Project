@@ -21,6 +21,7 @@ import CheckoutScreen from "../screens/Customer/CheckoutScreen";
 import CustomerStackNavigator from "./CustomerStackNavigator";
 import ProfileNavigator from "./ProfileNavigator";
 import { ProfileStackParamList } from "./ProfileNavigator";
+import TestOrderNavigator from "./TestOrderNavigator";
 
 
 export type CustomerTabParamList = {
@@ -43,6 +44,7 @@ export type CustomerTabParamList = {
     category: string;
   };
   CartStack: undefined;
+  // OrderStack: undefined;
 };
 
 const Tab = createBottomTabNavigator<CustomerTabParamList>(); 
@@ -77,6 +79,9 @@ const CustomerNavigator = () => {
           case "CartStack":
             icon = <MaterialCommunityIcons name="cart" size={22} color={focused ? '#4AA366' : '#888'} />;
             break;
+            // case "OrderStack":
+            // icon = <MaterialCommunityIcons name="cart" size={22} color={focused ? '#4AA366' : '#888'} />;
+            // break;
         }
 
         return <View style={styles.iconWrapper}>{icon}</View>;
@@ -105,6 +110,7 @@ const CustomerNavigator = () => {
         },
       })}
     />
+    {/* <Tab.Screen name="OrderStack" component={TestOrderNavigator} /> */}
   </Tab.Navigator>
 )};
 

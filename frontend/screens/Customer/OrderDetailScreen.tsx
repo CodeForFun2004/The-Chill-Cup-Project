@@ -16,6 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
 import { CustomerStackParamList } from '../../navigation/CustomerStackNavigator';
+import { formatCurrency } from '../../utils/formatCurrency';
 
 // Import types
 interface OrderItem {
@@ -115,7 +116,7 @@ const OrderDetailScreen: React.FC<OrderDetailScreenProps> = ({ route, navigation
         </TouchableOpacity>
       </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 70 }}>
         {/* Order Status Card */}
         <View style={styles.statusCard}>
           <View style={styles.statusHeader}>
@@ -137,7 +138,7 @@ const OrderDetailScreen: React.FC<OrderDetailScreenProps> = ({ route, navigation
                 <Text style={styles.itemQuantity}>Qty: {item.quantity}</Text>
                 {item.image && <Image source={item.image} style={styles.image} />}
               </View>
-              <Text style={styles.itemPrice}>${item.price.toFixed(2)}</Text>
+              <Text style={styles.itemPrice}>{formatCurrency(item.price)}</Text>
             </View>
           ))}
         </View>
@@ -147,11 +148,11 @@ const OrderDetailScreen: React.FC<OrderDetailScreenProps> = ({ route, navigation
           <Text style={styles.sectionTitle}>Order Summary</Text>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Subtotal</Text>
-            <Text style={styles.summaryValue}>${(order.total * 0.9).toFixed(2)}</Text>
+            <Text style={styles.summaryValue}>{formatCurrency(order.total * 0.9)}</Text>
           </View>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Tax</Text>
-            <Text style={styles.summaryValue}>${(order.total * 0.1).toFixed(2)}</Text>
+            <Text style={styles.summaryValue}>{formatCurrency(order.total * 0.1)}</Text>
           </View>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Delivery Fee</Text>
@@ -159,7 +160,7 @@ const OrderDetailScreen: React.FC<OrderDetailScreenProps> = ({ route, navigation
           </View>
           <View style={[styles.summaryRow, styles.totalRow]}>
             <Text style={styles.totalLabel}>Total</Text>
-            <Text style={styles.totalValue}>${order.total.toFixed(2)}</Text>
+            <Text style={styles.totalValue}>{formatCurrency(order.total)}</Text>
           </View>
         </View>
 
@@ -189,9 +190,8 @@ const OrderDetailScreen: React.FC<OrderDetailScreenProps> = ({ route, navigation
             </View>
           </View>
         </View>
-      </ScrollView>
 
-      {/* Action Buttons */}
+              {/* Action Buttons */}
       <View style={styles.actionButtons}>
         {/* Track Order Button - for orders in progress */}
         {canTrackOrder() && (
@@ -209,6 +209,9 @@ const OrderDetailScreen: React.FC<OrderDetailScreenProps> = ({ route, navigation
           </TouchableOpacity>
         )}
       </View>
+      </ScrollView>
+
+
     </SafeAreaView>
   );
 };

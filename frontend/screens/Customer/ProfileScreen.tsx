@@ -67,6 +67,11 @@ const ProfileScreen = () => {
 
   const menuItems: MenuItemType[] = [
     {
+      icon: <MaterialIcons name="history" size={24} color="#666" />,
+      title: 'Order History',
+      onPress: () => navigation.navigate('OrderStack' as never),
+    },
+    {
       icon: <MaterialIcons name="favorite-border" size={24} color="#666" />,
       title: 'My Favorite Restaurants',
       onPress: () => navigation.navigate('Favorites'),

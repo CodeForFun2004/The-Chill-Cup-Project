@@ -41,7 +41,7 @@ const Stack = createNativeStackNavigator<TestOrderStackParamList>();
 const TestOrderNavigator = () => {
   return (
     <Stack.Navigator 
-      initialRouteName="OrderHistory"
+      // initialRouteName="OrderHistory"
       screenOptions={{ headerShown: false }}
     >
       <Stack.Screen name="OrderHistory" component={OrderHistoryScreen} />

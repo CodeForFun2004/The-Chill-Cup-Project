@@ -3,15 +3,15 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import ProfileScreen from '../screens/Customer/ProfileScreen';
 import EditProfileScreen from '../screens/Customer/EditProfileScreen';
 import ChangePasswordScreen from '../screens/Customer/ChangePasswordScreen';
-import OrderHistoryScreen from '../screens/Customer/OrderHistoryScreen';
 import FavoritesScreen from '../screens/Customer/FavoritesScreen';
+import TestOrderNavigator from './TestOrderNavigator'; // ✅ thêm navigator mới
 
 export type ProfileStackParamList = {
   ProfileMain: undefined;
   EditProfile: undefined;
   ChangePassword: undefined;
-  OrderHistory: undefined;
   Favorites: undefined;
+  OrderStack: undefined; // ✅ dùng stack chứa toàn bộ order
 };
 
 const Stack = createNativeStackNavigator<ProfileStackParamList>();
@@ -30,33 +30,33 @@ const ProfileNavigator = () => {
         },
       }}
     >
-      <Stack.Screen 
-        name="ProfileMain" 
+      <Stack.Screen
+        name="ProfileMain"
         component={ProfileScreen}
         options={{ title: 'Profile' }}
       />
-      <Stack.Screen 
-        name="EditProfile" 
+      <Stack.Screen
+        name="EditProfile"
         component={EditProfileScreen}
         options={{ title: 'Edit Profile' }}
       />
-      <Stack.Screen 
-        name="ChangePassword" 
+      <Stack.Screen
+        name="ChangePassword"
         component={ChangePasswordScreen}
         options={{ title: 'Change Password' }}
       />
-      <Stack.Screen 
-        name="OrderHistory" 
-        component={OrderHistoryScreen}
-        options={{ title: 'Order History' }}
-      />
-      <Stack.Screen 
-        name="Favorites" 
+      <Stack.Screen
+        name="Favorites"
         component={FavoritesScreen}
         options={{ title: 'Favorites' }}
+      />
+      <Stack.Screen
+        name="OrderStack"
+        component={TestOrderNavigator}
+        options={{ headerShown: false }} // dùng header riêng trong Order stack
       />
     </Stack.Navigator>
   );
 };
 
-export default ProfileNavigator; 
+export default ProfileNavigator;

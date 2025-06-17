@@ -14,30 +14,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { CustomerStackParamList } from '../../navigation/CustomerStackNavigator';
 
-// Get screen width for tab calculations
+import { orders } from '../../data/orders'; // ✅ Dùng biến runtime
+import type { Order } from '../../data/orders';
+import { formatCurrency } from '../../utils/formatCurrency';
+
 const { width: screenWidth } = Dimensions.get('window');
-const TAB_WIDTH = (screenWidth - 32) / 4; // 32 = padding left + right
-
-// Types
-interface OrderItem {
-  name: string;
-  quantity: number;
-  price: number;
-  image?: any;
-}
-
-interface Order {
-  id: string;
-  orderNumber: string;
-  date: string;
-  time: string;
-  status: 'Completed' | 'Cancelled' | 'Pending' | 'Processing' | 'Preparing' | 'Ready' | 'Delivering';
-  total: number;
-  items: OrderItem[];
-  estimatedDelivery?: string;
-  deliveryAddress?: string;
-  phoneNumber?: string;
-}
+const TAB_WIDTH = (screenWidth - 32) / 4;
 
 type OrderHistoryScreenNavigationProp = NativeStackNavigationProp<
   CustomerStackParamList,
@@ -48,115 +30,11 @@ interface OrderHistoryScreenProps {
   navigation: OrderHistoryScreenNavigationProp;
 }
 
-// Tab types
 type TabType = 'Preparing' | 'Delivering' | 'Completed' | 'Cancelled';
-
-// Mock data
-const mockOrderHistory: Order[] = [
-  {
-    id: '1',
-    orderNumber: '#ORD-001',
-    date: '2024-01-15',
-    time: '10:30 AM',
-    status: 'Delivering',
-    total: 15.50,
-    items: [
-      { name: 'Cappuccino', quantity: 2, price: 4.50 },
-      { name: 'Croissant', quantity: 1, price: 6.50 },
-    ],
-    estimatedDelivery: '11:00 AM',
-    deliveryAddress: '123 Coffee Street, Brew City',
-  },
-  {
-    id: '2',
-    orderNumber: '#ORD-002',
-    date: '2024-01-14',
-    time: '2:15 PM',
-    status: 'Preparing',
-    total: 8.75,
-    items: [
-      { name: 'Latte', quantity: 1, price: 5.25 },
-      { name: 'Blueberry Muffin', quantity: 1, price: 3.50 },
-    ],
-    estimatedDelivery: '2:45 PM',
-  },
-  {
-    id: '3',
-    orderNumber: '#ORD-003',
-    date: '2024-01-13',
-    time: '8:45 AM',
-    status: 'Completed',
-    total: 12.25,
-    items: [
-      { name: 'Americano', quantity: 1, price: 3.75 },
-      { name: 'Sandwich', quantity: 1, price: 8.50 },
-    ],
-  },
-  {
-    id: '4',
-    orderNumber: '#ORD-004',
-    date: '2024-01-12',
-    time: '3:20 PM',
-    status: 'Ready',
-    total: 7.50,
-    items: [
-      { name: 'Espresso', quantity: 2, price: 3.75 },
-    ],
-  },
-  {
-    id: '5',
-    orderNumber: '#ORD-005',
-    date: '2024-01-11',
-    time: '10:15 AM',
-    status: 'Cancelled',
-    total: 18.00,
-    items: [
-      { name: 'Frappuccino', quantity: 1, price: 6.50 },
-      { name: 'Cake', quantity: 1, price: 11.50 },
-    ],
-  },
-  {
-    id: '6',
-    orderNumber: '#ORD-006',
-    date: '2024-01-10',
-    time: '9:30 AM',
-    status: 'Processing',
-    total: 9.25,
-    items: [
-      { name: 'Mocha', quantity: 1, price: 5.75 },
-      { name: 'Cookie', quantity: 1, price: 3.50 },
-    ],
-  },
-  {
-    id: '7',
-    orderNumber: '#ORD-007',
-    date: '2024-01-09',
-    time: '4:45 PM',
-    status: 'Pending',
-    total: 6.50,
-    items: [
-      { name: 'Green Tea', quantity: 1, price: 3.25 },
-      { name: 'Donut', quantity: 1, price: 3.25 },
-    ],
-  },
-  {
-    id: '8',
-    orderNumber: '#ORD-008',
-    date: '2024-01-08',
-    time: '11:20 AM',
-    status: 'Completed',
-    total: 14.75,
-    items: [
-      { name: 'Caramel Latte', quantity: 1, price: 6.25 },
-      { name: 'Bagel', quantity: 1, price: 8.50 },
-    ],
-  },
-];
 
 const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({ navigation }) => {
   const [activeTab, setActiveTab] = useState<TabType>('Preparing');
 
-  // Tab configuration - Fixed 4 tabs
   const tabs: { key: TabType; title: string; icon: keyof typeof Ionicons.glyphMap }[] = [
     { key: 'Preparing', title: 'Preparing', icon: 'restaurant-outline' },
     { key: 'Delivering', title: 'Delivering', icon: 'bicycle-outline' },
@@ -164,37 +42,35 @@ const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({ navigation }) =
     { key: 'Cancelled', title: 'Cancelled', icon: 'close-circle-outline' },
   ];
 
-  // Filter orders based on active tab
   const getFilteredOrders = (): Order[] => {
     switch (activeTab) {
       case 'Preparing':
-        return mockOrderHistory.filter(order => 
+        return orders.filter(order =>
           ['Processing', 'Preparing', 'Ready', 'Pending'].includes(order.status)
         );
       case 'Delivering':
-        return mockOrderHistory.filter(order => order.status === 'Delivering');
+        return orders.filter(order => order.status === 'Delivering');
       case 'Completed':
-        return mockOrderHistory.filter(order => order.status === 'Completed');
+        return orders.filter(order => order.status === 'Completed');
       case 'Cancelled':
-        return mockOrderHistory.filter(order => order.status === 'Cancelled');
+        return orders.filter(order => order.status === 'Cancelled');
       default:
-        return mockOrderHistory;
+        return orders;
     }
   };
 
-  // Get count for each tab
   const getTabCount = (tabKey: TabType): number => {
     switch (tabKey) {
       case 'Preparing':
-        return mockOrderHistory.filter(order => 
+        return orders.filter(order =>
           ['Processing', 'Preparing', 'Ready', 'Pending'].includes(order.status)
         ).length;
       case 'Delivering':
-        return mockOrderHistory.filter(order => order.status === 'Delivering').length;
+        return orders.filter(order => order.status === 'Delivering').length;
       case 'Completed':
-        return mockOrderHistory.filter(order => order.status === 'Completed').length;
+        return orders.filter(order => order.status === 'Completed').length;
       case 'Cancelled':
-        return mockOrderHistory.filter(order => order.status === 'Cancelled').length;
+        return orders.filter(order => order.status === 'Cancelled').length;
       default:
         return 0;
     }
@@ -252,21 +128,21 @@ const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({ navigation }) =
         style={[
           styles.tabItem,
           { width: TAB_WIDTH },
-          isActive && { 
-            backgroundColor: tabColor + '15', 
+          isActive && {
+            backgroundColor: tabColor + '15',
             borderBottomColor: tabColor,
             borderBottomWidth: 3,
-          }
+          },
         ]}
         onPress={() => setActiveTab(tab.key)}
         activeOpacity={0.7}
       >
         <View style={styles.tabContent}>
           <View style={styles.tabIconContainer}>
-            <Ionicons 
-              name={tab.icon} 
-              size={20} 
-              color={isActive ? tabColor : '#8E8E93'} 
+            <Ionicons
+              name={tab.icon}
+              size={20}
+              color={isActive ? tabColor : '#8E8E93'}
             />
             {count > 0 && (
               <View style={[styles.tabBadge, { backgroundColor: tabColor }]}>
@@ -274,10 +150,7 @@ const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({ navigation }) =
               </View>
             )}
           </View>
-          <Text style={[
-            styles.tabText,
-            { color: isActive ? tabColor : '#8E8E93' }
-          ]}>
+          <Text style={[styles.tabText, { color: isActive ? tabColor : '#8E8E93' }]}>
             {tab.title}
           </Text>
         </View>
@@ -302,12 +175,12 @@ const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({ navigation }) =
           </View>
         </View>
       </View>
-      
+
       <View style={styles.orderBody}>
         <Text style={styles.itemsText}>
           {item.items.length} item{item.items.length > 1 ? 's' : ''}
         </Text>
-        <Text style={styles.totalText}>${item.total.toFixed(2)}</Text>
+        <Text style={styles.totalText}>{formatCurrency(item.total)}</Text>
       </View>
 
       {item.estimatedDelivery && canTrackOrder(item.status) && (
@@ -318,15 +191,15 @@ const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({ navigation }) =
           </Text>
         </View>
       )}
-      
+
       <View style={styles.orderFooter}>
         <Text style={styles.viewDetailsText}>
           {canTrackOrder(item.status) ? 'Tap to track order' : 'Tap to view details'}
         </Text>
-        <Ionicons 
-          name={canTrackOrder(item.status) ? 'location-outline' : 'chevron-forward'} 
-          size={16} 
-          color="#8E8E93" 
+        <Ionicons
+          name={canTrackOrder(item.status) ? 'location-outline' : 'chevron-forward'}
+          size={16}
+          color="#8E8E93"
         />
       </View>
     </TouchableOpacity>
@@ -337,8 +210,6 @@ const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({ navigation }) =
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-      
-      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
           onPress={() => navigation.goBack()}
@@ -350,31 +221,30 @@ const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({ navigation }) =
         <View style={styles.placeholder} />
       </View>
 
-      {/* Fixed Tabs - No ScrollView */}
       <View style={styles.tabsContainer}>
-        <View style={styles.tabsRow}>
-          {tabs.map(renderTabItem)}
-        </View>
+        <View style={styles.tabsRow}>{tabs.map(renderTabItem)}</View>
       </View>
 
-      {/* Orders List */}
       <FlatList
         data={filteredOrders}
         renderItem={renderOrderItem}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContainer}
+        contentContainerStyle={{ paddingBottom: 100 }}
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Ionicons 
+            <Ionicons
               name={
-                activeTab === 'Preparing' ? 'restaurant-outline' :
-                activeTab === 'Delivering' ? 'bicycle-outline' :
-                activeTab === 'Completed' ? 'checkmark-circle-outline' :
-                'close-circle-outline'
-              } 
-              size={64} 
-              color="#C7C7CC" 
+                activeTab === 'Preparing'
+                  ? 'restaurant-outline'
+                  : activeTab === 'Delivering'
+                  ? 'bicycle-outline'
+                  : activeTab === 'Completed'
+                  ? 'checkmark-circle-outline'
+                  : 'close-circle-outline'
+              }
+              size={64}
+              color="#C7C7CC"
             />
             <Text style={styles.emptyTitle}>No {activeTab} Orders</Text>
             <Text style={styles.emptySubtitle}>

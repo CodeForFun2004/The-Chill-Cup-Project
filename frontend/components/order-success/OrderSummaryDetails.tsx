@@ -6,35 +6,32 @@ import { formatCurrency } from '../../utils/formatCurrency';
 
 const OrderSummaryDetails = () => {
   const order = useSelector((state: RootState) => state.order);
-  const itemsList = order.items?.split(', ') || [];
+  const itemsList = order.items || []; // ✅ mảng object
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Order Summary</Text>
 
-      <Row label="Order ID" value={order.orderId} />
+      <Row label="Order ID" value={order.orderNumber} />
 
       {/* Items Section */}
       <View style={styles.rowItems}>
         <Text style={styles.label}>Items</Text>
         <View style={styles.itemsContainer}>
-          {itemsList.map((itemStr, index) => {
-            const [namePart, quantityPart] = itemStr.split(' x');
-            return (
-              <View key={index} style={styles.itemRow}>
-                <Text style={styles.itemName} numberOfLines={1}>
-                  {namePart}
-                </Text>
-                <Text style={styles.itemQty}>x{quantityPart}</Text>
-              </View>
-            );
-          })}
+          {itemsList.map((item, index) => (
+            <View key={index} style={styles.itemRow}>
+              <Text style={styles.itemName} numberOfLines={1}>
+                {item.name}
+              </Text>
+              <Text style={styles.itemQty}>x{item.quantity}</Text>
+            </View>
+          ))}
         </View>
       </View>
 
       <Row label="Total" value={formatCurrency(order.total)} highlight />
       <Row label="Delivery Time" value={order.deliveryTime} />
-      <Row label="Address" value={order.address} />
+      <Row label="Address" value={order.deliveryAddress || order.address} />
       <Row label="Payment" value={order.paymentMethod} />
     </View>
   );

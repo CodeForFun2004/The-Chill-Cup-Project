@@ -10,48 +10,30 @@ import {
   Dimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { formatCurrency } from '../../utils/formatCurrency';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { CustomerStackParamList } from '../../navigation/CustomerStackNavigator';
 
-// Import types
+const { width } = Dimensions.get('window');
+
+// ✅ Kiểu chính xác từ Ionicons
+type IoniconsName = keyof typeof Ionicons.glyphMap;
+
 interface TrackingStep {
   id: string;
   title: string;
   description: string;
   time?: string;
   status: 'completed' | 'current' | 'pending' | 'cancelled';
-  icon: keyof typeof Ionicons.glyphMap;
+  icon: IoniconsName;
 }
 
-interface Order {
-  id: string;
-  orderNumber: string;
-  date: string;
-  time: string;
-  status: 'Completed' | 'Cancelled' | 'Pending' | 'Processing' | 'Preparing' | 'Ready' | 'Delivering';
-  total: number;
-  estimatedDelivery?: string;
-  deliveryAddress?: string;
-  phoneNumber?: string;
-}
+type Props = NativeStackScreenProps<CustomerStackParamList, 'OrderTracking'>;
 
-interface OrderTrackingScreenProps {
-  route: {
-    params: {
-      order: Order;
-    };
-  };
-  navigation: {
-    navigate: (screen: string, params?: any) => void;
-    goBack: () => void;
-  };
-}
-
-const { width } = Dimensions.get('window');
-
-const OrderTrackingScreen: React.FC<OrderTrackingScreenProps> = ({ route, navigation }) => {
+const OrderTrackingScreen: React.FC<Props> = ({ route, navigation }) => {
   const { order } = route.params;
 
-  // Generate tracking steps based on order status
-  const getTrackingSteps = (orderStatus: Order['status']): TrackingStep[] => {
+  const getTrackingSteps = (orderStatus: typeof order.status): TrackingStep[] => {
     const baseSteps: TrackingStep[] = [
       {
         id: '1',
@@ -65,7 +47,6 @@ const OrderTrackingScreen: React.FC<OrderTrackingScreenProps> = ({ route, naviga
         id: '2',
         title: 'Preparing',
         description: 'Your coffee is being prepared',
-        time: '',
         status: 'pending',
         icon: 'restaurant',
       },
@@ -73,7 +54,6 @@ const OrderTrackingScreen: React.FC<OrderTrackingScreenProps> = ({ route, naviga
         id: '3',
         title: 'Ready for Pickup/Delivery',
         description: 'Your order is ready',
-        time: '',
         status: 'pending',
         icon: 'bag-check',
       },
@@ -81,7 +61,6 @@ const OrderTrackingScreen: React.FC<OrderTrackingScreenProps> = ({ route, naviga
         id: '4',
         title: 'Out for Delivery',
         description: 'Your order is on the way',
-        time: '',
         status: 'pending',
         icon: 'bicycle',
       },
@@ -89,56 +68,47 @@ const OrderTrackingScreen: React.FC<OrderTrackingScreenProps> = ({ route, naviga
         id: '5',
         title: 'Delivered',
         description: 'Order delivered successfully',
-        time: '',
         status: 'pending',
         icon: 'home',
       },
     ];
 
-    // Update steps based on current status
     switch (orderStatus.toLowerCase()) {
       case 'cancelled':
         return baseSteps.map((step, index) => ({
           ...step,
           status: index === 0 ? 'completed' : 'cancelled',
         }));
-      
       case 'preparing':
         return baseSteps.map((step, index) => ({
           ...step,
           status: index === 0 ? 'completed' : index === 1 ? 'current' : 'pending',
           time: index === 1 ? 'In progress...' : step.time,
         }));
-      
       case 'ready':
         return baseSteps.map((step, index) => ({
           ...step,
           status: index <= 1 ? 'completed' : index === 2 ? 'current' : 'pending',
           time: index === 2 ? 'Ready now!' : step.time,
         }));
-      
       case 'delivering':
         return baseSteps.map((step, index) => ({
           ...step,
           status: index <= 2 ? 'completed' : index === 3 ? 'current' : 'pending',
           time: index === 3 ? 'On the way...' : step.time,
         }));
-      
       case 'completed':
         return baseSteps.map((step, index) => ({
           ...step,
           status: 'completed',
           time: index === 4 ? 'Delivered!' : step.time,
         }));
-      
       default:
         return baseSteps;
     }
   };
 
-  const trackingSteps = getTrackingSteps(order.status);
-
-  const getStepColor = (status: TrackingStep['status']): string => {
+  const getStepColor = (status: TrackingStep['status']) => {
     switch (status) {
       case 'completed':
         return '#4CAF50';
@@ -151,7 +121,7 @@ const OrderTrackingScreen: React.FC<OrderTrackingScreenProps> = ({ route, naviga
     }
   };
 
-  const getStatusMessage = (status: Order['status']): { message: string; color: string } => {
+  const getStatusMessage = (status: typeof order.status) => {
     switch (status.toLowerCase()) {
       case 'preparing':
         return { message: 'Your order is being prepared with care', color: '#FF9800' };
@@ -168,27 +138,23 @@ const OrderTrackingScreen: React.FC<OrderTrackingScreenProps> = ({ route, naviga
     }
   };
 
+  const trackingSteps = getTrackingSteps(order.status);
   const statusInfo = getStatusMessage(order.status);
 
-  const handleCallSupport = (): void => {
-    // Handle call support logic
+  const handleCallSupport = () => {
     console.log('Calling support...');
   };
 
-  const handleViewDetails = (): void => {
+  const handleViewDetails = () => {
     navigation.navigate('OrderDetail', { order });
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-      
-      {/* Header */}
+
       <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={styles.backButton}
-        >
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color="#000" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Track Order</Text>
@@ -197,14 +163,13 @@ const OrderTrackingScreen: React.FC<OrderTrackingScreenProps> = ({ route, naviga
         </TouchableOpacity>
       </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Order Info Card */}
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 70 }}>
         <View style={styles.orderInfoCard}>
           <View style={styles.orderInfoHeader}>
             <Text style={styles.orderNumber}>{order.orderNumber}</Text>
             <Text style={styles.orderDate}>{order.date} • {order.time}</Text>
           </View>
-          
+
           <View style={[styles.statusMessageContainer, { backgroundColor: statusInfo.color + '20' }]}>
             <Ionicons name="information-circle" size={20} color={statusInfo.color} />
             <Text style={[styles.statusMessage, { color: statusInfo.color }]}>
@@ -215,59 +180,34 @@ const OrderTrackingScreen: React.FC<OrderTrackingScreenProps> = ({ route, naviga
           {order.estimatedDelivery && order.status !== 'Completed' && order.status !== 'Cancelled' && (
             <View style={styles.estimatedTimeContainer}>
               <Ionicons name="time-outline" size={16} color="#8E8E93" />
-              <Text style={styles.estimatedTime}>
-                Estimated delivery: {order.estimatedDelivery}
-              </Text>
+              <Text style={styles.estimatedTime}>Estimated delivery: {order.estimatedDelivery}</Text>
             </View>
           )}
         </View>
 
-        {/* Tracking Progress */}
         <View style={styles.trackingContainer}>
           <Text style={styles.sectionTitle}>Order Progress</Text>
-          
           <View style={styles.trackingSteps}>
             {trackingSteps.map((step, index) => (
               <View key={step.id} style={styles.stepContainer}>
                 <View style={styles.stepIndicator}>
                   <View style={[styles.stepCircle, { backgroundColor: getStepColor(step.status) }]}>
-                    <Ionicons 
-                      name={step.status === 'cancelled' ? 'close' : step.icon} 
-                      size={20} 
-                      color="#FFFFFF" 
-                    />
+                    <Ionicons name={step.status === 'cancelled' ? 'close' : step.icon} size={20} color="#FFFFFF" />
                   </View>
                   {index < trackingSteps.length - 1 && (
-                    <View style={[
-                      styles.stepLine, 
-                      { backgroundColor: getStepColor(trackingSteps[index + 1].status) }
-                    ]} />
+                    <View style={[styles.stepLine, { backgroundColor: getStepColor(trackingSteps[index + 1].status) }]} />
                   )}
                 </View>
-                
                 <View style={styles.stepContent}>
-                  <Text style={[
-                    styles.stepTitle,
-                    { color: step.status === 'cancelled' ? '#F44336' : '#000' }
-                  ]}>
-                    {step.title}
-                  </Text>
-                  <Text style={[
-                    styles.stepDescription,
-                    { color: step.status === 'cancelled' ? '#F44336' : '#8E8E93' }
-                  ]}>
-                    {step.description}
-                  </Text>
-                  {step.time && (
-                    <Text style={styles.stepTime}>{step.time}</Text>
-                  )}
+                  <Text style={[styles.stepTitle, { color: step.status === 'cancelled' ? '#F44336' : '#000' }]}>{step.title}</Text>
+                  <Text style={[styles.stepDescription, { color: step.status === 'cancelled' ? '#F44336' : '#8E8E93' }]}>{step.description}</Text>
+                  {step.time && <Text style={styles.stepTime}>{step.time}</Text>}
                 </View>
               </View>
             ))}
           </View>
         </View>
 
-        {/* Delivery Information */}
         {order.deliveryAddress && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Delivery Information</Text>
@@ -286,31 +226,30 @@ const OrderTrackingScreen: React.FC<OrderTrackingScreenProps> = ({ route, naviga
           </View>
         )}
 
-        {/* Order Total */}
         <View style={styles.section}>
           <View style={styles.totalRow}>
             <Text style={styles.totalLabel}>Order Total</Text>
-            <Text style={styles.totalValue}>${order.total.toFixed(2)}</Text>
+            <Text style={styles.totalValue}>{formatCurrency(order.total)}</Text>
           </View>
         </View>
-      </ScrollView>
 
-      {/* Action Buttons */}
-      <View style={styles.actionButtons}>
-        <TouchableOpacity style={styles.detailsButton} onPress={handleViewDetails}>
-          <Text style={styles.detailsButtonText}>View Order Details</Text>
-        </TouchableOpacity>
-        
-        {(order.status === 'Preparing' || order.status === 'Ready' || order.status === 'Delivering') && (
-          <TouchableOpacity style={styles.supportButton2} onPress={handleCallSupport}>
-            <Ionicons name="headset-outline" size={20} color="#007AFF" />
-            <Text style={styles.supportButtonText}>Contact Support</Text>
+        <View style={styles.actionButtons}>
+          <TouchableOpacity style={styles.detailsButton} onPress={handleViewDetails}>
+            <Text style={styles.detailsButtonText}>View Order Details</Text>
           </TouchableOpacity>
-        )}
-      </View>
+
+          {(order.status === 'Preparing' || order.status === 'Ready' || order.status === 'Delivering') && (
+            <TouchableOpacity style={styles.supportButton2} onPress={handleCallSupport}>
+              <Ionicons name="headset-outline" size={20} color="#007AFF" />
+              <Text style={styles.supportButtonText}>Contact Support</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      </ScrollView>
     </SafeAreaView>
   );
 };
+
 
 const styles = StyleSheet.create({
   container: {

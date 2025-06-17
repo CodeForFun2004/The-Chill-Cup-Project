@@ -1,68 +1,80 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { TouchableOpacity, Text, StyleSheet, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../../redux/store';
 import { setOrderInfo } from '../../redux/slices/orderSlice';
+import uuid from 'react-native-uuid';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { CustomerStackParamList } from '../../navigation/CustomerStackNavigator';
 
+import { addOrder } from '../../data/orders';
+
 const PlaceOrderButton = ({
-  paymentMethod,
   location,
   phone,
+  paymentMethod,
 }: {
-  paymentMethod: 'vnpay' | 'cod';
   location: string;
   phone: string;
+  paymentMethod: 'cod' | 'vnpay';
 }) => {
   const navigation = useNavigation<NativeStackNavigationProp<CustomerStackParamList>>();
   const dispatch = useDispatch();
+  const cart = useSelector((state: RootState) => state.cart);
 
-  const { items, delivery, taxRate } = useSelector((state: RootState) => state.cart);
-  const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const tax = Math.round(subtotal * taxRate);
-  const total = subtotal + delivery + tax;
+  const handlePlaceOrder = () => {
+    if (!cart.items.length) {
+      Alert.alert('Cart is empty');
+      return;
+    }
 
-  const handlePress = () => {
-    const formattedItems = items.map(i => `${i.name} x${i.quantity}`).join(', ');
+    const now = new Date();
+    const id = String(uuid.v4()); // ✅ generate uuid
+    const orderNumber = `#ORD-${id.slice(0, 6)}`; // ✅ generate orderNumber
+    const subtotal = cart.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    const tax = Math.round(subtotal * cart.taxRate);
+    const total = subtotal + tax + cart.delivery;
 
-    dispatch(setOrderInfo({
-      orderId: Math.random().toString(36).substr(2, 8).toUpperCase(),
-      items: formattedItems,
+    const order = {
+      id,
+      orderNumber,
+      items: cart.items,
       total,
       address: location,
-      paymentMethod: paymentMethod === 'vnpay' ? 'VNPay' : 'Cash on Delivery',
+      paymentMethod: paymentMethod === 'cod' ? 'Cash on Delivery' : 'VNPAY',
       deliveryTime: '25–35 mins',
-    }));
+      date: now.toLocaleDateString('en-CA'),
+      time: now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
+      status: 'Processing' as const,
+      estimatedDelivery: '25–35 mins',
+      deliveryAddress: location,
+      phoneNumber: phone,
+    };
 
-    if (paymentMethod === 'vnpay') {
-      navigation.navigate('VNPayGateway');
-    } else {
-      navigation.navigate('OrderSuccess');
-    }
+    dispatch(setOrderInfo(order));
+    addOrder(order); // ✅ thêm order vào danh sách hiện tại
+    navigation.navigate('OrderSuccess');
   };
 
   return (
-    <TouchableOpacity style={styles.button} onPress={handlePress}>
-      <Text style={styles.text}>🛒 Place Order</Text>
+    <TouchableOpacity style={styles.button} onPress={handlePlaceOrder}>
+      <Text style={styles.buttonText}>Place Order</Text>
     </TouchableOpacity>
   );
 };
-
 
 export default PlaceOrderButton;
 
 const styles = StyleSheet.create({
   button: {
-    backgroundColor: '#E53935',
-    paddingVertical: 16,
-    borderRadius: 24,
+    backgroundColor: '#e53935',
+    paddingVertical: 14,
+    borderRadius: 28,
     alignItems: 'center',
-    marginHorizontal: 16,
-    marginBottom: 20,
+    marginVertical: 10,
   },
-  text: {
+  buttonText: {
     color: '#fff',
     fontWeight: 'bold',
     fontSize: 16,
