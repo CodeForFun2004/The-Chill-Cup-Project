@@ -13,19 +13,19 @@ const CustomerHomeScreen = () => {
     <View style={styles.container}>
       <Header />
       <ScrollView contentContainerStyle={styles.scrollContent}>
-  <AfterLoginBanner />
-  <PromoBanner />
-  <CategoryCardBlock />
+        <AfterLoginBanner />
+        <PromoBanner />
+        <CategoryCardBlock />
 
-  {drinkData.map((section) => (
-    <ProductSection
-      title={section.category}
-      products={section.drinks}
-    />
-  ))}
+        {drinkData.map((section) => (
+          <ProductSection
+            title={section.category}
+            products={section.drinks}
+          />
+        ))}
 
-  <View style={{ height: 80 }} />
-</ScrollView>
+        <View style={{ height: 80 }} />
+      </ScrollView>
     </View>
   );
 };

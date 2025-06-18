@@ -5,11 +5,12 @@ type ProductCardProps = {
   image: ImageSourcePropType;
   name: string;
   price: string;
+  onPress?: () => void;
 };
 
-const ProductCard = ({ image, name, price }: ProductCardProps) => {
+const ProductCard = ({ image, name, price, onPress }: ProductCardProps) => {
   return (
-    <View style={styles.card}>
+    <TouchableOpacity onPress={onPress} activeOpacity={0.8} style={styles.card}>
       <Image source={image} style={styles.image} />
       <Text style={styles.name}>{name}</Text>
       <View style={styles.bottomContainer}>
@@ -18,7 +19,7 @@ const ProductCard = ({ image, name, price }: ProductCardProps) => {
           <Text style={styles.addButtonText}>+</Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 };
 

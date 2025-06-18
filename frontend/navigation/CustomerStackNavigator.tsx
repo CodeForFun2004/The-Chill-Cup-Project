@@ -33,7 +33,6 @@ interface Order {
 
 import VNPayGatewayScreen from '../screens/Customer/VNPayGatewayScreen';
 
-
 export type CustomerStackParamList = {
   Cart: undefined;
   Checkout: undefined;
@@ -48,6 +47,7 @@ export type CustomerStackParamList = {
   OrderTracking: {
     order: Order;
   };
+  
 };
 
 const Stack = createNativeStackNavigator<CustomerStackParamList>();
