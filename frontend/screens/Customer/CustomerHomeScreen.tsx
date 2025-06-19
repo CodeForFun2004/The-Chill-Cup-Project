@@ -6,26 +6,23 @@ import PromoBanner from "../../components/hompage/PromoBanner";
 import CategoryCardBlock from "../../components/hompage/search-card/CategoryCardBlock";
 import ProductSection from "../../components/hompage/ProductSection";
 import AfterLoginBanner from "../../components/hompage/AfterLoginBanner";
-import { drinkData } from '../../data/drinks';
+import { drinkData } from "../../data/drinks";
 
 const CustomerHomeScreen = () => {
   return (
     <View style={styles.container}>
       <Header />
       <ScrollView contentContainerStyle={styles.scrollContent}>
-  <AfterLoginBanner />
-  <PromoBanner />
-  <CategoryCardBlock />
+        <AfterLoginBanner />
+        <PromoBanner />
+        <CategoryCardBlock />
 
-  {drinkData.map((section) => (
-    <ProductSection
-      title={section.category}
-      products={section.drinks}
-    />
-  ))}
+        {drinkData.map((section) => (
+          <ProductSection title={section.category} products={section.drinks} />
+        ))}
 
-  <View style={{ height: 80 }} />
-</ScrollView>
+        <View style={{ height: 80 }} />
+      </ScrollView>
     </View>
   );
 };
