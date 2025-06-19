@@ -4,6 +4,14 @@ import CustomerHomeScreen from '../screens/Customer/CustomerHomeScreen';
 import VouchersScreen from '../screens/Customer/VouchersScreen';
 import LoyaltyScreen from '../screens/Customer/LoyaltyScreen';
 
+export interface Drink {
+  id: string;
+  name: string;
+  image: string;
+  price: number;
+  description?: string;
+}
+
 export type CustomerHomeStackParamList = {
   CustomerHomeScreen: undefined;
   Vouchers: undefined;
