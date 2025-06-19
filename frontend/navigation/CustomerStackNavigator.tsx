@@ -9,7 +9,7 @@ import OrderSuccessScreen from '../screens/Customer/OrderSuccessScreen';
 import OrderHistoryScreen from '../screens/Customer/OrderHistoryScreen';
 import OrderDetailScreen from '../screens/Customer/OrderDetailScreen';
 import OrderTrackingScreen from '../screens/Customer/OrderTrackingScreen';
-
+import NotificationScreen from '../screens/Customer/NotificationScreen';
 // Types for Order data
 interface OrderItem {
   name: string;
@@ -42,6 +42,7 @@ export type CustomerStackParamList = {
   VNPayGateway: undefined;
   OrderSuccess: undefined;
   OrderHistory: undefined;
+  Notifications: undefined;
   OrderDetail: {
     order: Order;
   };
@@ -64,6 +65,7 @@ const CustomerStackNavigator = () => {
       <Stack.Screen name="OrderHistory" component={OrderHistoryScreen} />
       <Stack.Screen name="OrderDetail" component={OrderDetailScreen} />
       <Stack.Screen name="OrderTracking" component={OrderTrackingScreen} />
+      <Stack.Screen name="Notifications" component={NotificationScreen} />
     </Stack.Navigator>
   );
 };
