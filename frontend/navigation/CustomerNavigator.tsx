@@ -22,7 +22,7 @@ import CustomerStackNavigator from "./CustomerStackNavigator";
 import ProfileNavigator from "./ProfileNavigator";
 import { ProfileStackParamList } from "./ProfileNavigator";
 import TestOrderNavigator from "./TestOrderNavigator";
-import DrinkStackNavigator from './DrinkStackNavigator';
+import DrinkStackNavigator from './CustomerDrinkStackNavigator';
 
 export type CustomerTabParamList = {
   CustomerHomeStack: undefined;
