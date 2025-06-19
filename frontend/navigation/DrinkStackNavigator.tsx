@@ -19,7 +19,7 @@ const Stack = createNativeStackNavigator<DrinkStackParamList>();
 
 const DrinkStackNavigator = () => {
   return (
-    <Stack.Navigator>
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="DrinkCategoryScreen" component={DrinkCategoryScreen} />
       <Stack.Screen name="DrinkDetailScreen" component={DrinkDetailScreen} />
     </Stack.Navigator>

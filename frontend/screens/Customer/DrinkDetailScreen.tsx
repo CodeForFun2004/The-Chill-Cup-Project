@@ -116,7 +116,7 @@ const styles = StyleSheet.create({
   },
   infoContainer: { padding: 20 },
   name: { fontSize: 24, fontWeight: 'bold', color: '#333' },
-  price: { fontSize: 20, color: '#D17842', marginVertical: 8 },
+  price: { fontSize: 20, color: '#4AA366', marginVertical: 8 },
   sectionTitle: { fontSize: 18, fontWeight: '600', marginTop: 20, marginBottom: 8, color: '#555' },
   description: { fontSize: 15, color: '#666', lineHeight: 22 },
   optionsContainer: {
@@ -126,7 +126,7 @@ const styles = StyleSheet.create({
   },
   optionButton: {
     borderWidth: 1,
-    borderColor: '#ccc',
+    borderColor: '#4AA366',
     borderRadius: 20,
     paddingHorizontal: 16,
     paddingVertical: 8,
@@ -134,7 +134,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   selectedOption: {
-    backgroundColor: '#D17842',
+    backgroundColor: '#4AA366',
     borderColor: '#D17842',
   },
   footer: {
@@ -145,7 +145,7 @@ const styles = StyleSheet.create({
     marginBottom: 60,
   },
   addToCartButton: {
-    backgroundColor: '#D17842',
+    backgroundColor: '#4AA366',
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: 'center',
