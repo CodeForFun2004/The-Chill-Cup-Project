@@ -161,7 +161,7 @@ const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({ navigation }) =
   const renderOrderItem: ListRenderItem<Order> = ({ item }) => (
     <TouchableOpacity
       style={styles.orderCard}
-      onPress={() => navigation.navigate('OrderDetail', { order: item })}
+      onPress={() => navigation.navigate('OrderTracking', { order: item })}
       activeOpacity={0.7}
     >
       <View style={styles.orderHeader}>
