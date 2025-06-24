@@ -13,8 +13,8 @@ import GuestHomeScreen from '../screens/Guest/GuestHomeScreen';
 import type { NavigatorScreenParams } from '@react-navigation/native';
 import type { AuthStackParamList } from './AuthNavigator';
 import AdminNavigator from './admin/AdminNavigator';
-import StaffNavigator from './StaffNavigator';
-import ShipperNavigator from './ShipperNavigator';
+import StaffNavigator from './staff/StaffNavigator';
+import ShipperNavigator from './shipper/ShipperNavigator';
 
 export type RootStackParamList = {
   Splash: undefined;
