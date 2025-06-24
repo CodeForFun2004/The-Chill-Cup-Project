@@ -3,17 +3,11 @@ import {
   View, Text, ScrollView, TouchableOpacity, FlatList,
   TextInput, StyleSheet
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
 import { drinkData } from '../../data/drinks';
 import ProductCard from '../../components/hompage/ProductCard';
 
 // Navigation types
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
-import { CompositeNavigationProp } from '@react-navigation/native';
-
-import { DrinkStackParamList } from '../../navigation/DrinkStackNavigator';
-import { CustomerTabParamList } from '../../navigation/customer/CustomerNavigator';
 import { GuestDrinkStackParamList } from '../../navigation/guest/GuestDrinkStackNavigator';
 
 // Combine Stack + Tab
@@ -31,7 +25,6 @@ const DrinkCategoryScreen = ({ navigation }: { navigation: DrinkCategoryNavigati
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      console.log("🚀 navigation state:", JSON.stringify(navigation.getState(), null, 2));
       const positions: number[] = [];
       sectionRefs.current.forEach((ref, index) => {
         ref?.measureLayout(
@@ -101,9 +94,6 @@ const DrinkCategoryScreen = ({ navigation }: { navigation: DrinkCategoryNavigati
                   name={item.name}
                   price={item.price}
                   onPress={() => {
-                    console.log('➡️ Navigating to DrinkDetailScreen with:', item);
-                    console.log('🧭 Navigation state:', JSON.stringify(navigation.getState(), null, 2));
-              
                     navigation.navigate('DrinkDetailScreen', {
                       drink: item 
                     });
