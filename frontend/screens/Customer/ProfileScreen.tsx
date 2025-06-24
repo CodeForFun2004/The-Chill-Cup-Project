@@ -26,7 +26,7 @@ import {
 } from '@expo/vector-icons';
 import { CompositeNavigationProp } from '@react-navigation/native';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
-import { CustomerTabParamList } from '../../navigation/CustomerNavigator';
+import { CustomerTabParamList } from '../../navigation/customer/CustomerNavigator';
 
 // Combine stack and tab navigation props
 type ProfileScreenNavigationProp = CompositeNavigationProp<

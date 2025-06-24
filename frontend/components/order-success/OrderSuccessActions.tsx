@@ -5,10 +5,10 @@ import { useSelector } from 'react-redux';
 import { MaterialIcons } from '@expo/vector-icons';
 import { RootState } from '../../redux/store';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { CustomerStackParamList } from '../../navigation/CustomerStackNavigator';
+import { CustomerStackParamList } from '../../navigation/customer/CustomerStackNavigator';
 
 const OrderSuccessActions = () => {
-  const order = useSelector((state: RootState) => state.order); // ✅ Lấy từ Redux
+  const order = useSelector((state: RootState) => state.order);
   const navigation = useNavigation<NativeStackNavigationProp<CustomerStackParamList>>();
 
   const handleBackToHome = () => {
@@ -20,11 +20,11 @@ const OrderSuccessActions = () => {
 
   const handleTrackOrder = () => {
     if (!order || !order.id) {
-      console.warn('No valid order to track.');
+      console.warn('Không có đơn hàng hợp lệ để theo dõi.');
       return;
     }
 
-    navigation.navigate('OrderTracking', { order }); // ✅ Truyền dữ liệu sang Tracking screen
+    navigation.navigate('OrderTracking', { order });
   };
 
   return (
@@ -33,7 +33,7 @@ const OrderSuccessActions = () => {
         style={[styles.button, styles.outlineButton]}
         onPress={handleBackToHome}
       >
-        <Text style={styles.outlineText}>← Back to Home</Text>
+        <Text style={styles.outlineText}>← Quay về trang chủ</Text>
       </TouchableOpacity>
 
       <TouchableOpacity
@@ -41,7 +41,7 @@ const OrderSuccessActions = () => {
         onPress={handleTrackOrder}
       >
         <MaterialIcons name="local-shipping" size={20} color="#fff" style={{ marginRight: 6 }} />
-        <Text style={styles.primaryText}>Track Order</Text>
+        <Text style={styles.primaryText}>Theo dõi đơn hàng</Text>
       </TouchableOpacity>
     </View>
   );

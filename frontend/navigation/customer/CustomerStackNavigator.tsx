@@ -1,15 +1,15 @@
 // navigation/CustomerStackNavigator.tsx
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import CartScreen from '../screens/Customer/CartScreen';
-import CheckoutScreen from '../screens/Customer/CheckoutScreen';
-import VouchersScreen from '../screens/Customer/VouchersScreen';
-import LoyaltyScreen from '../screens/Customer/LoyaltyScreen';
-import OrderSuccessScreen from '../screens/Customer/OrderSuccessScreen';
-import OrderHistoryScreen from '../screens/Customer/OrderHistoryScreen';
-import OrderDetailScreen from '../screens/Customer/OrderDetailScreen';
-import OrderTrackingScreen from '../screens/Customer/OrderTrackingScreen';
-import NotificationScreen from '../screens/Customer/NotificationScreen';
+import CartScreen from '../../screens/Customer/CartScreen';
+import CheckoutScreen from '../../screens/Customer/CheckoutScreen';
+import VouchersScreen from '../../screens/Customer/VouchersScreen';
+import LoyaltyScreen from '../../screens/Customer/LoyaltyScreen';
+import OrderSuccessScreen from '../../screens/Customer/OrderSuccessScreen';
+import OrderHistoryScreen from '../../screens/Customer/OrderHistoryScreen';
+import OrderDetailScreen from '../../screens/Customer/OrderDetailScreen';
+import OrderTrackingScreen from '../../screens/Customer/OrderTrackingScreen';
+import NotificationScreen from '../../screens/Customer/NotificationScreen';
 // Types for Order data
 interface OrderItem {
   name: string;
@@ -31,8 +31,7 @@ interface Order {
   phoneNumber?: string;
 }
 
-import VNPayGatewayScreen from '../screens/Customer/VNPayGatewayScreen';
-
+import VNPayGatewayScreen from '../../screens/Customer/VNPayGatewayScreen';
 
 export type CustomerStackParamList = {
   Cart: undefined;
@@ -49,6 +48,7 @@ export type CustomerStackParamList = {
   OrderTracking: {
     order: Order;
   };
+  
 };
 
 const Stack = createNativeStackNavigator<CustomerStackParamList>();

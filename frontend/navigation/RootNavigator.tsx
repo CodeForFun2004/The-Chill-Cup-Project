@@ -7,11 +7,14 @@ import SplashScreen from '../screens/SplashScreen';
 import WelcomeScreen from '../screens/Auth/WelcomeScreen';
 import AuthNavigator from './AuthNavigator';
 import GuestNavigator from './GuestNavigator';
-import CustomerNavigator from './CustomerNavigator';
+import CustomerNavigator from './customer/CustomerNavigator';
 import GuestHomeScreen from '../screens/Guest/GuestHomeScreen';
 
 import type { NavigatorScreenParams } from '@react-navigation/native';
 import type { AuthStackParamList } from './AuthNavigator';
+import AdminNavigator from './admin/AdminNavigator';
+import StaffNavigator from './staff/StaffNavigator';
+import ShipperNavigator from './shipper/ShipperNavigator';
 
 export type RootStackParamList = {
   Splash: undefined;
@@ -28,6 +31,9 @@ const RootNavigator = () => {
 
   let MainComponent = GuestNavigator;
   if (role === 'customer') MainComponent = CustomerNavigator;
+  if (role === 'admin') MainComponent = AdminNavigator;
+  if (role === 'staff') MainComponent = StaffNavigator;
+  if (role === 'shipper') MainComponent = ShipperNavigator;
   // Có thể mở rộng role: staff, shipper, admin tại đây...
 
   return (

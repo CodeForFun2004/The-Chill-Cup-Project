@@ -13,36 +13,24 @@ import {
 import { View, Text, StyleSheet, Platform } from "react-native";
 import { NavigatorScreenParams } from "@react-navigation/native";
 import CustomerHomeStack from "./CustomerHomeStack";
-import DrinkCategoryScreen from '../screens/Customer/DrinkCategoryScreen';
-import StoreScreen from "../screens/Customer/StoreScreen";
-import PromotionScreen from "../screens/Customer/PromotionScreen";
-import CartScreen from "../screens/Customer/CartScreen";
-import CheckoutScreen from "../screens/Customer/CheckoutScreen";
+import DrinkCategoryScreen from '../../screens/Customer/DrinkCategoryScreen';
+import StoreScreen from "../../screens/Customer/StoreScreen";
+import PromotionScreen from "../../screens/Customer/PromotionScreen";
+import CartScreen from "../../screens/Customer/CartScreen";
+import CheckoutScreen from "../../screens/Customer/CheckoutScreen";
 import CustomerStackNavigator from "./CustomerStackNavigator";
-import ProfileNavigator from "./ProfileNavigator";
-import { ProfileStackParamList } from "./ProfileNavigator";
-import TestOrderNavigator from "./TestOrderNavigator";
-
+import ProfileNavigator from "../ProfileNavigator";
+import { ProfileStackParamList } from "../ProfileNavigator";
+import TestOrderNavigator from "../TestOrderNavigator";
+import DrinkStackNavigator from '../DrinkStackNavigator';
 
 export type CustomerTabParamList = {
   CustomerHomeStack: undefined;
-  DrinkCategoryScreen: undefined;
+  Drink: undefined;
   Store: undefined;
   Promotion: undefined;
   Profile: NavigatorScreenParams<ProfileStackParamList>;
   SearchScreen: undefined;
-  DrinkDetailScreen: {
-    drink: {
-      id: number;
-      name: string;
-      description: string;
-      price: number;
-      image: string;
-      category: string;
-      popular: boolean;
-    };
-    category: string;
-  };
   CartStack: undefined;
   // OrderStack: undefined;
 };
@@ -64,7 +52,7 @@ const CustomerNavigator = () => {
           case "CustomerHomeStack":
             icon = <Ionicons name="home-outline" size={22} color={focused ? "#4AA366" : "#888"} />;
             break;
-          case 'DrinkCategoryScreen':
+          case 'Drink':
             icon = <Ionicons name="cafe-outline" size={22} color={focused ? '#4AA366' : '#888'} />;
             break;
           case "Store":
@@ -90,7 +78,7 @@ const CustomerNavigator = () => {
   >
 
     <Tab.Screen name="CustomerHomeStack" component={CustomerHomeStack} /> 
-    <Tab.Screen name="DrinkCategoryScreen" component={DrinkCategoryScreen} />
+    <Tab.Screen name="Drink" component={DrinkStackNavigator} />
     <Tab.Screen name="Store" component={StoreScreen} />
     <Tab.Screen name="Promotion" component={PromotionScreen} />
     <Tab.Screen 

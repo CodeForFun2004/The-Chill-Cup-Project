@@ -10,7 +10,7 @@ type Props = {
 const PaymentMethod: React.FC<Props> = ({ selected, onSelect }) => {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Payment Method</Text>
+      <Text style={styles.title}>Phương thức thanh toán</Text>
 
       <TouchableOpacity
         style={[styles.card, selected === 'vnpay' && styles.selected]}
@@ -22,7 +22,7 @@ const PaymentMethod: React.FC<Props> = ({ selected, onSelect }) => {
             style={styles.icon}
             resizeMode="contain"
           />
-          <Text style={styles.method}>VNPay Payment</Text>
+          <Text style={styles.method}>Thanh toán VNPay</Text>
           {selected === 'vnpay' && <MaterialIcons name="check-circle" size={20} color="#4AA366" />}
         </View>
       </TouchableOpacity>
@@ -32,7 +32,7 @@ const PaymentMethod: React.FC<Props> = ({ selected, onSelect }) => {
         onPress={() => onSelect('cod')}
       >
         <View style={styles.row}>
-          <Text style={styles.method}>💵 Cash on Delivery</Text>
+          <Text style={styles.method}>💵 Thanh toán khi nhận hàng</Text>
           {selected === 'cod' && <MaterialIcons name="check-circle" size={20} color="#4AA366" />}
         </View>
       </TouchableOpacity>

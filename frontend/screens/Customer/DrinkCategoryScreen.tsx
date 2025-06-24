@@ -1,13 +1,28 @@
 import React, { useRef, useState, useEffect } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, FlatList,
-  TextInput, StyleSheet, Dimensions
+  TextInput, StyleSheet
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { drinkData } from '../../data/drinks';
-import { NavigationProp } from '@react-navigation/native';
 import ProductCard from '../../components/hompage/ProductCard';
 
-const DrinkCategoryScreen = ({ navigation }: { navigation: NavigationProp<any> }) => {
+// Navigation types
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+import { CompositeNavigationProp } from '@react-navigation/native';
+
+import { DrinkStackParamList } from '../../navigation/DrinkStackNavigator';
+import { CustomerTabParamList } from '../../navigation/customer/CustomerNavigator';
+import { GuestDrinkStackParamList } from '../../navigation/guest/GuestDrinkStackNavigator';
+
+// Combine Stack + Tab
+type DrinkCategoryNavigationProp = NativeStackNavigationProp<
+  GuestDrinkStackParamList,
+  'DrinkCategoryScreen'
+>;
+
+const DrinkCategoryScreen = ({ navigation }: { navigation: DrinkCategoryNavigationProp }) => {
   const [searchText, setSearchText] = useState('');
   const scrollViewRef = useRef<ScrollView>(null);
   const sectionRefs = useRef<(View | null)[]>([]);
@@ -16,6 +31,7 @@ const DrinkCategoryScreen = ({ navigation }: { navigation: NavigationProp<any> }
 
   useEffect(() => {
     const timer = setTimeout(() => {
+      console.log("🚀 navigation state:", JSON.stringify(navigation.getState(), null, 2));
       const positions: number[] = [];
       sectionRefs.current.forEach((ref, index) => {
         ref?.measureLayout(
@@ -26,7 +42,7 @@ const DrinkCategoryScreen = ({ navigation }: { navigation: NavigationProp<any> }
               setCategoryPositions(positions);
             }
           },
-          () => {}
+          () => { }
         );
       });
     }, 500);
@@ -74,7 +90,7 @@ const DrinkCategoryScreen = ({ navigation }: { navigation: NavigationProp<any> }
             <Text style={styles.categoryTitle}>{cat.category}</Text>
             <FlatList
               data={cat.drinks}
-              keyExtractor={item => item.id}
+              keyExtractor={item => item.id.toString()}
               numColumns={2}
               scrollEnabled={false}
               columnWrapperStyle={{ justifyContent: 'space-between' }}
@@ -84,6 +100,14 @@ const DrinkCategoryScreen = ({ navigation }: { navigation: NavigationProp<any> }
                   image={item.image}
                   name={item.name}
                   price={item.price}
+                  onPress={() => {
+                    console.log('➡️ Navigating to DrinkDetailScreen with:', item);
+                    console.log('🧭 Navigation state:', JSON.stringify(navigation.getState(), null, 2));
+              
+                    navigation.navigate('DrinkDetailScreen', {
+                      drink: item 
+                    });
+                  }}
                 />
               )}
             />

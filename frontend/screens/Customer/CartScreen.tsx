@@ -17,7 +17,7 @@ import CartHeader from '../../components/cart/CardHeader';
 
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { CustomerStackParamList } from '../../navigation/CustomerStackNavigator';
+import { CustomerStackParamList } from '../../navigation/customer/CustomerStackNavigator';
 
 import { mockData } from '../../data/carts';
 

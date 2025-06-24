@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { CustomerStackParamList } from '../../navigation/CustomerStackNavigator';
+import { CustomerStackParamList } from '../../navigation/customer/CustomerStackNavigator';
 
 import { orders } from '../../data/orders'; // ✅ Dùng biến runtime
 import type { Order } from '../../data/orders';
@@ -217,7 +217,7 @@ const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({ navigation }) =
         >
           <Ionicons name="arrow-back" size={24} color="#000" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Order History</Text>
+        <Text style={styles.headerTitle}>Lịch sử đơn hàng</Text>
         <View style={styles.placeholder} />
       </View>
 
@@ -246,12 +246,12 @@ const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({ navigation }) =
               size={64}
               color="#C7C7CC"
             />
-            <Text style={styles.emptyTitle}>No {activeTab} Orders</Text>
+            <Text style={styles.emptyTitle}>Chưa có {activeTab} đơn hàng nào</Text>
             <Text style={styles.emptySubtitle}>
-              {activeTab === 'Preparing' && 'No orders are currently being prepared.'}
-              {activeTab === 'Delivering' && 'No orders are currently being delivered.'}
-              {activeTab === 'Completed' && 'No completed orders found.'}
-              {activeTab === 'Cancelled' && 'No cancelled orders found.'}
+              {activeTab === 'Preparing' && 'Hiện không có đơn hàng nào đang được chuẩn bị.'}
+              {activeTab === 'Delivering' && 'Hiện không có đơn hàng nào đang được chuẩn bị.'}
+              {activeTab === 'Completed' && 'Không tìm thấy đơn hàng đã hoàn tất.'}
+              {activeTab === 'Cancelled' && 'Không có đơn hàng bị hủy.'}
             </Text>
           </View>
         }
