@@ -26,7 +26,7 @@ const CartHeader = ({ onClearCart }: Props) => {
         <Ionicons name="chevron-back" size={24} color="#000" />
       </TouchableOpacity>
 
-      <Text style={styles.headerTitle}>Cart</Text>
+      <Text style={styles.headerTitle}>Giỏ Hàng</Text>
 
       <TouchableOpacity onPress={confirmClear}>
         <MaterialCommunityIcons name="delete-outline" size={24} color="#000" />

@@ -13,12 +13,12 @@ const OrderSummary: React.FC<Props> = ({ subtotal, delivery, tax }) => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.heading}>Order Summary</Text>
-      <Row label="Subtotal" value={formatCurrency(subtotal)} />
-      <Row label="Delivery Fee" value={delivery === 0 ? 'Free' : formatCurrency(delivery)} />
-      <Row label="Tax" value={formatCurrency(tax)} />
-      <Row label="Total" value={formatCurrency(total)} bold green />
-      <Text style={styles.estimated}>⏱ Estimated Delivery: 25-35 mins</Text>
+      <Text style={styles.heading}>Tóm tắt đơn hàng</Text>
+      <Row label="Tạm tính" value={formatCurrency(subtotal)} />
+      <Row label="Phí giao hàng" value={delivery === 0 ? 'Miễn phí' : formatCurrency(delivery)} />
+      <Row label="Thuế" value={formatCurrency(tax)} />
+      <Row label="Tổng cộng" value={formatCurrency(total)} bold green />
+      <Text style={styles.estimated}>⏱ Thời gian giao hàng dự kiến: 25-35 phút</Text>
     </View>
   );
 };
