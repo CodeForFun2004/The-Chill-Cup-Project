@@ -18,6 +18,9 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../navigation/RootNavigator';
 
+import { users } from '../../data/users'; 
+
+
 const LoginScreen = () => {
   const dispatch = useDispatch();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -32,10 +35,14 @@ const LoginScreen = () => {
       return;
     }
 
-    if (username === 'user123' && password === '123') {
+    const foundUser = users.find(
+      (user) => user.username === username && user.password === password
+    );
+  
+    if (foundUser) {
       dispatch(login({
-        role: 'customer',
-        userInfo: { name: username, id: 'M162445270' },
+        role: foundUser.role,
+        userInfo: { name: foundUser.name, id: foundUser.id },
       }));
       navigation.reset({ index: 0, routes: [{ name: 'Main' }] });
     } else {

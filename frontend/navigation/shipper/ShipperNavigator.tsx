@@ -1,8 +1,8 @@
 // navigation/ShipperNavigator.tsx
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import ShipperDashboard from '../screens/Shipper/Dashboard';
-import DeliveryDetail from '../screens/Shipper/DeliveryDetail';
+import ShipperDashboard from '../../screens/Shipper/ShipperDashboard';
+import DeliveryDetail from '../../screens/Shipper/ShipperDeliveryDetail';
 
 const Stack = createNativeStackNavigator();
 

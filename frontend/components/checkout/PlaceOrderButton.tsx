@@ -6,7 +6,7 @@ import { RootState } from '../../redux/store';
 import { setOrderInfo } from '../../redux/slices/orderSlice';
 import uuid from 'react-native-uuid';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { CustomerStackParamList } from '../../navigation/CustomerStackNavigator';
+import { CustomerStackParamList } from '../../navigation/customer/CustomerStackNavigator';
 
 import { addOrder } from '../../data/orders';
 

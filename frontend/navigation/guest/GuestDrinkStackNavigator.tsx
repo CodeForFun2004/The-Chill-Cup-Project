@@ -1,7 +1,7 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import DrinkCategoryScreen from '../screens/Customer/DrinkCategoryScreen';
-import DrinkDetailScreen from '../screens/Customer/DrinkDetailScreen';
+import DrinkCategoryScreen from '../../screens/Customer/DrinkCategoryScreen';
+import DrinkDetailScreen from '../../screens/Customer/DrinkDetailScreen';
 
 export type GuestDrinkStackParamList = {
   DrinkCategoryScreen: undefined;

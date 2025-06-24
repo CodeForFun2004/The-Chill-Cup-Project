@@ -15,7 +15,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
-import { CustomerStackParamList } from '../../navigation/CustomerStackNavigator';
+import { CustomerStackParamList } from '../../navigation/customer/CustomerStackNavigator';
 import { formatCurrency } from '../../utils/formatCurrency';
 
 // Import types

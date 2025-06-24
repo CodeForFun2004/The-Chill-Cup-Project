@@ -12,7 +12,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { formatCurrency } from '../../utils/formatCurrency';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { CustomerStackParamList } from '../../navigation/CustomerStackNavigator';
+import { CustomerStackParamList } from '../../navigation/customer/CustomerStackNavigator';
 
 const { width } = Dimensions.get('window');
 

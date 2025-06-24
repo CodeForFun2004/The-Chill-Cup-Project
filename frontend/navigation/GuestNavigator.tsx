@@ -10,8 +10,8 @@ import StoreScreen from '../screens/Customer/StoreScreen';
 import PromotionScreen from '../screens/Customer/PromotionScreen';
 import ProfileScreen from '../screens/Customer/ProfileScreen';
 import DrinkCategoryScreen from '../screens/Customer/DrinkCategoryScreen';
-import GuestDrinkStackParamList from '../navigation/GuestDrinkStackNavigator';
-import GuestDrinkStackNavigator from '../navigation/GuestDrinkStackNavigator';
+import GuestDrinkStackParamList from './guest/GuestDrinkStackNavigator';
+import GuestDrinkStackNavigator from './guest/GuestDrinkStackNavigator';
 
 export type GuestTabParamList = {
   GuestHomeScreen: undefined;

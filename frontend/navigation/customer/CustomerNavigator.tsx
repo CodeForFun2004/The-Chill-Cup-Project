@@ -13,16 +13,16 @@ import {
 import { View, Text, StyleSheet, Platform } from "react-native";
 import { NavigatorScreenParams } from "@react-navigation/native";
 import CustomerHomeStack from "./CustomerHomeStack";
-import DrinkCategoryScreen from '../screens/Customer/DrinkCategoryScreen';
-import StoreScreen from "../screens/Customer/StoreScreen";
-import PromotionScreen from "../screens/Customer/PromotionScreen";
-import CartScreen from "../screens/Customer/CartScreen";
-import CheckoutScreen from "../screens/Customer/CheckoutScreen";
+import DrinkCategoryScreen from '../../screens/Customer/DrinkCategoryScreen';
+import StoreScreen from "../../screens/Customer/StoreScreen";
+import PromotionScreen from "../../screens/Customer/PromotionScreen";
+import CartScreen from "../../screens/Customer/CartScreen";
+import CheckoutScreen from "../../screens/Customer/CheckoutScreen";
 import CustomerStackNavigator from "./CustomerStackNavigator";
-import ProfileNavigator from "./ProfileNavigator";
-import { ProfileStackParamList } from "./ProfileNavigator";
-import TestOrderNavigator from "./TestOrderNavigator";
-import DrinkStackNavigator from './DrinkStackNavigator';
+import ProfileNavigator from "../ProfileNavigator";
+import { ProfileStackParamList } from "../ProfileNavigator";
+import TestOrderNavigator from "../TestOrderNavigator";
+import DrinkStackNavigator from '../DrinkStackNavigator';
 
 export type CustomerTabParamList = {
   CustomerHomeStack: undefined;
