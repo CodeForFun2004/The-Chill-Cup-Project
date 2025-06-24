@@ -1,8 +1,8 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import CustomerHomeScreen from '../screens/Customer/CustomerHomeScreen';
-import VouchersScreen from '../screens/Customer/VouchersScreen';
-import LoyaltyScreen from '../screens/Customer/LoyaltyScreen';
+import CustomerHomeScreen from '../../screens/Customer/CustomerHomeScreen';
+import VouchersScreen from '../../screens/Customer/VouchersScreen';
+import LoyaltyScreen from '../../screens/Customer/LoyaltyScreen';
 
 export interface Drink {
   id: string;

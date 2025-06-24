@@ -13,8 +13,8 @@ import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { CompositeNavigationProp } from '@react-navigation/native';
 
 import { DrinkStackParamList } from '../../navigation/DrinkStackNavigator';
-import { CustomerTabParamList } from '../../navigation/CustomerNavigator';
-import { GuestDrinkStackParamList } from '../../navigation/GuestDrinkStackNavigator';
+import { CustomerTabParamList } from '../../navigation/customer/CustomerNavigator';
+import { GuestDrinkStackParamList } from '../../navigation/guest/GuestDrinkStackNavigator';
 
 // Combine Stack + Tab
 type DrinkCategoryNavigationProp = NativeStackNavigationProp<

@@ -5,7 +5,7 @@ import { useSelector } from 'react-redux';
 import { MaterialIcons } from '@expo/vector-icons';
 import { RootState } from '../../redux/store';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { CustomerStackParamList } from '../../navigation/CustomerStackNavigator';
+import { CustomerStackParamList } from '../../navigation/customer/CustomerStackNavigator';
 
 const OrderSuccessActions = () => {
   const order = useSelector((state: RootState) => state.order); // ✅ Lấy từ Redux
