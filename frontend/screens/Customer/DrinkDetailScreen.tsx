@@ -3,7 +3,7 @@ import {
   View, Text, Image, StyleSheet, TouchableOpacity, ScrollView, Dimensions,
 } from 'react-native';
 import { RouteProp, useRoute, useNavigation } from '@react-navigation/native';
-import { DrinkStackParamList } from '../../navigation/DrinkStackNavigator';
+import { DrinkStackParamList } from '../../navigation/CustomerDrinkStackNavigator';
 import { Ionicons } from '@expo/vector-icons';
 
 type DrinkDetailRouteProp = RouteProp<DrinkStackParamList, 'DrinkDetailScreen'>;
@@ -135,7 +135,7 @@ const styles = StyleSheet.create({
   },
   selectedOption: {
     backgroundColor: '#4AA366',
-    borderColor: '#D17842',
+    borderColor: '#4AA366',
   },
   footer: {
     padding: 16,
