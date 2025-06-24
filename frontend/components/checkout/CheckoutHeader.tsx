@@ -12,7 +12,7 @@ const CheckoutHeader = () => {
         <Ionicons name="chevron-back" size={24} color="#000" />
       </TouchableOpacity>
 
-      <Text style={styles.headerTitle}>Checkout</Text>
+      <Text style={styles.headerTitle}>Thanh Toán</Text>
 
       <View style={{ width: 24 }} /> 
     </View>

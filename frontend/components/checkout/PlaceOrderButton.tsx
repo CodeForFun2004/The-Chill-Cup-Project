@@ -59,7 +59,7 @@ const PlaceOrderButton = ({
 
   return (
     <TouchableOpacity style={styles.button} onPress={handlePlaceOrder}>
-      <Text style={styles.buttonText}>Place Order</Text>
+      <Text style={styles.buttonText}>Đặt Hàng</Text>
     </TouchableOpacity>
   );
 };
