@@ -21,7 +21,7 @@ const ForgotPasswordScreen = () => {
 
   const handleSendCode = () => {
     if (!email) {
-      Alert.alert('Error', 'Please enter your email address.');
+      Alert.alert('Lỗi', 'Vui lòng nhập địa chỉ email của bạn.');
       return;
     }
 
@@ -46,16 +46,16 @@ const ForgotPasswordScreen = () => {
         />
 
         {/* Title */}
-        <Text style={styles.title}>Forgot password?</Text>
+        <Text style={styles.title}>Quên tài khoản?</Text>
         <Text style={styles.description}>
-          Don’t worry! It happens. Please enter the email associated with your account.
+          Đừng lo! Chuyện này vẫn hay xảy ra. {'\n'} Vui lòng nhập email gắn với tài khoản của bạn.
         </Text>
 
         {/* Email Field */}
-        <Text style={styles.label}>Email address</Text>
+        <Text style={styles.label}>Email</Text>
         <TextInput
           style={styles.input}
-          placeholder="Enter your email address"
+          placeholder="Nhập email của bạn"
           value={email}
           onChangeText={setEmail}
           keyboardType="email-address"
@@ -64,14 +64,14 @@ const ForgotPasswordScreen = () => {
 
         {/* Send Button */}
         <TouchableOpacity style={styles.sendButton} onPress={handleSendCode}>
-          <Text style={styles.sendText}>Send code</Text>
+          <Text style={styles.sendText}>Gửi mã</Text>
         </TouchableOpacity>
 
         {/* Login Link */}
         <View style={styles.footer}>
-          <Text style={styles.footerText}>Remember password?</Text>
+          <Text style={styles.footerText}>Đã nhớ mật khẩu?</Text>
           <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-            <Text style={styles.loginLink}> Log in</Text>
+            <Text style={styles.loginLink}> Đăng nhập</Text>
           </TouchableOpacity>
         </View>
       </View>

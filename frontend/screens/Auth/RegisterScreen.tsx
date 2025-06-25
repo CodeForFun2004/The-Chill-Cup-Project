@@ -34,28 +34,28 @@ const RegisterScreen = () => {
         />
 
         {/* Title */}
-        <Text style={styles.title}>Mood on! ChillCup on!</Text>
+        <Text style={styles.title}>ChillCup — uống là chill!</Text>
         <Text style={styles.description}>
-          Sip the vibe. Feel the good.{'\n'} Let the day begin.
+          Nhấp một ngụm, chill cả ngày.
         </Text>
 
         {/* Social Buttons */}
         <TouchableOpacity style={styles.socialBtn} onPress={handleGoogleSignup}>
           <FontAwesome name="google" size={20} color="#EA4335" />
-          <Text style={styles.socialText}>  Continue with Google</Text>
+          <Text style={styles.socialText}>  Đăng ký với Google</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.socialBtn} onPress={handleFacebookSignup}>
           <FontAwesome name="facebook" size={20} color="#3b5998" />
-          <Text style={styles.socialText}>  Sign in with Facebook</Text>
+          <Text style={styles.socialText}>  Đăng ký với Facebook</Text>
         </TouchableOpacity>
       </View>
 
       {/* Log in link */}
       <View style={styles.loginRow}>
-        <Text style={styles.loginText}>Already have an account?</Text>
+        <Text style={styles.loginText}>Đã có tài khoản?</Text>
         <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-          <Text style={styles.loginLink}> Log in</Text>
+          <Text style={styles.loginLink}> Đăng nhập</Text>
         </TouchableOpacity>
       </View>
     </View>

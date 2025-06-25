@@ -45,7 +45,7 @@ const VerifyCodeScreen = () => {
   const fullCode = code.join('');
   
   if (timer === 0) {
-    Alert.alert('Timeout', 'Verification time expired. Please request a new code.');
+    Alert.alert('Hết thời gian', 'Thời gian xác minh đã hết. Vui lòng yêu cầu mã xác nhận mới.');
     return;
   }
 
@@ -57,7 +57,7 @@ const VerifyCodeScreen = () => {
 };
 
   const handleResend = () => {
-    Alert.alert('Success', 'A new code has been sent to your email.');
+    Alert.alert('Thành công', 'Mã mới đã được gửi đến email của bạn.');
     setTimer(30);
     setError(false);
     setCode(['', '', '', '', '', '']);
@@ -73,9 +73,9 @@ const VerifyCodeScreen = () => {
 
         <Image source={require('../../assets/splash.png')} style={styles.logo} resizeMode="contain" />
 
-        <Text style={styles.title}>Enter code</Text>
+        <Text style={styles.title}>Nhập mã xác nhận</Text>
         <Text style={styles.subtitle}>
-          We’ve sent a code to <Text style={styles.email}>{email}</Text>
+          Mã xác nhận đã được gửi đến <Text style={styles.email}>{email}</Text>
         </Text>
 
         <View style={styles.codeRow}>
@@ -92,15 +92,15 @@ const VerifyCodeScreen = () => {
           ))}
         </View>
 
-        {error && <Text style={styles.errorText}>Wrong code, please try again</Text>}
+        {error && <Text style={styles.errorText}>Mã xác nhận không chính xác, vui lòng thử lại.</Text>}
 
         <TouchableOpacity style={styles.verifyBtn} onPress={handleVerify}>
-          <Text style={styles.verifyText}>Verify</Text>
+          <Text style={styles.verifyText}>Xác nhận</Text>
         </TouchableOpacity>
 
         <TouchableOpacity onPress={handleResend}>
             <Text style={[styles.resendText, timer > 0 && { color: '#aaa' }]}>
-                 Send code again <Text style={{ fontWeight: 'bold' }}>{`00:${timer < 10 ? '0' : ''}${timer}`}</Text>
+                 Gửi lại mã <Text style={{ fontWeight: 'bold' }}>{`00:${timer < 10 ? '0' : ''}${timer}`}</Text>
             </Text>
         </TouchableOpacity>
 
