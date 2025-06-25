@@ -33,15 +33,15 @@ const CreateAccountScreen = () => {
 
   const handleSubmit = () => {
     if (!username || !password || !confirm) {
-      Alert.alert('Error', 'Please fill out all fields.');
+      Alert.alert('Lỗi', 'Vui lòng điền đầy đủ thông tin.');
       return;
     }
     if (password !== confirm) {
-      Alert.alert('Error', 'Passwords do not match.');
+      Alert.alert('Lỗi', 'Mật khẩu xác nhận không khớp.');
       return;
     }
     if (!agree) {
-      Alert.alert('Error', 'You must agree to the policy.');
+      Alert.alert('Lỗi', 'Bạn phải đồng ý với chính sách.');
       return;
     }
 
@@ -69,21 +69,21 @@ const CreateAccountScreen = () => {
 
               <Image source={require('../../assets/splash.png')} style={styles.logo} />
 
-              <Text style={styles.title}>Welcome, New friend!<Text style={{ fontSize: 20 }}>👋</Text></Text>
+              <Text style={styles.title}>Chào mừng bạn mới!<Text style={{ fontSize: 20 }}>👋</Text></Text>
 
-              <Text style={styles.label}>Username</Text>
+              <Text style={styles.label}>Tên đăng nhập</Text>
               <TextInput
                 style={styles.input}
-                placeholder="Your username"
+                placeholder="Nhập tên đăng nhập"
                 value={username}
                 onChangeText={setUsername}
               />
 
-              <Text style={styles.label}>Create a password</Text>
+              <Text style={styles.label}>Tạo mật khẩu</Text>
               <View style={styles.inputRow}>
                 <TextInput
                   style={styles.inputField}
-                  placeholder="Must be 8 characters"
+                  placeholder="Tối thiểu 8 ký tự"
                   secureTextEntry={secure1}
                   value={password}
                   onChangeText={setPassword}
@@ -93,11 +93,11 @@ const CreateAccountScreen = () => {
                 </TouchableOpacity>
               </View>
 
-              <Text style={styles.label}>Confirm password</Text>
+              <Text style={styles.label}>Xác nhận mật khẩu</Text>
               <View style={styles.inputRow}>
                 <TextInput
                   style={styles.inputField}
-                  placeholder="Repeat password"
+                  placeholder="Nhập lại mật khẩu"
                   secureTextEntry={secure2}
                   value={confirm}
                   onChangeText={setConfirm}
@@ -113,18 +113,18 @@ const CreateAccountScreen = () => {
                   size={20}
                   color={agree ? '#4AA366' : '#ccc'}
                 />
-                <Text style={styles.agreeText}> I accept the terms and privacy policy</Text>
+                <Text style={styles.agreeText}> Tôi đồng ý với điều khoản và chính sách bảo mật</Text>
               </TouchableOpacity>
 
               <TouchableOpacity style={styles.button} onPress={handleSubmit}>
-                <Text style={styles.buttonText}>Log in</Text>
+                <Text style={styles.buttonText}>Đăng nhập</Text>
               </TouchableOpacity>
             </View>
 
             <View style={styles.footer}>
-              <Text style={styles.footerText}>Already have an account?</Text>
+              <Text style={styles.footerText}>Đã có tài khoản?</Text>
               <TouchableOpacity onPress={() => navigation.navigate('Auth', { screen: 'Login' })}>
-                <Text style={styles.footerLink}> Log in</Text>
+                <Text style={styles.footerLink}> Đăng nhập</Text>
               </TouchableOpacity>
             </View>
           </View>

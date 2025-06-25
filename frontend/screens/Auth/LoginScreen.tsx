@@ -61,13 +61,13 @@ const LoginScreen = () => {
         />
 
         {/* Welcome Text */}
-        <Text style={styles.welcome}>Hi, Welcome! <Text style={{ fontSize: 20 }}>👋</Text></Text>
+        <Text style={styles.welcome}>Xin chào! <Text style={{ fontSize: 20 }}>👋</Text></Text>
 
         {/* Username */}
-        <Text style={styles.label}>Username</Text>
+        <Text style={styles.label}>Tên đăng nhập</Text>
           <TextInput
               style={styles.input}
-              placeholder="Your username"
+              placeholder="Tên đăng nhập"
               value={username}
               onChangeText={setUsername}
               autoCapitalize="none"
@@ -82,11 +82,11 @@ const LoginScreen = () => {
         </TouchableOpacity>
 
         {/* Password */}
-        <Text style={styles.label}>Password</Text>
+        <Text style={styles.label}>Mật khẩu</Text>
        <View style={styles.passwordContainer}>
   <TextInput
     style={styles.passwordInput}
-    placeholder="Password"
+    placeholder="Mật Khẩu"
     placeholderTextColor="#999"
     secureTextEntry={secure}
     value={password}
@@ -107,22 +107,22 @@ const LoginScreen = () => {
               color={remember ? '#4AA366' : '#ccc'}
               onPress={() => setRemember(!remember)}
             />
-            <Text style={styles.rememberText}> Remember me</Text>
+            <Text style={styles.rememberText}> Lưu tài khoản</Text>
           </View>
           <TouchableOpacity onPress={() => navigation.navigate('Auth', {screen: 'ForgotPassword',})}>
-            <Text style={styles.forgotText}>Forgot password?</Text>
+            <Text style={styles.forgotText}>Quên mật khẩu?</Text>
           </TouchableOpacity>
         </View>
 
         {/* Login Button */}
         <TouchableOpacity style={styles.loginBtn} onPress={handleLogin}>
-          <Text style={styles.loginText}>Log in</Text>
+          <Text style={styles.loginText}>Đăng nhập</Text>
         </TouchableOpacity>
 
         {/* Divider */}
         <View style={styles.divider}>
           <View style={styles.line} />
-          <Text style={styles.orText}>Or with</Text>
+          <Text style={styles.orText}>Đăng nhập với</Text>
           <View style={styles.line} />
         </View>
 
@@ -143,9 +143,9 @@ const LoginScreen = () => {
 
         {/* Sign up */}
         <View style={styles.signupRow}>
-          <Text style={styles.signupText}>Don’t have an account?</Text>
+          <Text style={styles.signupText}>Chưa có tài khoản?</Text>
           <TouchableOpacity onPress={() => navigation.navigate('Auth', {screen: 'Register',})}>
-          <Text style={styles.signupLink}> Sign up</Text>
+          <Text style={styles.signupLink}> Đăng ký</Text>
         </TouchableOpacity>
 
         </View>

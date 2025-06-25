@@ -23,15 +23,15 @@ const PasswordChangedScreen = () => {
       />
 
       {/* Title */}
-      <Text style={styles.title}>Password changed</Text>
-      <Text style={styles.subtitle}>Your password has been changed successfully</Text>
+      <Text style={styles.title}>Đã đổi mậ khẩu</Text>
+      <Text style={styles.subtitle}>Mật khẩu của bạn đã thay đổi thành công</Text>
 
       {/* Back to Login */}
       <TouchableOpacity
         style={styles.button}
         onPress={() => navigation.navigate('Login')}
       >
-        <Text style={styles.buttonText}>Back to login</Text>
+        <Text style={styles.buttonText}>Quay về đăng nhập</Text>
       </TouchableOpacity>
     </View>
   );
