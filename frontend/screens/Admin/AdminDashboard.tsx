@@ -14,13 +14,15 @@ import { logout } from '../../redux/slices/authSlice';
 import { CommonActions, useNavigation } from '@react-navigation/native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LineChart, BarChart } from 'react-native-chart-kit';
+import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+import { AdminTabParamList } from '../../navigation/admin/AdminNavigator';
 
 const screenWidth = Dimensions.get('window').width;
 
 // Main Component
 const AdminDashboard = () => {
   const dispatch = useDispatch();
-  const navigation = useNavigation();
+  const navigation = useNavigation<BottomTabNavigationProp<AdminTabParamList>>();
   const [isActionsExpanded, setIsActionsExpanded] = useState(true);
 
   const handleLogout = () => {
@@ -75,6 +77,15 @@ const AdminDashboard = () => {
         </TouchableOpacity>
 
         {isActionsExpanded && <ActionsGrid onTaskPress={handleTaskPress} />}
+
+        <View style={styles.actionContainer}>
+          <TouchableOpacity style={styles.actionBtn} onPress={() => navigation.navigate('DrinkManagement')}>
+            <Text style={styles.actionText}>Quản lý Thức Uống</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.actionBtn} onPress={() => navigation.navigate('ToppingManagement')}>
+            <Text style={styles.actionText}>Quản lý Topping</Text>
+          </TouchableOpacity>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -314,6 +325,9 @@ const styles = StyleSheet.create({
     color: '#57606f',
     textAlign: 'center',
   },
+  actionContainer: { flexDirection: 'row', justifyContent: 'center', marginVertical: 20 },
+  actionBtn: { backgroundColor: '#007AFF', padding: 16, borderRadius: 10, marginHorizontal: 10 },
+  actionText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
 });
 
 export default AdminDashboard;
