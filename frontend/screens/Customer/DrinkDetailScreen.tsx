@@ -25,21 +25,6 @@ const sizeOptions = [
   { size: 'L', name: 'Lớn', multiplier: 1.3, volume: '700ml' },
 ];
 
-const iceOptions = [
-  { id: '0', name: 'Không đá', icon: '🚫' },
-  { id: '25', name: 'Ít đá', icon: '🧊' },
-  { id: '50', name: 'Đá vừa', icon: '🧊🧊' },
-  { id: '100', name: 'Đá nhiều', icon: '🧊🧊🧊' },
-];
-
-const sweetnessOptions = [
-  { id: '0', name: '0%', label: 'Không đường' },
-  { id: '30', name: '30%', label: 'Ít ngọt' },
-  { id: '50', name: '50%', label: 'Vừa ngọt' },
-  { id: '70', name: '70%', label: 'Ngọt' },
-  { id: '100', name: '100%', label: 'Rất ngọt' },
-];
-
 const DrinkDetailScreen = () => {
   const route = useRoute<DrinkDetailRouteProp>();
   const navigation = useNavigation();
