@@ -17,7 +17,7 @@ export type DrinkStackParamList = {
 
 const Stack = createNativeStackNavigator<DrinkStackParamList>();
 
-const DrinkStackNavigator = () => {
+const CustomerDrinkStackNavigator = () => {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="DrinkCategoryScreen" component={DrinkCategoryScreen} />
@@ -26,4 +26,4 @@ const DrinkStackNavigator = () => {
   );
 };
 
-export default DrinkStackNavigator;
+export default CustomerDrinkStackNavigator;

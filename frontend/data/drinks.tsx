@@ -2,6 +2,7 @@
 export const drinkData = [
     {
       category: 'Món Mới Phải Thử',
+      icon: require('../assets/images/category_image/monmoi.jpg'),
       drinks: [
         { id: '1', name: 'Matcha Đá Xay', image: require('../assets/images/search-box/matcha-latte.png'), price: '65,000đ' },
         { id: '2', name: 'Matcha Latte', image: require('../assets/images/search-box/matcha-latte.png'), price: '59,000đ' },
@@ -10,6 +11,7 @@ export const drinkData = [
     },
     {
       category: 'Matcha',
+      icon: require('../assets/images/category_image/matcha.jpg'),
       drinks: [
         { id: '4', name: 'Matcha Latte', image: require('../assets/images/matcha/matcha-latte.png'), price: '65,000đ' },
         { id: '5', name: 'Matcha Sữa Dừa', image: require('../assets/images/matcha/matcha-sua-dua.png'), price: '59,000đ' },
@@ -21,6 +23,7 @@ export const drinkData = [
     },
     {
       category: 'Coffee',
+      icon: require('../assets/images/category_image/coffee.jpg'),
       drinks: [
         { id: '10', name: 'Dirty Chai Latte', image: require('../assets/images/coffee/dirty chai latte.png'), price: '65,000đ' },
         { id: '11', name: 'Latte Caremel', image: require('../assets/images/coffee/latte-caramel.png'), price: '59,000đ' },
@@ -32,6 +35,7 @@ export const drinkData = [
     },
     {
       category: 'Trà Sữa',
+      icon: require('../assets/images/category_image/trasua.jpg'),
       drinks: [
         { id: '16', name: 'Trà Sữa Truyền Thống', image: require('../assets/images/bubble-tea/tra-sua-truyen-thong.png'), price: '65,000đ' },
         { id: '17', name: 'Trà Sữa Trân Châu Đường Đen', image: require('../assets/images/bubble-tea/tra-sua-tran-chau-duong-den.png'), price: '59,000đ' },
@@ -43,6 +47,7 @@ export const drinkData = [
     },
     {
       category: 'Trà Trái Cây',
+      icon: require('../assets/images/category_image/tratraicay.jpg'),
       drinks: [
         { id: '22', name: 'Trà Đào Cam Sả', image: require('../assets/images/fruit-tea/tra-dao-cam-sa.png'), price: '65,000đ' },
         { id: '23', name: 'Trà Tắc', image: require('../assets/images/fruit-tea/tra-tac.png'), price: '59,000đ' },
@@ -54,6 +59,7 @@ export const drinkData = [
     },
     {
       category: 'Món Nóng',
+      icon: require('../assets/images/category_image/monnong.jpg'),
       drinks: [
         { id: '28', name: 'Americano Nóng', image: require('../assets/images/hot-drink/americano-nong.png'), price: '65,000đ' },
         { id: '29', name: 'Espresso Nóng', image: require('../assets/images/hot-drink/espresso-nong.png'), price: '59,000đ' },
