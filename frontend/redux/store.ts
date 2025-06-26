@@ -3,6 +3,7 @@ import authReducer from './slices/authSlice';
 import cartReducer from './slices/cartSlice'; 
 import orderReducer from './slices/orderSlice'; 
 import notificationReducer from './slices/notificationSlice'
+import staffReducer from "./slices/staffSlice"
 
 const store = configureStore({
   reducer: {
@@ -10,6 +11,7 @@ const store = configureStore({
     cart: cartReducer, 
     order: orderReducer, // ✅ Thêm dòng này
     notification: notificationReducer,
+    staff: staffReducer
   },
   
 });
