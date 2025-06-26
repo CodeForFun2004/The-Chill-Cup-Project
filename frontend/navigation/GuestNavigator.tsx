@@ -5,16 +5,15 @@ import { NavigatorScreenParams } from '@react-navigation/native';
 import { View, StyleSheet, Platform } from 'react-native';
 import { Ionicons, MaterialCommunityIcons, Entypo, FontAwesome } from '@expo/vector-icons';
 
-import GuestHomeScreen from '../screens/Guest/GuestHomeScreen';
 import StoreScreen from '../screens/Customer/StoreScreen';
 import PromotionScreen from '../screens/Customer/PromotionScreen';
 import ProfileScreen from '../screens/Customer/ProfileScreen';
-import DrinkCategoryScreen from '../screens/Customer/DrinkCategoryScreen';
-import GuestDrinkStackParamList from './guest/GuestDrinkStackNavigator';
-import GuestDrinkStackNavigator from './guest/GuestDrinkStackNavigator';
+import GuestDrinkStackParamList from '../navigation/GuestDrinkStackNavigator';
+import DrinkStackNavigator from './CustomerDrinkStackNavigator';
+import GuestHomeStack from './GuestHomeStack';
 
 export type GuestTabParamList = {
-  GuestHomeScreen: undefined;
+  GuestHomeStack: undefined;
   DrinkCategory: NavigatorScreenParams<typeof GuestDrinkStackParamList>;
   Store: undefined;
   Promotion: undefined;
@@ -34,7 +33,7 @@ const GuestNavigator = () => (
         let icon;
 
         switch (route.name) {
-          case 'GuestHomeScreen':
+          case 'GuestHomeStack':
             icon = <Ionicons name="home-outline" size={22} color={focused ? '#4AA366' : '#888'} />;
             break;
           case 'DrinkCategory':
@@ -57,8 +56,8 @@ const GuestNavigator = () => (
       },
     })}
   >
-    <Tab.Screen name="GuestHomeScreen" component={GuestHomeScreen} />
-    <Tab.Screen name="DrinkCategory" component={GuestDrinkStackNavigator } />
+    <Tab.Screen name="GuestHomeStack" component={GuestHomeStack} />
+    <Tab.Screen name="DrinkCategory" component={DrinkStackNavigator } />
     <Tab.Screen name="Store" component={StoreScreen} />
     <Tab.Screen name="Promotion" component={PromotionScreen} />
     <Tab.Screen name="Profile" component={ProfileScreen} />
