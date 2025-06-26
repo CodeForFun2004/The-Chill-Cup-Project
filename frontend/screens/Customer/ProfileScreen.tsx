@@ -47,10 +47,10 @@ const ProfileScreen = () => {
   const userInfo = useSelector((state: RootState) => state.auth.userInfo);
 
   const handleLogout = () => {
-    Alert.alert('Logout', 'Are you sure you want to logout?', [
-      { text: 'Cancel' },
+    Alert.alert('Đăng xuất', 'Bạn có chắc chắn muốn đăng xuất?', [
+      { text: 'Huỷ' },
       {
-        text: 'Logout',
+        text: 'Đăng xuất',
         onPress: () => {
           dispatch(logout());
           navigation.dispatch(
@@ -68,58 +68,58 @@ const ProfileScreen = () => {
   const menuItems: MenuItemType[] = [
     {
       icon: <MaterialIcons name="history" size={24} color="#666" />,
-      title: 'Order History',
+      title: 'Lịch sử đơn hàng',
       onPress: () => navigation.navigate('OrderStack' as never),
     },
     {
       icon: <MaterialIcons name="favorite-border" size={24} color="#666" />,
-      title: 'My Favorite Restaurants',
+      title: 'Nhà hàng yêu thích',
       onPress: () => navigation.navigate('Favorites'),
     },
     {
       icon: <MaterialIcons name="local-offer" size={24} color="#666" />,
-      title: 'Special Offers & Promo',
+      title: 'Ưu đãi & khuyến mãi',
       onPress: () => {},
     },
     {
       icon: <MaterialIcons name="payment" size={24} color="#666" />,
-      title: 'Payment Methods',
+      title: 'Phương thức thanh toán',
       onPress: () => {},
     },
     {
       icon: <MaterialIcons name="person-outline" size={24} color="#666" />,
-      title: 'Profile',
+      title: 'Thông tin cá nhân',
       onPress: () => navigation.navigate('EditProfile'),
     },
     {
       icon: <MaterialIcons name="location-on" size={24} color="#666" />,
-      title: 'Address',
+      title: 'Địa chỉ',
       onPress: () => {},
     },
     {
       icon: <MaterialIcons name="notifications-none" size={24} color="#666" />,
-      title: 'Notification',
+      title: 'Thông báo',
       onPress: () => {},
     },
     {
       icon: <MaterialIcons name="security" size={24} color="#666" />,
-      title: 'Security',
+      title: 'Bảo mật',
       onPress: () => navigation.navigate('ChangePassword'),
     },
     {
       icon: <MaterialIcons name="language" size={24} color="#666" />,
-      title: 'Language',
-      rightText: 'English (US)',
+      title: 'Ngôn ngữ',
+      rightText: 'Tiếng Việt',
       onPress: () => {},
     },
     {
       icon: <MaterialIcons name="help-outline" size={24} color="#666" />,
-      title: 'Help Center',
+      title: 'Trung tâm trợ giúp',
       onPress: () => {},
     },
     {
       icon: <MaterialIcons name="group-add" size={24} color="#666" />,
-      title: 'Invite Friends',
+      title: 'Mời bạn bè',
       onPress: () => {},
     },
   ];
@@ -140,12 +140,12 @@ const ProfileScreen = () => {
   if (!userInfo) {
     return (
       <View style={styles.container}>
-        <Text style={styles.title}>Please login to view your profile</Text>
+        <Text style={styles.title}>Vui lòng đăng nhập để xem hồ sơ của bạn</Text>
         <TouchableOpacity
           style={styles.loginButton}
           onPress={() => navigation.getParent()?.navigate('WelcomeScreen')}
         >
-          <Text style={styles.loginButtonText}>Login</Text>
+          <Text style={styles.loginButtonText}>Đăng nhập</Text>
         </TouchableOpacity>
       </View>
     );
@@ -180,7 +180,7 @@ const ProfileScreen = () => {
 
       <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
         <MaterialIcons name="logout" size={24} color="#FF3B30" />
-        <Text style={styles.logoutText}>Logout</Text>
+        <Text style={styles.logoutText}>Đăng xuất</Text>
       </TouchableOpacity>
     </ScrollView>
   );
