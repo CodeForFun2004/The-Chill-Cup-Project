@@ -79,7 +79,7 @@ const AdminDashboard = () => {
         {isActionsExpanded && <ActionsGrid onTaskPress={handleTaskPress} />}
 
         <View style={styles.actionContainer}>
-          <TouchableOpacity style={styles.actionBtn} onPress={() => navigation.navigate('DrinkManagement')}>
+          <TouchableOpacity style={styles.actionBtn} onPress={() => navigation.navigate('Products')}>
             <Text style={styles.actionText}>Quản lý Thức Uống</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.actionBtn} onPress={() => navigation.navigate('ToppingManagement')}>
