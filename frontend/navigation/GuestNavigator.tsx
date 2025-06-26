@@ -8,7 +8,7 @@ import { Ionicons, MaterialCommunityIcons, Entypo, FontAwesome } from '@expo/vec
 import StoreScreen from '../screens/Customer/StoreScreen';
 import PromotionScreen from '../screens/Customer/PromotionScreen';
 import ProfileScreen from '../screens/Customer/ProfileScreen';
-import GuestDrinkStackParamList from '../navigation/GuestDrinkStackNavigator';
+import GuestDrinkStackParamList from '../navigation/guest/GuestDrinkStackNavigator';
 import DrinkStackNavigator from './CustomerDrinkStackNavigator';
 import GuestHomeStack from './GuestHomeStack';
 

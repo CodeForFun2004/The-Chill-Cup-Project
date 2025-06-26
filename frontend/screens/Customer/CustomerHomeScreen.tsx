@@ -24,7 +24,7 @@ const CustomerHomeScreen = () => {
           />
         ))}
 
-        <View style={{ height: 80 }} />
+        <View style={{ height: 25 }} />
       </ScrollView>
     </View>
   );

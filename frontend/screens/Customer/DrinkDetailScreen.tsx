@@ -1,14 +1,16 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View, Text, Image, StyleSheet, TouchableOpacity, ScrollView, 
-  Dimensions, Alert, Animated, StatusBar
+  Dimensions, Alert, Animated
 } from 'react-native';
 import { RouteProp, useRoute, useNavigation } from '@react-navigation/native';
 import { DrinkStackParamList } from '../../navigation/CustomerDrinkStackNavigator';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { NavigationProp } from '@react-navigation/native';
 
 type DrinkDetailRouteProp = RouteProp<DrinkStackParamList, 'DrinkDetailScreen'>;
+type DrinkDetailNavigationProp = NavigationProp<DrinkStackParamList, 'DrinkDetailScreen'>;
 
 const availableToppings = [
   { id: '1', name: 'Trân châu đen', price: 5000, icon: '⚫' },
@@ -27,7 +29,7 @@ const sizeOptions = [
 
 const DrinkDetailScreen = () => {
   const route = useRoute<DrinkDetailRouteProp>();
-  const navigation = useNavigation();
+  const navigation = useNavigation<DrinkDetailNavigationProp>();
   const { drink } = route.params;
 
   const [selectedSize, setSelectedSize] = useState<'S' | 'M' | 'L'>('M');
@@ -37,6 +39,26 @@ const DrinkDetailScreen = () => {
   const [quantity, setQuantity] = useState(1);
   const [isFavorite, setIsFavorite] = useState(false);
   const [scrollY] = useState(new Animated.Value(0));
+
+  useEffect(() => {
+    // Ẩn bottom tab bar
+    const parent = navigation.getParent();
+    if (parent) {
+      parent.setOptions({
+        tabBarStyle: { display: 'none' },
+      });
+    } else {
+      console.warn('Không tìm thấy parent navigator. Kiểm tra cấu hình navigation.');
+    }
+
+    return () => {
+      if (parent) {
+        parent.setOptions({
+          tabBarStyle: undefined,
+        });
+      }
+    };
+  }, [navigation]);
 
   const toggleTopping = useCallback((id: string) => {
     setSelectedToppings(prev =>
@@ -112,8 +134,6 @@ const DrinkDetailScreen = () => {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" />
-      
       {/* Compact Animated Header */}
       <Animated.View style={[styles.header, { opacity: headerOpacity }]}>
         <LinearGradient
@@ -257,7 +277,7 @@ const DrinkDetailScreen = () => {
           </View>
 
           {/* Quantity Selector */}
-          <View style={styles.quantitySection}>
+          <View style={styles.section}>
             <Text style={styles.sectionTitle}>🔢 Số lượng</Text>
             <View style={styles.quantityContainer}>
               <TouchableOpacity 
@@ -313,13 +333,12 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
   },
-  // Compact Header Styles
   header: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
-    height: 44 + 44, // Status bar + header height
+    height: 50,
     zIndex: 1000,
   },
   headerGradient: {
@@ -585,8 +604,6 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    paddingBottom: 34, 
-    marginBottom: 20,
   },
   bottomBarGradient: {
     paddingHorizontal: 20,
@@ -621,9 +638,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 16,
     marginLeft: 8,
-  },
-  quantitySection: {
-    marginBottom: 80,
   },
 });
 
