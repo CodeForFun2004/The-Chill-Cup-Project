@@ -11,12 +11,12 @@ import { LinearGradient } from 'expo-linear-gradient';
 type DrinkDetailRouteProp = RouteProp<DrinkStackParamList, 'DrinkDetailScreen'>;
 
 const availableToppings = [
-  { id: '1', name: 'Trân châu đen', price: 5000, icon: '🖤' },
+  { id: '1', name: 'Trân châu đen', price: 5000, icon: '⚫' },
   { id: '2', name: 'Thạch trái cây', price: 7000, icon: '🍓' },
   { id: '3', name: 'Pudding trứng', price: 6000, icon: '🍮' },
   { id: '4', name: 'Kem cheese', price: 7000, icon: '🧀' },
   { id: '5', name: 'Thạch matcha', price: 6000, icon: '🍵' },
-  { id: '6', name: 'Trân châu trắng', price: 6000, icon: '🤍' },
+  { id: '6', name: 'Trân châu trắng', price: 6000, icon: '⚪' },
 ];
 
 const sizeOptions = [
@@ -238,65 +238,6 @@ const DrinkDetailScreen = () => {
                 </TouchableOpacity>
               ))}
             </View>
-          </View>
-
-          {/* Ice Level */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>🧊 Mức độ đá</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              <View style={styles.horizontalOptions}>
-                {iceOptions.map(option => (
-                  <TouchableOpacity
-                    key={option.id}
-                    style={[
-                      styles.horizontalOption,
-                      selectedIce === option.id && styles.selectedOption,
-                    ]}
-                    onPress={() => setSelectedIce(option.id)}
-                  >
-                    <Text style={styles.optionIcon}>{option.icon}</Text>
-                    <Text style={[
-                      styles.optionText,
-                      selectedIce === option.id && styles.selectedOptionText
-                    ]}>
-                      {option.name}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </ScrollView>
-          </View>
-
-          {/* Sweetness Level */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>🍯 Độ ngọt</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              <View style={styles.horizontalOptions}>
-                {sweetnessOptions.map(option => (
-                  <TouchableOpacity
-                    key={option.id}
-                    style={[
-                      styles.horizontalOption,
-                      selectedSweetness === option.id && styles.selectedOption,
-                    ]}
-                    onPress={() => setSelectedSweetness(option.id)}
-                  >
-                    <Text style={[
-                      styles.optionText,
-                      selectedSweetness === option.id && styles.selectedOptionText
-                    ]}>
-                      {option.name}
-                    </Text>
-                    <Text style={[
-                      styles.optionSubtext,
-                      selectedSweetness === option.id && styles.selectedOptionText
-                    ]}>
-                      {option.label}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </ScrollView>
           </View>
 
           {/* Toppings */}
