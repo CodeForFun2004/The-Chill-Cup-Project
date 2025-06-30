@@ -1,240 +1,221 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
-  Image,
-  StyleSheet,
-  FlatList,
-  TouchableOpacity,
-  Linking,
   TextInput,
-  Animated,
-  Easing,
+  FlatList,
+  Image,
+  TouchableOpacity,
+  StyleSheet,
+  SafeAreaView,
+  Linking,
+  StatusBar,
+  Alert,
 } from 'react-native';
+import * as Location from 'expo-location';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { STORES } from '../../data/stores';
 
-const StoreScreen = () => {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filteredStores, setFilteredStores] = useState(STORES);
-  const [cardScales, setCardScales] = useState<{ [key: string]: Animated.Value }>(
-    STORES.reduce((acc, store) => ({ ...acc, [store.id]: new Animated.Value(1) }), {})
-  );
+interface Coordinates {
+  latitude: number;
+  longitude: number;
+}
 
-  const handleSearch = (query: string) => {
-    setSearchQuery(query);
-    const filtered = STORES.filter(
-      store =>
-        store.name.toLowerCase().includes(query.toLowerCase()) ||
-        store.address.toLowerCase().includes(query.toLowerCase())
+interface Store {
+  id: string;
+  name: string;
+  address: string;
+  latitude: number;
+  longitude: number;
+  phone: string;
+  image: any;
+  distance?: number;
+}
+
+const getDistance = (
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number
+): number => {
+  const toRad = (value: number): number => (value * Math.PI) / 180;
+  const R = 6371;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) *
+      Math.cos(toRad(lat2)) *
+      Math.sin(dLon / 2) ** 2;
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+};
+
+export default function StoreScreen() {
+  const [search, setSearch] = useState('');
+  const [location, setLocation] = useState<Coordinates | null>(null);
+  const [selectedStore, setSelectedStore] = useState<Store | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Lỗi', 'Không có quyền truy cập vị trí');
+        return;
+      }
+      const loc = await Location.getCurrentPositionAsync({});
+      setLocation(loc.coords);
+    })();
+  }, []);
+
+  const sortedStores = useMemo(() => {
+    if (!location)
+      return STORES.map((s) => ({
+        ...s,
+        distance: parseFloat(s.distance || '0'),
+      }));
+    const mapped = STORES.map((s) => ({
+      ...s,
+      distance: getDistance(
+        location.latitude,
+        location.longitude,
+        s.latitude,
+        s.longitude
+      ),
+    }));
+    mapped.sort((a, b) => a.distance - b.distance);
+    return mapped.filter(
+      (s) =>
+        s.name.toLowerCase().includes(search.toLowerCase()) ||
+        s.address.toLowerCase().includes(search.toLowerCase())
     );
-    setFilteredStores(filtered);
+  }, [location, search]);
+
+  const nearestStore = sortedStores[0];
+  const otherStores = sortedStores.slice(1);
+
+  const handleSelect = (store: Store): void => {
+    setSelectedStore(store);
+    Alert.alert('Đã chọn', `Địa chỉ giao hàng: ${store.name}`);
   };
 
-  const animateCard = (id: string, toValue: number) => {
-    Animated.timing(cardScales[id], {
-      toValue,
-      duration: 100,
-      easing: Easing.linear,
-      useNativeDriver: true,
-    }).start();
-  };
-
-  const renderItem = ({ item }: { item: typeof STORES[0] }) => (
-    <Animated.View
-      style={[styles.card, { transform: [{ scale: cardScales[item.id] }] }]}
-    >
-      <View style={styles.imageContainer}>
-        <Image source={item.image} style={styles.image} resizeMode="cover" />
-        <LinearGradient
-          colors={['transparent', 'rgba(0,0,0,0.7)']}
-          style={styles.gradientOverlay}
-        />
-      </View>
-      <View style={styles.info}>
-        <Text style={styles.name}>{item.name}</Text>
-        <Text style={styles.address}>{item.address}</Text>
-        <Text style={styles.openTime}>🕒 {item.openTime}</Text>
-        <Text style={styles.distance}>📍 Cách bạn {item.distance}</Text>
-
-        <View style={styles.buttonContainer}>
+  const StoreCard = ({ store }: { store: Store }) => (
+    <View style={styles.card}>
+      <Image source={store.image} style={styles.thumbnail} />
+      <View style={styles.details}>
+        <Text style={styles.storeName}>{store.name}</Text>
+        <Text style={styles.storeAddress}>{store.address}</Text>
+        <Text style={styles.storeDistance}>
+          📍 {store.distance?.toFixed(2)} km
+        </Text>
+        <View style={styles.rowActions}>
           <TouchableOpacity
-            style={styles.mapButton}
-            onPress={() => Linking.openURL(`https://www.google.com/maps?q=${item.latitude},${item.longitude}`)}
-            onPressIn={() => animateCard(item.id, 0.95)}
-            onPressOut={() => animateCard(item.id, 1)}
-            accessible
-            accessibilityLabel={`Xem bản đồ ${item.name}`}
+            style={styles.iconAction}
+            onPress={() =>
+              Linking.openURL(
+                `https://www.google.com/maps/dir/?api=1&destination=${store.latitude},${store.longitude}`
+              )
+            }
           >
-            <Ionicons name="location-outline" size={20} color="#fff" />
-            <Text style={styles.buttonText}>Xem bản đồ</Text>
+            <Ionicons name='navigate' size={20} color='#6366f1' />
           </TouchableOpacity>
           <TouchableOpacity
-            style={styles.callButton}
-            onPress={() => Linking.openURL(item.phone)}
-            onPressIn={() => animateCard(item.id, 0.95)}
-            onPressOut={() => animateCard(item.id, 1)}
-            accessible
-            accessibilityLabel={`Gọi điện đến ${item.name}`}
+            style={styles.iconAction}
+            onPress={() => Linking.openURL(`tel:${store.phone}`)}
           >
-            <Ionicons name="call-outline" size={20} color="#fff" />
-            <Text style={styles.buttonText}>Gọi điện</Text>
+            <Ionicons name='call' size={20} color='#10b981' />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.ctaBtn}
+            onPress={() => handleSelect(store)}
+          >
+            <Text style={styles.ctaText}>Chọn</Text>
           </TouchableOpacity>
         </View>
       </View>
-    </Animated.View>
+    </View>
   );
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.header}>Danh sách cửa hàng</Text>
-      <View style={styles.searchContainer}>
-        <Ionicons name="search-outline" size={20} color="#888" style={styles.searchIcon} />
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Tìm kiếm cửa hàng..."
-          value={searchQuery}
-          onChangeText={handleSearch}
-          accessible
-          accessibilityLabel="Tìm kiếm cửa hàng"
-        />
-      </View>
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle='dark-content' />
       <FlatList
-        data={filteredStores}
-        keyExtractor={item => item.id}
-        renderItem={renderItem}
-        contentContainerStyle={styles.listContainer}
-        ListEmptyComponent={
-          <Text style={styles.emptyText}>Không tìm thấy cửa hàng nào.</Text>
+        ListHeaderComponent={
+          <View style={styles.header}>
+            <Text style={styles.greeting}>Xin chào! 👋</Text>
+            <TextInput
+              placeholder='Tìm cửa hàng...'
+              style={styles.searchBox}
+              value={search}
+              onChangeText={setSearch}
+            />
+
+            {nearestStore && (
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>🏠 Gần bạn nhất</Text>
+                <StoreCard store={nearestStore} />
+              </View>
+            )}
+            <Text style={styles.sectionTitle}>📍 Các cửa hàng khác</Text>
+          </View>
         }
+        data={otherStores}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => <StoreCard store={item} />}
+        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 50 }}
       />
-    </View>
+    </SafeAreaView>
   );
-};
+}
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 16,
-    backgroundColor: '#f8f8f8',
-  },
-  header: {
-    fontSize: 24,
-    fontWeight: '700',
-    marginBottom: 16,
-    color: '#2D2D2D',
-  },
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  container: { flex: 1, backgroundColor: '#f8fafc' },
+  header: { padding: 20 },
+  greeting: { fontSize: 20, fontWeight: '700', marginBottom: 10 },
+  searchBox: {
     backgroundColor: '#fff',
     borderRadius: 12,
-    paddingHorizontal: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+  },
+  section: { marginTop: 20 },
+  sectionTitle: { fontSize: 18, fontWeight: '700', marginVertical: 10 },
+  card: {
+    flexDirection: 'row',
+    backgroundColor: '#fff',
+    borderRadius: 14,
     marginBottom: 16,
+    padding: 12,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.04,
     shadowRadius: 4,
     elevation: 2,
+    alignItems: 'center',
   },
-  searchIcon: {
-    marginRight: 8,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 16,
-    paddingVertical: 12,
-    color: '#333',
-  },
-  listContainer: {
-    paddingBottom: 35,
-  },
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    overflow: 'hidden',
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  imageContainer: {
-    position: 'relative',
-  },
-  image: {
-    width: '100%',
-    height: 180,
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-  },
-  gradientOverlay: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: '40%',
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-  },
-  info: {
-    padding: 16,
-  },
-  name: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#4AA366',
-    marginBottom: 6,
-  },
-  address: {
-    fontSize: 15,
-    color: '#555',
-    marginBottom: 4,
-  },
-  openTime: {
-    fontSize: 14,
-    color: '#888',
-    marginBottom: 4,
-  },
-  distance: {
-    fontSize: 14,
-    color: '#888',
-    marginBottom: 12,
-  },
-  buttonContainer: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  mapButton: {
+  thumbnail: { width: 60, height: 60, borderRadius: 10, marginRight: 12 },
+  details: { flex: 1 },
+  storeName: { fontSize: 16, fontWeight: '700', marginBottom: 4 },
+  storeAddress: { fontSize: 13, color: '#64748b' },
+  storeDistance: { fontSize: 12, color: '#94a3b8', marginTop: 4 },
+  rowActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#4AA366',
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 10,
+    marginTop: 8,
+    gap: 10,
   },
-  callButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FF6B6B',
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 10,
+  iconAction: {
+    backgroundColor: '#eef2ff',
+    padding: 8,
+    borderRadius: 8,
   },
-  buttonText: {
-    color: '#fff',
-    marginLeft: 8,
-    fontSize: 15,
-    fontWeight: '600',
+  ctaBtn: {
+    backgroundColor: '#10b981',
+    paddingVertical: 8,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    marginLeft: 'auto',
   },
-  emptyText: {
-    fontSize: 16,
-    color: '#888',
-    textAlign: 'center',
-    marginTop: 20,
-  },
+  ctaText: { color: '#fff', fontWeight: '700' },
 });
-
-export default StoreScreen;
