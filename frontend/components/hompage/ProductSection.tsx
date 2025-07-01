@@ -4,7 +4,7 @@ import ProductCard from './ProductCard';
 import { ImageSourcePropType } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { CustomerHomeStackParamList } from '../../navigation/CustomerHomeStack';
+import { CustomerHomeStackParamList } from '../../navigation/customer/CustomerHomeStack';
 
 type Product = {
   name: string;
