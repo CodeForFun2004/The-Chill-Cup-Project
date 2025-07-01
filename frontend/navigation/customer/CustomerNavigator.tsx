@@ -80,7 +80,7 @@ const CustomerNavigator = () => {
     <Tab.Screen name="CustomerHomeStack" component={CustomerHomeStack} /> 
     <Tab.Screen name="Drink" component={DrinkStackNavigator} />
     <Tab.Screen name="Store" component={StoreScreen} />
-    <Tab.Screen name="Promotion" component={PromotionScreen} />
+    {/* <Tab.Screen name="Promotion" component={PromotionScreen} /> */}
     <Tab.Screen 
       name="Profile" 
       component={ProfileNavigator}
