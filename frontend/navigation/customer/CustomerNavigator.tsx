@@ -19,10 +19,10 @@ import PromotionScreen from "../../screens/Customer/PromotionScreen";
 import CartScreen from "../../screens/Customer/CartScreen";
 import CheckoutScreen from "../../screens/Customer/CheckoutScreen";
 import CustomerStackNavigator from "./CustomerStackNavigator";
-import ProfileNavigator from "../ProfileNavigator";
-import { ProfileStackParamList } from "../ProfileNavigator";
-import TestOrderNavigator from "../TestOrderNavigator";
-import DrinkStackNavigator from '../DrinkStackNavigator';
+import ProfileNavigator from "../../navigation/ProfileNavigator";
+import { ProfileStackParamList } from "../../navigation/ProfileNavigator";
+import TestOrderNavigator from "../../navigation/TestOrderNavigator";
+import DrinkStackNavigator from '../CustomerDrinkStackNavigator';
 
 export type CustomerTabParamList = {
   CustomerHomeStack: undefined;
