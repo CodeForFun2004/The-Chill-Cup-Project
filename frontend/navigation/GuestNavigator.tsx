@@ -59,7 +59,7 @@ const GuestNavigator = () => (
     <Tab.Screen name="GuestHomeStack" component={GuestHomeStack} />
     <Tab.Screen name="DrinkCategory" component={DrinkStackNavigator } />
     <Tab.Screen name="Store" component={StoreScreen} />
-    <Tab.Screen name="Promotion" component={PromotionScreen} />
+    {/* <Tab.Screen name="Promotion" component={PromotionScreen} /> */}
     <Tab.Screen name="Profile" component={ProfileScreen} />
   </Tab.Navigator>
 );
