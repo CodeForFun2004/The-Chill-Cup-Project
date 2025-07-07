@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { Modal, View, Text, StyleSheet, Dimensions, TouchableOpacity } from "react-native";
-// import MapView, { Marker } from "react-native-maps";
 import * as Location from "expo-location";
 import { useOrder } from "../../contexts/OrderContext";
 import { STORES } from "../../data/stores";
+// import MapView, { Marker } from "react-native-maps";
 
 const { width, height } = Dimensions.get("window");
 
@@ -42,16 +42,6 @@ export default function StoreMapSelector({ visible, onClose }: { visible: boolea
       <View style={styles.overlay}>
         <View style={styles.container}>
           <Text style={styles.title}>Chọn cửa hàng trên bản đồ</Text>
-          <MapView style={styles.map} region={region}>
-            {STORES.map((s) => (
-              <Marker
-                key={s.id}
-                coordinate={{ latitude: s.latitude, longitude: s.longitude }}
-                pinColor={selected?.id === s.id ? "green" : "red"}
-                onPress={() => setSelected(s)}
-              />
-            ))}
-          </MapView>
 
           {selected && (
             <View style={styles.detail}>

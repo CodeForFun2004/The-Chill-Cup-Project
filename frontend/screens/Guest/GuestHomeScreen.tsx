@@ -21,7 +21,7 @@ const GuestHomeScreen = () => {
 
         <OrderMethodBlock />
         {method === 'delivery' && <DeliveryAddressBlock />}
-        {method === 'pickup' && store && <PickupStoreBlock />}
+        {method === 'pickup' && <PickupStoreBlock />}
 
         <PromoBanner />
         <CategoryCardBlock />

@@ -15,6 +15,8 @@ import {
 import * as Location from 'expo-location';
 import { Ionicons } from '@expo/vector-icons';
 import { STORES } from '../../data/stores';
+import { useOrder } from "../../contexts/OrderContext";
+import { useNavigation } from "@react-navigation/native";
 
 interface Coordinates {
   latitude: number;
@@ -68,6 +70,8 @@ export default function StoreScreen() {
   const [search, setSearch] = useState('');
   const [location, setLocation] = useState<Coordinates | null>(null);
   const [selectedStore, setSelectedStore] = useState<Store | null>(null);
+  const { setStore } = useOrder();
+  const navigation = useNavigation();
 
   useEffect(() => {
     (async () => {
@@ -112,13 +116,23 @@ export default function StoreScreen() {
   }, [search, fullSortedStores, nearestStore]);
 
   const handleSelect = (store: Store): void => {
-    setSelectedStore(store);
-    Alert.alert('Đã chọn', `Địa chỉ giao hàng: ${store.name}`);
+    setStore(store);
+  
+    Alert.alert(
+      'Đã chọn',
+      `Địa chỉ giao hàng: ${store.name}`,
+      [
+        {
+          text: 'OK',
+          onPress: () => navigation.goBack(),
+        },
+      ],
+      { cancelable: false }
+    );
   };
 
   const StoreCard = ({
     store,
-    isNearest,
   }: {
     store: Store;
     isNearest?: boolean;
@@ -126,7 +140,6 @@ export default function StoreScreen() {
     <View
       style={[
         styles.cardBase,
-        isNearest ? styles.nearestCard : styles.normalCard,
       ]}
     >
       <Image source={store.image} style={styles.thumbnail} />
@@ -203,9 +216,18 @@ export default function StoreScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f8fafc' },
-  header: { padding: 20 },
-  greeting: { fontSize: 20, fontWeight: '700', marginBottom: 10 },
+  container: {
+    flex: 1,
+    backgroundColor: '#f8fafc',
+  },
+  header: {
+    width: '100%',
+  },
+  greeting: {
+    fontSize: 20,
+    fontWeight: '700',
+    marginBottom: 10,
+  },
   searchBox: {
     backgroundColor: '#fff',
     borderRadius: 12,
@@ -214,25 +236,22 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#e2e8f0',
   },
-  sectionTitle: { fontSize: 18, fontWeight: '700', marginVertical: 10 },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginVertical: 10,
+  },
   cardBase: {
     flexDirection: 'row',
     backgroundColor: '#fff',
     borderRadius: 14,
     marginBottom: 16,
-    padding: 18,
+    padding: 12,
     shadowColor: '#000',
     shadowOpacity: 0.04,
     shadowRadius: 4,
     elevation: 2,
     alignItems: 'center',
-    minHeight: 100, // Đảm bảo chiều cao tối thiểu
-  },
-  normalCard: {
-    borderWidth: 0,
-  },
-  nearestCard: {
-    paddingHorizontal: 20, // Đồng bộ với cardBase
   },
   thumbnail: {
     width: 60,
@@ -242,11 +261,22 @@ const styles = StyleSheet.create({
   },
   details: {
     flex: 1,
-    minHeight: 80, // Đảm bảo khu vực nội dung đồng đều
+    minHeight: 80,
   },
-  storeName: { fontSize: 16, fontWeight: '700', marginBottom: 4 },
-  storeAddress: { fontSize: 13, color: '#64748b' },
-  storeDistance: { fontSize: 12, color: '#94a3b8', marginTop: 4 },
+  storeName: {
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  storeAddress: {
+    fontSize: 13,
+    color: '#64748b',
+  },
+  storeDistance: {
+    fontSize: 12,
+    color: '#94a3b8',
+    marginTop: 4,
+  },
   rowActions: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -265,7 +295,10 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginLeft: 'auto',
   },
-  ctaText: { color: '#fff', fontWeight: '700' },
+  ctaText: {
+    color: '#fff',
+    fontWeight: '700',
+  },
   emptyContainer: {
     alignItems: 'center',
     marginTop: 40,
@@ -278,3 +311,4 @@ const styles = StyleSheet.create({
     backgroundColor: '#fef08a',
   },
 });
+

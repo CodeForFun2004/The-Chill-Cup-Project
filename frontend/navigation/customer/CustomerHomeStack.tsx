@@ -4,6 +4,8 @@ import CustomerHomeScreen from '../../screens/Customer/CustomerHomeScreen';
 import VouchersScreen from '../../screens/Customer/VouchersScreen';
 import LoyaltyScreen from '../../screens/Customer/LoyaltyScreen';
 import DrinkDetailScreen from '../../screens/Customer/DrinkDetailScreen';
+import StoreScreen from '../../screens/Customer/StoreScreen';
+import PickupStoreBlock from '../../components/delivery-pickup/PickupStoreBlock';
 
 export interface Drink {
   id: string;
@@ -17,6 +19,7 @@ export type CustomerHomeStackParamList = {
   CustomerHomeScreen: undefined;
   Vouchers: undefined;
   LoyaltyScreen: undefined;
+  StoreScreen: undefined;
   DrinkDetailScreen: {
     drink: {
       id: string;
@@ -36,6 +39,7 @@ const CustomerHomeStack = () => {
       <Stack.Screen name="DrinkDetailScreen" component={DrinkDetailScreen} />
       <Stack.Screen name="Vouchers" component={VouchersScreen} />
       <Stack.Screen name="LoyaltyScreen" component={LoyaltyScreen} />
+      <Stack.Screen name="StoreScreen" component={StoreScreen} />
     </Stack.Navigator>
   );
 };
