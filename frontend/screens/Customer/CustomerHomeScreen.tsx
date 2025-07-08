@@ -1,3 +1,4 @@
+
 import React from "react";
 import { View, ScrollView, StyleSheet, Text } from "react-native";
 import Header from "../../components/hompage/Header";
@@ -6,9 +7,13 @@ import PromoBanner from "../../components/hompage/PromoBanner";
 import CategoryCardBlock from "../../components/hompage/search-card/CategoryCardBlock";
 import ProductSection from "../../components/hompage/ProductSection";
 import AfterLoginBanner from "../../components/hompage/AfterLoginBanner";
-import { drinkData } from '../../data/drinks';
+import { drinkData } from "../../data/drinks";
+import { useOrder } from "../../contexts/OrderContext";
 
-const CustomerHomeScreen = () => {
+
+export default function CustomerHomeScreen() {
+  const { method, store, deliveryAddress } = useOrder();
+
   return (
     <View style={styles.container}>
       <Header />
@@ -18,26 +23,17 @@ const CustomerHomeScreen = () => {
         <CategoryCardBlock />
 
         {drinkData.map((section) => (
-          <ProductSection
-            title={section.category}
-            products={section.drinks}
-          />
+          <ProductSection title={section.category} products={section.drinks} />
         ))}
 
         <View style={{ height: 80 }} />
+
       </ScrollView>
     </View>
   );
-};
-
-export default CustomerHomeScreen;
+}
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 12,
-  },
-  scrollContent: {
-    paddingBottom: 16,
-  },
+  container: { flex: 1, padding: 12 },
+  scrollContent: { paddingBottom: 20 },
 });

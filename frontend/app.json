@@ -19,7 +19,8 @@
         "foregroundImage": "./assets/splash-logo5.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.anonymous.chillcup"
     },
     "web": {
       "favicon": "./assets/splash-logo5.png"

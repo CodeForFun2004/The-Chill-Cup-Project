@@ -8,7 +8,7 @@ import { Ionicons, MaterialCommunityIcons, Entypo, FontAwesome } from '@expo/vec
 import StoreScreen from '../screens/Customer/StoreScreen';
 import PromotionScreen from '../screens/Customer/PromotionScreen';
 import ProfileScreen from '../screens/Customer/ProfileScreen';
-import GuestDrinkStackParamList from '../navigation/GuestDrinkStackNavigator';
+import GuestDrinkStackParamList from '../navigation/guest/GuestDrinkStackNavigator';
 import DrinkStackNavigator from './CustomerDrinkStackNavigator';
 import GuestHomeStack from './GuestHomeStack';
 
@@ -59,7 +59,7 @@ const GuestNavigator = () => (
     <Tab.Screen name="GuestHomeStack" component={GuestHomeStack} />
     <Tab.Screen name="DrinkCategory" component={DrinkStackNavigator } />
     <Tab.Screen name="Store" component={StoreScreen} />
-    <Tab.Screen name="Promotion" component={PromotionScreen} />
+    {/* <Tab.Screen name="Promotion" component={PromotionScreen} /> */}
     <Tab.Screen name="Profile" component={ProfileScreen} />
   </Tab.Navigator>
 );
