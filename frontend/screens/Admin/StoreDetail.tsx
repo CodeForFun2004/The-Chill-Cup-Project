@@ -10,10 +10,12 @@ import {
   Alert,
   Modal,
   TextInput,
+  Linking,
+  DeviceEventEmitter,
 } from 'react-native';
-import { Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
+import { Picker } from '@react-native-picker/picker';
 
 type Store = {
   id: string;
@@ -28,35 +30,33 @@ type Store = {
 };
 
 type StoreDetailRouteProp = RouteProp<
-  { StoreDetail: { store: Store; onUpdate: (store: Store) => void } },
+  { StoreDetail: { store: Store } },
   'StoreDetail'
 >;
+
+const staffList = [
+  { id: 'nv001', name: 'Nguyễn Văn A' },
+  { id: 'nv002', name: 'Trần Thị B' },
+  { id: 'nv003', name: 'Lê Văn C' },
+];
 
 const StoreDetail: React.FC = () => {
   const navigation = useNavigation();
   const route = useRoute<StoreDetailRouteProp>();
-  const { store, onUpdate } = route.params;
+  const { store } = route.params;
 
   const [storeDetail, setStoreDetail] = useState<Store>(store);
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [editForm, setEditForm] = useState<Partial<Store>>(storeDetail);
 
-  const toggleActive = () => {
-    const updatedStore = { ...storeDetail, isActive: !storeDetail.isActive };
-    setStoreDetail(updatedStore);
-    onUpdate(updatedStore);
+  const emitUpdate = (updated: Store) => {
+    DeviceEventEmitter.emit('storeUpdated', updated);
+    setStoreDetail(updated);
   };
 
-  const handleBack = () => navigation.goBack();
-
-  const openMap = () => {
-    Alert.alert('Điều hướng đến bản đồ', 'Chức năng này sẽ mở Google Maps.', [
-      {
-        text: 'OK',
-        onPress: () => Linking.openURL(storeDetail.mapUrl),
-      },
-      { text: 'Huỷ', style: 'cancel' },
-    ]);
+  const toggleActive = () => {
+    const updated = { ...storeDetail, isActive: !storeDetail.isActive };
+    emitUpdate(updated);
   };
 
   const handleEditSave = () => {
@@ -65,15 +65,22 @@ const StoreDetail: React.FC = () => {
       editForm.address &&
       editForm.contact &&
       editForm.openHours &&
-      editForm.mapUrl
+      editForm.mapUrl &&
+      editForm.staff
     ) {
       const updated = { ...storeDetail, ...editForm };
-      setStoreDetail(updated);
-      onUpdate(updated);
+      emitUpdate(updated);
       setEditModalVisible(false);
     } else {
-      Alert.alert('Lỗi', 'Vui lòng điền đầy đủ thông tin.');
+      Alert.alert('Lỗi', 'Vui lòng nhập đầy đủ thông tin.');
     }
+  };
+
+  const openMap = () => {
+    Alert.alert('Mở bản đồ', 'Bạn có muốn xem trên Google Maps?', [
+      { text: 'Huỷ', style: 'cancel' },
+      { text: 'OK', onPress: () => Linking.openURL(storeDetail.mapUrl) },
+    ]);
   };
 
   return (
@@ -91,7 +98,9 @@ const StoreDetail: React.FC = () => {
         <Text style={styles.value}>{storeDetail.contact}</Text>
 
         <Text style={styles.label}>👤 Nhân viên quản lý:</Text>
-        <Text style={styles.value}>{storeDetail.staff}</Text>
+        <Text style={styles.value}>
+          {staffList.find(s => s.id === storeDetail.staff)?.name || 'Không rõ'}
+        </Text>
 
         <TouchableOpacity style={styles.mapButton} onPress={openMap}>
           <Ionicons name="location-outline" size={20} color="#fff" />
@@ -100,14 +109,16 @@ const StoreDetail: React.FC = () => {
 
         <View style={styles.switchRow}>
           <Text style={styles.label}>Trạng thái hoạt động:</Text>
-          <Switch value={storeDetail.isActive} onValueChange={toggleActive} />
+          <Switch
+            value={storeDetail.isActive}
+            onValueChange={() => toggleActive()}
+          />
         </View>
 
         {!storeDetail.isActive && (
           <Text style={styles.inactiveWarning}>⚠️ Cửa hàng này đã ngưng hoạt động</Text>
         )}
 
-        {/* Nút chỉnh sửa */}
         <TouchableOpacity
           style={[styles.mapButton, { backgroundColor: '#FFA500', marginTop: 20 }]}
           onPress={() => {
@@ -119,7 +130,7 @@ const StoreDetail: React.FC = () => {
           <Text style={styles.mapText}>Chỉnh sửa</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.backButton} onPress={handleBack}>
+        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
           <Text style={styles.backText}>⬅ Quay lại</Text>
         </TouchableOpacity>
       </View>
@@ -128,6 +139,7 @@ const StoreDetail: React.FC = () => {
       <Modal visible={editModalVisible} animationType="slide">
         <ScrollView style={{ padding: 20 }}>
           <Text style={styles.header}>Chỉnh sửa cửa hàng</Text>
+
           <TextInput
             placeholder="Tên cửa hàng"
             value={editForm.name}
@@ -158,6 +170,23 @@ const StoreDetail: React.FC = () => {
             onChangeText={(text) => setEditForm({ ...editForm, mapUrl: text })}
             style={styles.input}
           />
+
+          <View style={[styles.input, { height: 54, justifyContent: 'center', marginBottom: 12 }]}>
+            <Picker
+              selectedValue={editForm.staff}
+              onValueChange={(itemValue) => setEditForm({ ...editForm, staff: itemValue })}
+              style={{ height: 50 }}
+            >
+              <Picker.Item label="Chọn nhân viên quản lý" value={undefined} />
+              {staffList.map(staff => (
+                <Picker.Item
+                  key={staff.id}
+                  label={`${staff.name} (${staff.id})`}
+                  value={staff.id}
+                />
+              ))}
+            </Picker>
+          </View>
 
           <TouchableOpacity style={styles.saveButton} onPress={handleEditSave}>
             <Text style={styles.buttonText}>Lưu thay đổi</Text>
