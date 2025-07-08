@@ -1,10 +1,15 @@
 import React from 'react';
 import { View, StyleSheet, TouchableOpacity, Text } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { useSelector } from 'react-redux';
 import { MaterialIcons } from '@expo/vector-icons';
+import { RootState } from '../../redux/store';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { CustomerStackParamList } from '../../navigation/customer/CustomerStackNavigator';
 
 const OrderSuccessActions = () => {
-  const navigation = useNavigation();
+  const order = useSelector((state: RootState) => state.order);
+  const navigation = useNavigation<NativeStackNavigationProp<CustomerStackParamList>>();
 
   const handleBackToHome = () => {
     const parentNav = navigation.getParent();
@@ -12,22 +17,23 @@ const OrderSuccessActions = () => {
       screen: 'CustomerHomeScreen',
     });
   };
-  
 
   const handleTrackOrder = () => {
-    const parentNav = navigation.getParent();
-    parentNav?.navigate('CartStack', {
-      screen: 'Cart',
-    });
+    if (!order || !order.id) {
+      console.warn('Không có đơn hàng hợp lệ để theo dõi.');
+      return;
+    }
+
+    navigation.navigate('OrderTracking', { order });
   };
-  
+
   return (
     <View>
       <TouchableOpacity
         style={[styles.button, styles.outlineButton]}
         onPress={handleBackToHome}
       >
-        <Text style={styles.outlineText}>← Back to Home</Text>
+        <Text style={styles.outlineText}>← Quay về trang chủ</Text>
       </TouchableOpacity>
 
       <TouchableOpacity
@@ -35,7 +41,7 @@ const OrderSuccessActions = () => {
         onPress={handleTrackOrder}
       >
         <MaterialIcons name="local-shipping" size={20} color="#fff" style={{ marginRight: 6 }} />
-        <Text style={styles.primaryText}>Track Order</Text>
+        <Text style={styles.primaryText}>Theo dõi đơn hàng</Text>
       </TouchableOpacity>
     </View>
   );

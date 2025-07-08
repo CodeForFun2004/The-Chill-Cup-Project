@@ -30,17 +30,17 @@ const WelcomeScreen = () => {
         />
 
 
-      <Text style={styles.title}>Mood on! ChillCup on!</Text>
+      <Text style={styles.title}>ChillCup — uống là chill!</Text>
       <Text style={styles.subtitle}>
-        Sip the vibe. Feel the good.{'\n'} Let the day begin.
+       Nhấp một ngụm, chill cả ngày.
       </Text>
 
       <TouchableOpacity style={styles.signInButton} onPress={goToLogin}>
-        <Text style={styles.signInText}>Sign In</Text>
+        <Text style={styles.signInText}>Đăng Nhập</Text>
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.createAccountButton} onPress={goToRegister}>
-        <Text style={styles.createAccountText}>Create account</Text>
+        <Text style={styles.createAccountText}>Tạo tài khoản</Text>
       </TouchableOpacity>
     </View>
   );

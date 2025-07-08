@@ -12,26 +12,30 @@ import {
 
 import { View, Text, StyleSheet, Platform } from "react-native";
 import { NavigatorScreenParams } from "@react-navigation/native";
-
 import CustomerHomeStack from "./CustomerHomeStack";
-import StoreScreen from "../screens/Customer/StoreScreen";
-import PromotionScreen from "../screens/Customer/PromotionScreen";
-import CartScreen from "../screens/Customer/CartScreen";
-import CheckoutScreen from "../screens/Customer/CheckoutScreen";
+import DrinkCategoryScreen from '../../screens/Customer/DrinkCategoryScreen';
+import StoreScreen from "../../screens/Customer/StoreScreen";
+import PromotionScreen from "../../screens/Customer/PromotionScreen";
+import CartScreen from "../../screens/Customer/CartScreen";
+import CheckoutScreen from "../../screens/Customer/CheckoutScreen";
 import CustomerStackNavigator from "./CustomerStackNavigator";
-import ProfileNavigator from "./ProfileNavigator";
-import { ProfileStackParamList } from "./ProfileNavigator";
-
+import ProfileNavigator from "../../navigation/ProfileNavigator";
+import { ProfileStackParamList } from "../../navigation/ProfileNavigator";
+import TestOrderNavigator from "../../navigation/TestOrderNavigator";
+import DrinkStackNavigator from '../CustomerDrinkStackNavigator';
 
 export type CustomerTabParamList = {
   CustomerHomeStack: undefined;
+  Drink: undefined;
   Store: undefined;
   Promotion: undefined;
   Profile: NavigatorScreenParams<ProfileStackParamList>;
+  SearchScreen: undefined;
   CartStack: undefined;
+  // OrderStack: undefined;
 };
 
-const Tab = createBottomTabNavigator<CustomerTabParamList>();
+const Tab = createBottomTabNavigator<CustomerTabParamList>(); 
 
 const CustomerNavigator = () => {
   return (
@@ -48,6 +52,9 @@ const CustomerNavigator = () => {
           case "CustomerHomeStack":
             icon = <Ionicons name="home-outline" size={22} color={focused ? "#4AA366" : "#888"} />;
             break;
+          case 'Drink':
+            icon = <Ionicons name="cafe-outline" size={22} color={focused ? '#4AA366' : '#888'} />;
+            break;
           case "Store":
             icon = <MaterialCommunityIcons name="storefront-outline" size={22} color={focused ? "#4AA366" : "#888"} />;
             break;
@@ -60,15 +67,20 @@ const CustomerNavigator = () => {
           case "CartStack":
             icon = <MaterialCommunityIcons name="cart" size={22} color={focused ? '#4AA366' : '#888'} />;
             break;
+            // case "OrderStack":
+            // icon = <MaterialCommunityIcons name="cart" size={22} color={focused ? '#4AA366' : '#888'} />;
+            // break;
         }
 
         return <View style={styles.iconWrapper}>{icon}</View>;
       },
     })}
   >
-    <Tab.Screen name="CustomerHomeStack" component={CustomerHomeStack} />
+
+    <Tab.Screen name="CustomerHomeStack" component={CustomerHomeStack} /> 
+    <Tab.Screen name="Drink" component={DrinkStackNavigator} />
     <Tab.Screen name="Store" component={StoreScreen} />
-    <Tab.Screen name="Promotion" component={PromotionScreen} />
+    {/* <Tab.Screen name="Promotion" component={PromotionScreen} /> */}
     <Tab.Screen 
       name="Profile" 
       component={ProfileNavigator}
@@ -86,6 +98,7 @@ const CustomerNavigator = () => {
         },
       })}
     />
+    {/* <Tab.Screen name="OrderStack" component={TestOrderNavigator} /> */}
   </Tab.Navigator>
 )};
 

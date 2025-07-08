@@ -1,8 +1,8 @@
 // navigation/StaffNavigator.tsx
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import StaffDashboard from '../screens/Staff/Dashboard';
-import OrderManagement from '../screens/Staff/Orders';
+import StaffDashboard from '../../screens/Staff/StaffDashboard';
+import OrderManagement from '../../screens/Staff/StaffOrders';
 
 const Stack = createNativeStackNavigator();
 

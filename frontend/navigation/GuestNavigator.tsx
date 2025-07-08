@@ -1,17 +1,20 @@
 // navigation/GuestNavigator.tsx
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { NavigatorScreenParams } from '@react-navigation/native';
 import { View, StyleSheet, Platform } from 'react-native';
 import { Ionicons, MaterialCommunityIcons, Entypo, FontAwesome } from '@expo/vector-icons';
 
-import GuestHomeScreen from '../screens/Guest/GuestHomeScreen';
 import StoreScreen from '../screens/Customer/StoreScreen';
 import PromotionScreen from '../screens/Customer/PromotionScreen';
 import ProfileScreen from '../screens/Customer/ProfileScreen';
-
+import GuestDrinkStackParamList from '../navigation/guest/GuestDrinkStackNavigator';
+import DrinkStackNavigator from './CustomerDrinkStackNavigator';
+import GuestHomeStack from './GuestHomeStack';
 
 export type GuestTabParamList = {
-  GuestHomeScreen: undefined;
+  GuestHomeStack: undefined;
+  DrinkCategory: NavigatorScreenParams<typeof GuestDrinkStackParamList>;
   Store: undefined;
   Promotion: undefined;
   Profile: undefined;
@@ -30,8 +33,11 @@ const GuestNavigator = () => (
         let icon;
 
         switch (route.name) {
-          case 'GuestHomeScreen':
+          case 'GuestHomeStack':
             icon = <Ionicons name="home-outline" size={22} color={focused ? '#4AA366' : '#888'} />;
+            break;
+          case 'DrinkCategory':
+            icon = <Ionicons name="cafe-outline" size={22} color={focused ? '#4AA366' : '#888'} />;
             break;
           case 'Store':
             icon = <MaterialCommunityIcons name="storefront-outline" size={22} color={focused ? '#4AA366' : '#888'} />;
@@ -50,11 +56,11 @@ const GuestNavigator = () => (
       },
     })}
   >
-    <Tab.Screen name="GuestHomeScreen" component={GuestHomeScreen} />
+    <Tab.Screen name="GuestHomeStack" component={GuestHomeStack} />
+    <Tab.Screen name="DrinkCategory" component={DrinkStackNavigator } />
     <Tab.Screen name="Store" component={StoreScreen} />
-    <Tab.Screen name="Promotion" component={PromotionScreen} />
+    {/* <Tab.Screen name="Promotion" component={PromotionScreen} /> */}
     <Tab.Screen name="Profile" component={ProfileScreen} />
-    
   </Tab.Navigator>
 );
 

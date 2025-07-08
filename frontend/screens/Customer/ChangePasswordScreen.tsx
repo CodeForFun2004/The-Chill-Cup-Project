@@ -24,28 +24,28 @@ const ChangePasswordScreen = () => {
 
   const handleSave = () => {
     if (!formData.currentPassword || !formData.newPassword || !formData.confirmPassword) {
-      Alert.alert('Error', 'Please fill in all fields');
+      Alert.alert('Lỗi', 'Vui lòng điền đầy đủ các trường');
       return;
     }
 
     if (formData.newPassword !== formData.confirmPassword) {
-      Alert.alert('Error', 'New passwords do not match');
+      Alert.alert('Lỗi', 'Mật khẩu mới không khớp');
       return;
     }
 
     if (formData.newPassword.length < 6) {
-      Alert.alert('Error', 'Password must be at least 6 characters long');
+      Alert.alert('Lỗi', 'Mật khẩu phải có ít nhất 6 ký tự');
       return;
     }
 
-    Alert.alert('Success', 'Password updated successfully');
+    Alert.alert('Success', 'Đổi mật khẩu thành công');
   };
 
   return (
     <View style={styles.container}>
       <View style={styles.form}>
         <View style={styles.inputGroup}>
-          <Text style={styles.label}>Current Password</Text>
+          <Text style={styles.label}>Mật khẩu hiện tại</Text>
           <View style={styles.passwordContainer}>
             <TextInput
               style={styles.passwordInput}
@@ -53,7 +53,7 @@ const ChangePasswordScreen = () => {
               onChangeText={(text) =>
                 setFormData((prev) => ({ ...prev, currentPassword: text }))
               }
-              placeholder="Enter current password"
+              placeholder="Nhập mật khẩu hiện tại"
               secureTextEntry={!showPasswords.current}
             />
             <TouchableOpacity
@@ -74,7 +74,7 @@ const ChangePasswordScreen = () => {
         </View>
 
         <View style={styles.inputGroup}>
-          <Text style={styles.label}>New Password</Text>
+          <Text style={styles.label}>Mật khẩu mới</Text>
           <View style={styles.passwordContainer}>
             <TextInput
               style={styles.passwordInput}
@@ -82,7 +82,7 @@ const ChangePasswordScreen = () => {
               onChangeText={(text) =>
                 setFormData((prev) => ({ ...prev, newPassword: text }))
               }
-              placeholder="Enter new password"
+              placeholder="Nhập mật khẩu mới"
               secureTextEntry={!showPasswords.new}
             />
             <TouchableOpacity
@@ -103,7 +103,7 @@ const ChangePasswordScreen = () => {
         </View>
 
         <View style={styles.inputGroup}>
-          <Text style={styles.label}>Confirm New Password</Text>
+          <Text style={styles.label}>Xác nhận mật khẩu mới</Text>
           <View style={styles.passwordContainer}>
             <TextInput
               style={styles.passwordInput}
@@ -111,7 +111,7 @@ const ChangePasswordScreen = () => {
               onChangeText={(text) =>
                 setFormData((prev) => ({ ...prev, confirmPassword: text }))
               }
-              placeholder="Confirm new password"
+              placeholder="Nhập lại mật khẩu mới"
               secureTextEntry={!showPasswords.confirm}
             />
             <TouchableOpacity
@@ -133,7 +133,7 @@ const ChangePasswordScreen = () => {
       </View>
 
       <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-        <Text style={styles.saveButtonText}>Update Password</Text>
+        <Text style={styles.saveButtonText}>Lưu thay đổi</Text>
       </TouchableOpacity>
     </View>
   );

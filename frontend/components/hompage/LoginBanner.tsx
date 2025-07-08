@@ -14,7 +14,7 @@ const LoginBanner = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Wellcome to ChillCup</Text>
+      <Text style={styles.title}>Welcome to ChillCup</Text>
       <Text style={styles.description}>
         Sử dụng app để tích điểm và đổi những ưu đãi chỉ dành riêng cho thành viên bạn nhé!
       </Text>

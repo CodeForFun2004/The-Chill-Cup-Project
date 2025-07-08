@@ -5,8 +5,8 @@ import { MaterialIcons } from '@expo/vector-icons';
 const OrderSuccessHeader = () => (
   <View style={styles.container}>
     <MaterialIcons name="check-circle" size={72} color="#4CAF50" />
-    <Text style={styles.title}>Order Confirmed!</Text>
-    <Text style={styles.subtitle}>Thank you for your order! Your food is on its way.</Text>
+    <Text style={styles.title}>Đơn hàng đã được xác nhận!</Text>
+    <Text style={styles.subtitle}>Cảm ơn bạn đã đặt hàng! Đơn hàng đang được giao đến bạn.</Text>
   </View>
 );
 

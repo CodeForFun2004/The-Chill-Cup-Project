@@ -21,7 +21,9 @@ const Header = () => {
         >
           <Entypo name="ticket" size={18} color="#000" />
         </Pressable>
-        <Pressable style={styles.iconWrapper}>
+        <Pressable style={styles.iconWrapper}  onPress={() =>
+    (navigation as any).navigate('CartStack', { screen: 'Notifications' })
+  }>
           <Feather name="bell" size={18} color="#000" />
         </Pressable>
       </View>

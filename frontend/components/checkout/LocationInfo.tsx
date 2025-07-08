@@ -28,7 +28,7 @@ const LocationInfo: React.FC<Props> = ({ location, phone, setLocation, setPhone 
 
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>Location</Text>
+      <Text style={styles.label}>Địa chỉ</Text>
       <View style={styles.row}>
         <Text style={styles.value}>{location}</Text>
         <TouchableOpacity onPress={() => openModal('location')}>
@@ -36,7 +36,7 @@ const LocationInfo: React.FC<Props> = ({ location, phone, setLocation, setPhone 
         </TouchableOpacity>
       </View>
 
-      <Text style={[styles.label, { marginTop: 16 }]}>Phone Number</Text>
+      <Text style={[styles.label, { marginTop: 16 }]}>Số điện thoại</Text>
       <View style={styles.row}>
         <Text style={styles.value}>{phone}</Text>
         <TouchableOpacity onPress={() => openModal('phone')}>
@@ -54,7 +54,6 @@ const LocationInfo: React.FC<Props> = ({ location, phone, setLocation, setPhone 
     </View>
   );
 };
-
 
 export default LocationInfo;
 

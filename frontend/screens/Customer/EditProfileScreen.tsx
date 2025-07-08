@@ -71,7 +71,7 @@ const EditProfileScreen = () => {
   };
 
   const handleSave = () => {
-    Alert.alert('Success', 'Profile updated successfully');
+    Alert.alert('Success', 'Cập nhật hồ sơ thành công');
   };
 
   return (
@@ -91,18 +91,18 @@ const EditProfileScreen = () => {
             )}
             <TouchableOpacity style={styles.changePhotoButton} onPress={handleImagePick}>
               <MaterialIcons name="camera-alt" size={20} color="#fff" />
-              <Text style={styles.changePhotoText}>Change Photo</Text>
+              <Text style={styles.changePhotoText}>Đổi ảnh đại diện</Text>
             </TouchableOpacity>
           </View>
 
           <View style={styles.form}>
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Full Name</Text>
+              <Text style={styles.label}>Họ và tên</Text>
               <TextInput
                 style={styles.input}
                 value={formData.name}
                 onChangeText={(text) => setFormData(prev => ({ ...prev, name: text }))}
-                placeholder="Enter your full name"
+                placeholder="Nhập họ và tên"
               />
             </View>
 
@@ -112,24 +112,24 @@ const EditProfileScreen = () => {
                 style={styles.input}
                 value={formData.email}
                 onChangeText={(text) => setFormData(prev => ({ ...prev, email: text }))}
-                placeholder="Enter your email"
+                placeholder="Nhập email"
                 keyboardType="email-address"
               />
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Phone Number</Text>
+              <Text style={styles.label}>Số điện thoại</Text>
               <TextInput
                 style={styles.input}
                 value={formData.phone}
                 onChangeText={(text) => setFormData(prev => ({ ...prev, phone: text }))}
-                placeholder="Enter your phone number"
+                placeholder="Nhập số điện thoại"
                 keyboardType="phone-pad"
               />
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Date of Birth</Text>
+              <Text style={styles.label}>Ngày sinh</Text>
               <TouchableOpacity
                 style={styles.input}
                 onPress={() => setShowDatePicker(true)}
@@ -147,7 +147,7 @@ const EditProfileScreen = () => {
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Gender</Text>
+              <Text style={styles.label}>Giới tính</Text>
               <View style={styles.genderContainer}>
                 <TouchableOpacity
                   style={[
@@ -162,7 +162,7 @@ const EditProfileScreen = () => {
                       formData.gender === 'Male' && styles.genderButtonTextActive,
                     ]}
                   >
-                    Male
+                    Nam
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -178,19 +178,19 @@ const EditProfileScreen = () => {
                       formData.gender === 'Female' && styles.genderButtonTextActive,
                     ]}
                   >
-                    Female
+                    Nữ
                   </Text>
                 </TouchableOpacity>
               </View>
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Address</Text>
+              <Text style={styles.label}>Địa chỉ</Text>
               <TextInput
                 style={[styles.input, styles.addressInput]}
                 value={formData.address}
                 onChangeText={(text) => setFormData(prev => ({ ...prev, address: text }))}
-                placeholder="Enter your address"
+                placeholder="Nhập địa chỉ"
                 multiline
                 numberOfLines={3}
               />
@@ -204,7 +204,7 @@ const EditProfileScreen = () => {
             onPress={handleSave}
             activeOpacity={0.8}
           >
-            <Text style={styles.saveButtonText}>Save Changes</Text>
+            <Text style={styles.saveButtonText}>Lưu thay đổi</Text>
           </TouchableOpacity>
         </View>
       </View>
