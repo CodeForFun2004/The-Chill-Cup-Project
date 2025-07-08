@@ -5,7 +5,7 @@ const FavoritesScreen = () => {
   return (
     <ScrollView style={styles.container}>
       <View style={styles.content}>
-        <Text style={styles.emptyText}>No favorites yet</Text>
+        <Text style={styles.emptyText}>Chưa có mục nào được yêu thích</Text>
       </View>
     </ScrollView>
   );

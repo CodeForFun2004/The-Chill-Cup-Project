@@ -3,19 +3,26 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import {
   Ionicons,
   MaterialCommunityIcons,
-  FontAwesome5,
 } from "@expo/vector-icons";
-import { View, StyleSheet } from "react-native";
+import { View, StyleSheet, Text } from "react-native";
 
 // Import các screen của admin
-import AdminDashboardNavigator from "./AdminDashboardNavigator";
-import AdminProductNavigator from "./AdminProductNavigator";
-import AdminStoreNavigator from "./AdminStoreNavigator";
+import AdminDashboard from "../../screens/Admin/AdminDashboard";
+import ManageProducts from "../../screens/Admin/ManageProducts";
+import ManageOrders from "../../screens/Admin/ManageOrders";
+import ManageStores from "../../screens/Admin/ManageStores";
+import ManagePromotions from "../../screens/Admin/ManagePromotions";
+import ManageDelivery from "../../screens/Admin/ManageDelivery";
+import ToppingManagementScreen from '../../screens/Admin/ToppingManagementScreen';
 
 export type AdminTabParamList = {
   Dashboard: undefined;
-  ProductsOrders: undefined;
-  StoreDelivery: undefined;
+  Products: undefined;
+  Orders: undefined;
+  Stores: undefined;
+  Promotions: undefined;
+  Delivery: undefined;
+  ToppingManagement: undefined;
 };
 
 const Tab = createBottomTabNavigator<AdminTabParamList>();
@@ -25,38 +32,35 @@ const AdminNavigator = () => {
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarShowLabel: false,
+        tabBarShowLabel: true, 
         tabBarStyle: styles.tabBar,
+        tabBarLabelStyle: styles.tabBarLabel,
         tabBarIcon: ({ focused }) => {
           let icon;
+          const color = focused ? "#4AA366" : "#888";
+          const size = 24;
 
           switch (route.name) {
             case "Dashboard":
-              icon = (
-                <Ionicons
-                  name="stats-chart"
-                  size={22}
-                  color={focused ? "#4AA366" : "#888"}
-                />
-              );
+              icon = <Ionicons name="stats-chart" size={size} color={color} />;
               break;
-            case "ProductsOrders":
-              icon = (
-                <Ionicons
-                  name="cube-outline"
-                  size={22}
-                  color={focused ? "#4AA366" : "#888"}
-                />
-              );
+            case "Products":
+              icon = <Ionicons name="cube" size={size} color={color} />;
               break;
-            case "StoreDelivery":
-              icon = (
-                <MaterialCommunityIcons
-                  name="truck-delivery-outline"
-                  size={22}
-                  color={focused ? "#4AA366" : "#888"}
-                />
-              );
+            case "Orders":
+              icon = <Ionicons name="receipt" size={size} color={color} />;
+              break;
+            case "Stores":
+              icon = <MaterialCommunityIcons name="store" size={size} color={color} />;
+              break;
+            case "Promotions":
+              icon = <Ionicons name="pricetags" size={size} color={color} />;
+              break;
+            case "Delivery":
+              icon = <MaterialCommunityIcons name="truck-delivery" size={size} color={color} />;
+              break;
+            case "ToppingManagement":
+              icon = <MaterialCommunityIcons name="food-variant" size={size} color={color} />;
               break;
           }
 
@@ -64,44 +68,13 @@ const AdminNavigator = () => {
         },
       })}
     >
-      <Tab.Screen
-        name="Dashboard"
-        component={AdminDashboardNavigator}
-        listeners={({ navigation }) => ({
-          tabPress: (e) => {
-            e.preventDefault();
-            (navigation as any).navigate("Dashboard", {
-              screen: "AdminDashboard", // 👈 điều hướng đến màn cụ thể
-            });
-          },
-        })}
-      />
-
-      <Tab.Screen
-        name="ProductsOrders"
-        component={AdminProductNavigator}
-        listeners={({ navigation }) => ({
-          tabPress: (e) => {
-            e.preventDefault();
-            (navigation as any).navigate("ProductsOrders", {
-              screen: "ManageProducts", // 👈 mặc định load lại từ đầu
-            });
-          },
-        })}
-      />
-
-      <Tab.Screen
-        name="StoreDelivery"
-        component={AdminStoreNavigator}
-        listeners={({ navigation }) => ({
-          tabPress: (e) => {
-            e.preventDefault();
-            (navigation as any).navigate("StoreDelivery", {
-              screen: "ManageStores", // 👈 ép về màn hình gốc
-            });
-          },
-        })}
-      />
+      <Tab.Screen name="Dashboard" component={AdminDashboard} />
+      <Tab.Screen name="Products" component={ManageProducts} />
+      <Tab.Screen name="Orders" component={ManageOrders} />
+      <Tab.Screen name="Stores" component={ManageStores} />
+      <Tab.Screen name="Promotions" component={ManagePromotions} />
+      <Tab.Screen name="Delivery" component={ManageDelivery} />
+      <Tab.Screen name="ToppingManagement" component={ToppingManagementScreen} options={{ title: 'Quản lý Topping' }} />
     </Tab.Navigator>
   );
 };
@@ -111,7 +84,7 @@ export default AdminNavigator;
 const styles = StyleSheet.create({
   tabBar: {
     backgroundColor: "#fff",
-    height: 60,
+    height: 70, // Increased height for labels
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     borderTopWidth: 0,
@@ -124,9 +97,18 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowOffset: { width: 0, height: -2 },
     shadowRadius: 6,
+    paddingTop: 5,
+    paddingBottom: 5,
   },
   iconWrapper: {
     alignItems: "center",
     justifyContent: "center",
+    flex: 1,
+  },
+  tabBarLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    marginTop: -5,
+    marginBottom: 5,
   },
 });

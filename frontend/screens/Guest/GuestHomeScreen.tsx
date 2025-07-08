@@ -1,17 +1,28 @@
-import React from "react";
+import React, { useState } from "react";
 import { View, ScrollView, StyleSheet } from "react-native";
 import Header from "../../components/hompage/Header";
 import LoginBanner from "../../components/hompage/LoginBanner";
 import PromoBanner from "../../components/hompage/PromoBanner";
 import CategoryCardBlock from "../../components/hompage/search-card/CategoryCardBlock";
 import ProductSection from "../../components/hompage/ProductSection";
+import OrderMethodBlock from '../../components/delivery-pickup/OrderMethodBlock';
+import DeliveryAddressBlock from '../../components/delivery-pickup/DeliveryAddressBlock';
+import PickupStoreBlock from '../../components/delivery-pickup/PickupStoreBlock';
+import { useOrder } from '../../contexts/OrderContext';
 
 const GuestHomeScreen = () => {
+  const { method, store, deliveryAddress } = useOrder();
+
   return (
     <View style={styles.container}>
       <Header />
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <LoginBanner />
+
+        <OrderMethodBlock />
+        {method === 'delivery' && <DeliveryAddressBlock />}
+        {method === 'pickup' && store && <PickupStoreBlock />}
+
         <PromoBanner />
         <CategoryCardBlock />
 
@@ -36,7 +47,7 @@ const GuestHomeScreen = () => {
             },
           ]}
         />
-        
+
         {/* MATCHA */}
         <ProductSection
           title="Matcha"
@@ -225,7 +236,7 @@ const GuestHomeScreen = () => {
             },
           ]}
         />
-         <View style={{ height: 80 }} />
+        <View style={{ height: 80 }} />
       </ScrollView>
     </View>
   );

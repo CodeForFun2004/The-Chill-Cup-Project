@@ -15,6 +15,7 @@ import type { AuthStackParamList } from './AuthNavigator';
 import AdminNavigator from './admin/AdminNavigator';
 import StaffNavigator from './staff/StaffNavigator';
 import ShipperNavigator from './shipper/ShipperNavigator';
+import StoreDetail from '../screens/Admin/StoreDetail';
 
 export type RootStackParamList = {
   Splash: undefined;
@@ -22,6 +23,30 @@ export type RootStackParamList = {
   WelcomeScreen: undefined;
   Auth: NavigatorScreenParams<AuthStackParamList>;
   GuestHomeScreen: undefined;
+  StoreDetail: {
+    store: {
+      id: string;
+      name: string;
+      address: string;
+      contact: string;
+      openHours: string;
+      isActive: boolean;
+      mapUrl: string;
+      image: any; // Thay thế bằng kiểu ảnh phù hợp
+      staff?: string; // Có thể có hoặc không
+    };
+    onUpdate: (store: {
+      id: string;
+      name: string;
+      address: string;
+      contact: string;
+      openHours: string;
+      isActive: boolean;
+      mapUrl: string;
+      image: any; // Thay thế bằng kiểu ảnh phù hợp
+      staff?: string; // Có thể có hoặc không
+    }) => void;
+  };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -43,6 +68,7 @@ const RootNavigator = () => {
       <Stack.Screen name="WelcomeScreen" component={WelcomeScreen} />
       <Stack.Screen name="Auth" component={AuthNavigator} />
       <Stack.Screen name="GuestHomeScreen" component={GuestHomeScreen} />
+      <Stack.Screen name="StoreDetail" component={StoreDetail} />
     </Stack.Navigator>
   );
 };

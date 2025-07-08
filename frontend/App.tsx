@@ -10,6 +10,7 @@ import OrderHistoryScreen from './screens/Customer/OrderHistoryScreen';
 import OrderTrackingScreen from './screens/Customer/OrderTrackingScreen';
 import TestOrderNavigator from './navigation/TestOrderNavigator';
 import { NavigationContainer } from '@react-navigation/native';
+import { OrderProvider } from './contexts/OrderContext';
 
 // const mockOrder = {
 //   id: '1',
@@ -35,7 +36,7 @@ import { NavigationContainer } from '@react-navigation/native';
 
 export default function App() {
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}> 
+    <GestureHandlerRootView style={{ flex: 1 }}>
       <Provider store={store}>
         <SafeAreaProvider>
           <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
@@ -43,10 +44,12 @@ export default function App() {
             {/* <NavigationContainer>
               <TestOrderNavigator />
             </NavigationContainer> */}
-            <AppNavigator />
+            <OrderProvider>
+              <AppNavigator />
+            </OrderProvider>
           </SafeAreaView>
         </SafeAreaProvider>
-      </Provider> 
+      </Provider>
     </GestureHandlerRootView>
   );
 }

@@ -24,21 +24,21 @@ const ResetPasswordScreen = () => {
 
   const handleReset = () => {
     if (!password || !confirm) {
-      Alert.alert('Error', 'Please fill out all fields.');
+      Alert.alert('Lỗi', 'Vui lòng điền đầy đủ thông tin.');
       return;
     }
 
     if (password !== confirm) {
-      Alert.alert('Error', 'Passwords do not match.');
+      Alert.alert('Lỗi', 'Mật khẩu không khớp.');
       return;
     }
 
     if (password.length < 8) {
-      Alert.alert('Error', 'Password must be at least 8 characters.');
+      Alert.alert('Lỗi', 'Mật khẩu phải có ít nhất 8 ký tự.');
       return;
     }
 
-    Alert.alert('Success', 'Your password has been reset.');
+    Alert.alert('Thành công', 'Mật khẩu của bạn đã được đặt lại.');
     navigation.navigate('PasswordChanged');
   };
 
@@ -59,15 +59,15 @@ const ResetPasswordScreen = () => {
         />
 
         {/* Title */}
-        <Text style={styles.title}>Reset password</Text>
-        <Text style={styles.subtitle}>Please type something you’ll remember</Text>
+        <Text style={styles.title}>Đặt lại mật khẩu</Text>
+        <Text style={styles.subtitle}>Vui lòng nhập mật khẩu dễ nhớ đối với bạn</Text>
 
         {/* New Password */}
-        <Text style={styles.label}>New password</Text>
+        <Text style={styles.label}>Mật khẩu mới</Text>
         <View style={styles.passwordContainer}>
           <TextInput
             style={styles.passwordInput}
-            placeholder="must be 8 characters"
+            placeholder="ít nhất 8 ký tự"
             placeholderTextColor="#999"
             secureTextEntry={secure1}
             value={password}
@@ -79,11 +79,11 @@ const ResetPasswordScreen = () => {
         </View>
 
         {/* Confirm Password */}
-        <Text style={styles.label}>Confirm new password</Text>
+        <Text style={styles.label}>Xác nhận mật khẩu mới</Text>
         <View style={styles.passwordContainer}>
           <TextInput
             style={styles.passwordInput}
-            placeholder="repeat password"
+            placeholder="nhập lại mật khẩu"
             placeholderTextColor="#999"
             secureTextEntry={secure2}
             value={confirm}
@@ -96,14 +96,14 @@ const ResetPasswordScreen = () => {
 
         {/* Button */}
         <TouchableOpacity style={styles.resetBtn} onPress={handleReset}>
-          <Text style={styles.resetText}>Reset password</Text>
+          <Text style={styles.resetText}>Đặt lại mật khẩu</Text>
         </TouchableOpacity>
 
         {/* Link to Login */}
         <View style={styles.footer}>
-          <Text style={styles.footerText}>Already have an account?</Text>
+          <Text style={styles.footerText}>Đã có tài khoản?</Text>
           <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-            <Text style={styles.loginLink}> Log in</Text>
+            <Text style={styles.loginLink}> Đăng nhập</Text>
           </TouchableOpacity>
         </View>
 
