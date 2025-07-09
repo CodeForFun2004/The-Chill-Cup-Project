@@ -9,7 +9,7 @@ import {
   StyleSheet,
   Image,
   ScrollView,
-  Alert
+  Alert,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -23,6 +23,7 @@ interface Voucher {
   minOrder: string;
   expiry: string;
   isExpired: boolean;
+  isLock?: boolean; // ✅ NEW
   pointsRequired: number;
   image?: any;
 }
@@ -42,8 +43,9 @@ const sampleVouchers: Voucher[] = [
     minOrder: '100000đ',
     expiry: '2024-12-31',
     isExpired: false,
+    isLock: false,
     pointsRequired: 200,
-    image: require('../../assets/images/voucher/discount-20.png')
+    image: require('../../assets/images/voucher/discount-20.png'),
   },
   {
     id: '2',
@@ -54,70 +56,49 @@ const sampleVouchers: Voucher[] = [
     minOrder: '200000đ',
     expiry: '2024-06-30',
     isExpired: true,
+    isLock: true, // ✅ Locked
     pointsRequired: 300,
-    image: require('../../assets/images/voucher/discount-20.png')
+    image: require('../../assets/images/voucher/discount-20.png'),
   },
   {
-  id: '3',
-  code: 'TCC-000003',
-  title: 'Giảm 10% cho đơn từ 50k',
-  description: 'Áp dụng toàn bộ cửa hàng',
-  discount: '10%',
-  minOrder: '50000đ',
-  expiry: '2025-08-31',
-  isExpired: false,
-  pointsRequired: 100,
-  image: require('../../assets/images/voucher/discount-20.png')
-},
-{
-  id: '4',
-  code: 'TCC-000004',
-  title: 'Miễn phí vận chuyển',
-  description: 'Dành cho đơn hàng trên 150k',
-  discount: '100%',
-  minOrder: '150000đ',
-  expiry: '2025-09-15',
-  isExpired: false,
-  pointsRequired: 250,
-  image: require('../../assets/images/voucher/discount-20.png')
-},
-{
-  id: '5',
-  code: 'TCC-000005',
-  title: 'Giảm 50% cho khách hàng VIP',
-  description: 'Chỉ áp dụng cho thành viên VIP',
-  discount: '50%',
-  minOrder: '300000đ',
-  expiry: '2024-05-30',
-  isExpired: true,
-  pointsRequired: 500,
-  image: require('../../assets/images/voucher/discount-20.png')
-},
-{
-  id: '6',
-  code: 'TCC-000006',
-  title: 'Giảm 25% cho đơn hàng combo',
-  description: 'Áp dụng khi mua combo bất kỳ',
-  discount: '25%',
-  minOrder: '180000đ',
-  expiry: '2025-12-31',
-  isExpired: false,
-  pointsRequired: 220,
-  image: require('../../assets/images/voucher/discount-20.png')
-},
-{
-  id: '7',
-  code: 'TCC-000007',
-  title: 'Giảm 15% khi thanh toán Momo',
-  description: 'Chỉ áp dụng với ví Momo',
-  discount: '15%',
-  minOrder: '100000đ',
-  expiry: '2024-07-01',
-  isExpired: true,
-  pointsRequired: 180,
-  image: require('../../assets/images/voucher/discount-20.png')
-},
-
+    id: '3',
+    code: 'TCC-000003',
+    title: 'Giảm 10% cho đơn từ 50k',
+    description: 'Áp dụng toàn bộ cửa hàng',
+    discount: '10%',
+    minOrder: '50000đ',
+    expiry: '2025-08-31',
+    isExpired: false,
+    isLock: false,
+    pointsRequired: 100,
+    image: require('../../assets/images/voucher/discount-20.png'),
+  },
+  {
+    id: '4',
+    code: 'TCC-000004',
+    title: 'Miễn phí vận chuyển',
+    description: 'Dành cho đơn hàng trên 150k',
+    discount: '100%',
+    minOrder: '150000đ',
+    expiry: '2025-09-15',
+    isExpired: false,
+    isLock: false,
+    pointsRequired: 250,
+    image: require('../../assets/images/voucher/discount-20.png'),
+  },
+  {
+    id: '5',
+    code: 'TCC-000005',
+    title: 'Giảm 50% cho khách hàng VIP',
+    description: 'Chỉ áp dụng cho thành viên VIP',
+    discount: '50%',
+    minOrder: '300000đ',
+    expiry: '2024-05-30',
+    isExpired: true,
+    isLock: true,
+    pointsRequired: 500,
+    image: require('../../assets/images/voucher/discount-20.png'),
+  },
 ];
 
 const ManagePromotions = () => {
@@ -169,8 +150,10 @@ const ManagePromotions = () => {
       Alert.alert('Lỗi', 'Điểm đổi hoặc đơn tối thiểu không được là số âm.');
       return;
     }
+
     const today = new Date().toISOString().split('T')[0];
     const isExpired = editFields.expiry < today;
+    const isLock = isExpired;
 
     const save = () => {
       if (isCreating) {
@@ -183,8 +166,9 @@ const ManagePromotions = () => {
           minOrder: `${minOrderVal}đ`,
           expiry: editFields.expiry,
           isExpired,
+          isLock,
           pointsRequired: points,
-          image: require('../../assets/images/voucher/discount-20.png')
+          image: require('../../assets/images/voucher/discount-20.png'),
         };
         setVouchers(prev => [...prev, newVoucher]);
         setModalVisible(false);
@@ -200,8 +184,9 @@ const ManagePromotions = () => {
               ...editFields,
               discount: `${editFields.discount}%`,
               isExpired,
+              isLock,
               minOrder: `${minOrderVal}đ`,
-              pointsRequired: points
+              pointsRequired: points,
             }
           : v
       );
@@ -220,12 +205,17 @@ const ManagePromotions = () => {
   };
 
   const renderVoucher = ({ item }: { item: Voucher }) => (
-    <TouchableOpacity style={[styles.voucherCard, item.isExpired && styles.expired]} onPress={() => handlePress(item)}>
+    <TouchableOpacity
+      style={[styles.voucherCard, item.isExpired && styles.expired]}
+      onPress={() => handlePress(item)}
+    >
       <View style={styles.voucherContent}>
         <View style={styles.voucherLeft}>
           {item.image && <Image source={item.image} style={styles.voucherImage} />}
           <View style={styles.voucherInfo}>
-            <Text style={styles.voucherTitle}>{item.title} - {item.code}</Text>
+            <Text style={styles.voucherTitle}>
+              {item.title} - {item.code}
+            </Text>
             <Text style={styles.voucherDescription}>{item.description}</Text>
             <View style={styles.voucherDetails}>
               <View style={styles.detailItem}>
@@ -262,28 +252,24 @@ const ManagePromotions = () => {
           setVouchers(prev => prev.filter(v => v.id !== id));
           setModalVisible(false);
           setSelectedVoucher(null);
-        }
-      }
+        },
+      },
     ]);
   };
 
   const handleCancelCreate = () => {
     if (isCreating && isFormFilled()) {
-      Alert.alert(
-        'Xác nhận hủy tạo',
-        'Bạn đã nhập thông tin. Hủy sẽ làm mất dữ liệu. Bạn có chắc chắn?',
-        [
-          { text: 'Tiếp tục chỉnh sửa', style: 'cancel' },
-          {
-            text: 'Hủy tạo',
-            style: 'destructive',
-            onPress: () => {
-              setModalVisible(false);
-              setIsCreating(false);
-            }
-          }
-        ]
-      );
+      Alert.alert('Xác nhận hủy tạo', 'Bạn đã nhập thông tin. Hủy sẽ làm mất dữ liệu. Bạn có chắc chắn?', [
+        { text: 'Tiếp tục chỉnh sửa', style: 'cancel' },
+        {
+          text: 'Hủy tạo',
+          style: 'destructive',
+          onPress: () => {
+            setModalVisible(false);
+            setIsCreating(false);
+          },
+        },
+      ]);
     } else {
       setModalVisible(false);
     }
@@ -293,7 +279,7 @@ const ManagePromotions = () => {
     <View style={styles.container}>
       <Text style={styles.title}>Quản Lý Khuyến Mãi</Text>
       <FlatList
-        data={vouchers}
+        data={vouchers.filter(v => !v.isLock)} // ✅ Chỉ hiển thị voucher chưa bị khóa
         keyExtractor={(item) => item.id}
         renderItem={renderVoucher}
         contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
