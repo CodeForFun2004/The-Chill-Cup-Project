@@ -1,8 +1,10 @@
 import { useState } from "react"
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, StatusBar, Switch, Alert } from "react-native"
-import { useNavigation } from "@react-navigation/native"
+import { useNavigation, CommonActions } from "@react-navigation/native"
 import type { StackNavigationProp } from "@react-navigation/stack"
 import type { ShipperStackParamList } from "../../navigation/shipper/ShipperNavigator"
+import { useDispatch } from 'react-redux';
+import { logout } from '../../redux/slices/authSlice';
 
 type NavigationProp = StackNavigationProp<ShipperStackParamList, "ShipperDashboard">
 
@@ -30,6 +32,7 @@ const ShipperDashboard = () => {
   const [isOnline, setIsOnline] = useState(true)
   const [currentEarnings, setCurrentEarnings] = useState(125000)
   const [completedOrders, setCompletedOrders] = useState(8)
+  const dispatch = useDispatch();
 
   const pendingOrders: DeliveryOrder[] = [
     {
@@ -89,31 +92,67 @@ const ShipperDashboard = () => {
     }
   }
 
+  const handleLogout = () => {
+    Alert.alert('Đăng xuất', 'Bạn có chắc chắn muốn đăng xuất?', [
+      { text: 'Huỷ' },
+      {
+        text: 'Đăng xuất',
+        onPress: () => {
+          dispatch(logout());
+          navigation.dispatch(
+            CommonActions.reset({
+              index: 0,
+              routes: [{ name: 'ShipperDashboard' }],
+            })
+          );
+        },
+        style: 'destructive',
+      },
+    ]);
+  }
+
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#FF6B35" />
 
       {/* Header */}
       <View style={styles.header}>
+        {/* Left: Avatar + Tên */}
         <View style={styles.headerLeft}>
-          <Image source={{ uri: "https://cl-wpml.careerlink.vn/cam-nang-viec-lam/wp-content/uploads/2023/02/28141652/3692229-1-1024x1024.jpg" }} style={styles.avatar} />
+          <Image
+            source={{
+              uri: "https://cl-wpml.careerlink.vn/cam-nang-viec-lam/wp-content/uploads/2023/02/28141652/3692229-1-1024x1024.jpg",
+            }}
+            style={styles.avatar}
+          />
           <View>
             <Text style={styles.greeting}>Xin chào!</Text>
             <Text style={styles.shipperName}>Shipper</Text>
           </View>
         </View>
 
-        <View style={styles.onlineToggle}>
-          <Text style={[styles.statusText, { color: isOnline ? "#4CAF50" : "#757575" }]}>
+        {/* Center: Online Toggle */}
+        <View style={styles.headerCenter}>
+          <Text
+            style={[
+              styles.statusText,
+              { color: isOnline ? "#4CAF50" : "#757575" },
+            ]}
+          >
             {isOnline ? "Online" : "Offline"}
           </Text>
           <Switch
             value={isOnline}
             onValueChange={toggleOnlineStatus}
             trackColor={{ false: "#E0E0E0", true: "#4CAF50" }}
-            thumbColor={isOnline ? "#FFFFFF" : "#FFFFFF"}
+            thumbColor="#FFFFFF"
           />
         </View>
+
+        {/* Right: Logout */}
+        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+          <Text style={styles.logoutText}>Đăng xuất</Text>
+        </TouchableOpacity>
       </View>
 
       {/* Stats Cards */}
@@ -203,10 +242,21 @@ const styles = StyleSheet.create({
     backgroundColor: "#FF6B35",
     paddingHorizontal: 20,
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
+    justifyContent: "space-between",
   },
   headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+  },
+  headerCenter: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  headerRight: {
     flexDirection: "row",
     alignItems: "center",
   },
@@ -228,6 +278,13 @@ const styles = StyleSheet.create({
   },
   onlineToggle: {
     alignItems: "center",
+    marginRight: 12,
+  },
+  logoutButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    borderRadius: 6,
   },
   statusText: {
     fontSize: 12,
@@ -397,6 +454,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#999999",
     textAlign: "center",
+  },
+  logoutText: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "600",
   },
 })
 
