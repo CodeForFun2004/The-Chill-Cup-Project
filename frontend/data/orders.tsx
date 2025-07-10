@@ -128,3 +128,10 @@ export let orders: Order[] = [...mockOrderHistory];
 export const addOrder = (newOrder: Order) => {
   orders.unshift(newOrder); // thêm lên đầu
 };
+
+export const updateOrderStatus = (id: string, newStatus: Order['status']) => {
+  const index = orders.findIndex((o) => o.id === id);
+  if (index >= 0) {
+    orders[index].status = newStatus;
+  }
+};

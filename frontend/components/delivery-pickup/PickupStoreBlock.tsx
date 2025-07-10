@@ -1,13 +1,18 @@
 import React, { useState, useEffect } from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import * as Location from "expo-location";
+import { Ionicons } from "@expo/vector-icons";
+import { useNavigation, RouteProp, NavigationProp, useRoute } from "@react-navigation/native";
 import { useOrder } from "../../contexts/OrderContext";
 import { STORES } from "../../data/stores";
-import StoreMapSelector from "./StoreMapSelector";
+import { CustomerHomeStackParamList } from "../../navigation/customer/CustomerHomeStack";
 
-const getDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
-    const toRad = (value: number) => (value * Math.PI) / 180;
-    const R = 6371;
+type StoreRouteProp = RouteProp<CustomerHomeStackParamList, 'StoreScreen'>;
+type StoreNavigationProp = NavigationProp<CustomerHomeStackParamList, 'StoreScreen'>;
+
+const getDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+    const toRad = (value: number): number => (value * Math.PI) / 180;
+    const R = 6371; // Radius of the Earth in kilometers
     const dLat = toRad(lat2 - lat1);
     const dLon = toRad(lon2 - lon1);
     const a =
@@ -21,7 +26,8 @@ const getDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => 
 
 export default function PickupStoreBlock() {
     const { store, setStore } = useOrder();
-    const [showMap, setShowMap] = useState(false);
+    const route = useRoute<StoreRouteProp>();
+    const navigation = useNavigation<StoreNavigationProp>();
 
     useEffect(() => {
         (async () => {
@@ -45,20 +51,52 @@ export default function PickupStoreBlock() {
 
     return (
         <View style={styles.container}>
-            <Text style={styles.label}>Cửa hàng bạn sẽ đến:</Text>
-            <Text style={styles.storeName}>{store?.name}</Text>
-            <TouchableOpacity onPress={() => setShowMap(true)}>
-                <Text style={styles.changeText}>Đổi cửa hàng</Text>
-            </TouchableOpacity>
-
-            <StoreMapSelector visible={showMap} onClose={() => setShowMap(false)} />
+            <View style={styles.row}>
+                <Ionicons name="storefront" size={22} color="#6366f1" style={styles.icon} />
+                <View style={styles.info}>
+                    <Text style={styles.label}>Cửa hàng bạn sẽ đến</Text>
+                    <Text style={styles.storeName}>{store?.name || "Đang tìm cửa hàng gần nhất..."}</Text>
+                </View>
+                <TouchableOpacity onPress={() => navigation.navigate("StoreScreen")}>
+                    <Text style={styles.changeText}>Đổi</Text>
+                </TouchableOpacity>
+            </View>
         </View>
     );
 }
 
 const styles = StyleSheet.create({
-    container: { backgroundColor: "#fff", padding: 16, borderRadius: 12, marginBottom: 16 },
-    label: { fontSize: 14, fontWeight: "600", marginBottom: 4 },
-    storeName: { fontSize: 16, fontWeight: "700" },
-    changeText: { fontSize: 13, color: "#6366f1", marginTop: 4 },
+    container: {
+        backgroundColor: "#fff",
+        padding: 14,
+        borderRadius: 12,
+        marginBottom: 16,
+        borderWidth: 1,
+        borderColor: "#e2e8f0",
+    },
+    row: {
+        flexDirection: "row",
+        alignItems: "center",
+    },
+    icon: {
+        marginRight: 12,
+    },
+    info: {
+        flex: 1,
+    },
+    label: {
+        fontSize: 12,
+        color: "#64748b",
+        marginBottom: 2,
+    },
+    storeName: {
+        fontSize: 15,
+        fontWeight: "700",
+        color: "#0f172a",
+    },
+    changeText: {
+        fontSize: 13,
+        color: "#6366f1",
+        fontWeight: "600",
+    },
 });
