@@ -10,6 +10,7 @@ import {
   Image,
   ScrollView,
   Alert,
+  Switch, // import thêm switch
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -23,7 +24,7 @@ interface Voucher {
   minOrder: string;
   expiry: string;
   isExpired: boolean;
-  isLock?: boolean; // ✅ NEW
+  isLock?: boolean;
   pointsRequired: number;
   image?: any;
 }
@@ -56,7 +57,7 @@ const sampleVouchers: Voucher[] = [
     minOrder: '200000đ',
     expiry: '2024-06-30',
     isExpired: true,
-    isLock: true, // ✅ Locked
+    isLock: true,
     pointsRequired: 300,
     image: require('../../assets/images/voucher/discount-20.png'),
   },
@@ -206,7 +207,10 @@ const ManagePromotions = () => {
 
   const renderVoucher = ({ item }: { item: Voucher }) => (
     <TouchableOpacity
-      style={[styles.voucherCard, item.isExpired && styles.expired]}
+      style={[
+        styles.voucherCard,
+        (item.isExpired || item.isLock) && styles.expired,
+      ]}
       onPress={() => handlePress(item)}
     >
       <View style={styles.voucherContent}>
@@ -233,10 +237,17 @@ const ManagePromotions = () => {
           <Text style={styles.discountText}>{item.discount}</Text>
         </View>
       </View>
-      {item.isExpired && (
+      {(item.isExpired || item.isLock) && (
         <View style={styles.usedOverlay}>
-          <MaterialIcons name="cancel" size={24} color="red" />
-          <Text style={styles.usedText}>Voucher đã hết hạn</Text>
+          <MaterialIcons name="cancel" size={24} color={item.isExpired ? "red" : "#faad14"} />
+          <Text style={[
+            styles.usedText,
+            { color: item.isLock ? '#fa541c' : 'red' }
+          ]}>
+            {item.isExpired
+              ? 'Voucher đã hết hạn'
+              : 'Voucher đã bị khóa'}
+          </Text>
         </View>
       )}
     </TouchableOpacity>
@@ -279,7 +290,7 @@ const ManagePromotions = () => {
     <View style={styles.container}>
       <Text style={styles.title}>Quản Lý Khuyến Mãi</Text>
       <FlatList
-        data={vouchers.filter(v => !v.isLock)} // ✅ Chỉ hiển thị voucher chưa bị khóa
+        data={vouchers}
         keyExtractor={(item) => item.id}
         renderItem={renderVoucher}
         contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
@@ -367,6 +378,33 @@ const ManagePromotions = () => {
                     <Text style={styles.label}>Mã khuyến mãi</Text>
                     <Text style={styles.text}>{selectedVoucher?.code}</Text>
 
+                    {/* Switch lock/unlock */}
+                    <Text style={styles.label}>Trạng thái khóa</Text>
+                    <View style={{flexDirection: 'row', alignItems: 'center', marginBottom: 12}}>
+                      <Switch
+                        value={selectedVoucher?.isLock || false}
+                        onValueChange={(val) => {
+                          setVouchers(vouchers =>
+                            vouchers.map(v =>
+                              v.id === selectedVoucher?.id ? { ...v, isLock: val } : v
+                            )
+                          );
+                          setSelectedVoucher(prev =>
+                            prev ? { ...prev, isLock: val } : prev
+                          );
+                          Alert.alert('Thông báo', val ? 'Voucher đã bị khóa' : 'Voucher đã được mở khóa');
+                        }}
+                        disabled={selectedVoucher?.isExpired}
+                      />
+                      <Text style={{
+                        marginLeft: 8,
+                        color: selectedVoucher?.isLock ? '#fa541c' : 'green',
+                        fontWeight: 'bold'
+                      }}>
+                        {selectedVoucher?.isLock ? 'Đã bị khóa' : 'Đang mở'}
+                      </Text>
+                    </View>
+
                     <View style={styles.buttonRow}>
                       <TouchableOpacity style={[styles.viewButton, styles.primaryButton]} onPress={() => setIsEditing(true)}>
                         <Text style={styles.viewButtonText}>Chỉnh sửa</Text>
@@ -406,7 +444,7 @@ const styles = StyleSheet.create({
   voucherRight: { alignItems: 'center', justifyContent: 'center', marginLeft: 16 },
   discountText: { fontSize: 18, fontWeight: 'bold', color: '#4AA366' },
   usedOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(255, 255, 255, 0.85)', borderRadius: 12, alignItems: 'center', justifyContent: 'center', gap: 8 },
-  usedText: { color: 'red', fontSize: 14, fontWeight: '600' },
+  usedText: { fontSize: 14, fontWeight: '600' },
   input: { borderBottomWidth: 1, borderBottomColor: '#ccc', marginBottom: 10, padding: 8, fontSize: 14, color: '#333' },
   card: { backgroundColor: '#fff', borderRadius: 12, padding: 20, width: 340 },
   label: { fontSize: 15, fontWeight: '600', marginTop: 10, marginBottom: 4, color: '#333' },
