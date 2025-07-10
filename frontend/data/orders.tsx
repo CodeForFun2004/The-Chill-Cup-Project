@@ -17,6 +17,7 @@ export interface Order {
   estimatedDelivery?: string;
   deliveryAddress?: string;
   phoneNumber?: string;
+  rejectionReason?: string;
 }
 // Dữ liệu mẫu ban đầu
 const mockOrderHistory: Order[] = [

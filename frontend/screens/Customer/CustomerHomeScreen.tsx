@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { View, ScrollView, StyleSheet } from 'react-native';
 import Header from '../../components/hompage/Header';
@@ -11,6 +12,9 @@ import PickupStoreBlock from '../../components/delivery-pickup/PickupStoreBlock'
 import { useOrder } from '../../contexts/OrderContext';
 import { drinkData } from '../../data/drinks';
 
+
+
+
 export default function CustomerHomeScreen() {
   const { method, store, deliveryAddress } = useOrder();
 
@@ -20,18 +24,22 @@ export default function CustomerHomeScreen() {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <AfterLoginBanner />
 
+
         <OrderMethodBlock />
         {method === 'delivery' && <DeliveryAddressBlock />}
         {method === 'pickup' && <PickupStoreBlock />}
+
 
         <PromoBanner />
         <CategoryCardBlock />
 
         {drinkData.map((section) => (
+
           <ProductSection key={section.category} title={section.category} products={section.drinks} />
         ))}
 
         <View style={{ height: 30 }} />
+
       </ScrollView>
     </View>
   );
