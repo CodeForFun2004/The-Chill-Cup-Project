@@ -1,7 +1,7 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useSelector } from 'react-redux';
-import { RootState } from '../redux/store';
+import { RootState } from '../redux/rootReducer';
 
 import SplashScreen from '../screens/SplashScreen';
 import WelcomeScreen from '../screens/Auth/WelcomeScreen';

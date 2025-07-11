@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '../../redux/slices/authSlice';
-import { RootState } from '../../redux/store';
+import { RootState } from '../../redux/rootReducer';
 import {
   useNavigation,
   CommonActions,
@@ -44,7 +44,7 @@ type MenuItemType = {
 const ProfileScreen = () => {
   const dispatch = useDispatch();
   const navigation = useNavigation<ProfileScreenNavigationProp>();
-  const userInfo = useSelector((state: RootState) => state.auth.userInfo);
+  const userInfo = useSelector((state: RootState) => state.auth.user);
 
   const handleLogout = () => {
     Alert.alert('Đăng xuất', 'Bạn có chắc chắn muốn đăng xuất?', [

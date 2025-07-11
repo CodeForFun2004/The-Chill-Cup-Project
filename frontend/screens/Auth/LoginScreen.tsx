@@ -9,25 +9,23 @@ import {
   Keyboard,
   Image,
   Alert,
-  Switch,
 } from 'react-native';
 import { Ionicons, FontAwesome } from '@expo/vector-icons';
-import { useDispatch } from 'react-redux';
-import { login } from '../../redux/slices/authSlice';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../navigation/RootNavigator';
 
-import { users } from '../../data/users'; 
-
+import { useAppDispatch, useAppSelector } from '../../redux/hooks';
+import { loginUser } from '../../redux/slices/authSlice';
 
 const LoginScreen = () => {
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [secure, setSecure] = useState(true);
   const [remember, setRemember] = useState(true);
+  const { loading } = useAppSelector((state) => state.auth);
 
   const handleLogin = () => {
     if (!username || !password) {
@@ -35,19 +33,17 @@ const LoginScreen = () => {
       return;
     }
 
-    const foundUser = users.find(
-      (user) => user.username === username && user.password === password
-    );
-  
-    if (foundUser) {
-      dispatch(login({
-        role: foundUser.role,
-        userInfo: { name: foundUser.name, id: foundUser.id },
-      }));
-      navigation.reset({ index: 0, routes: [{ name: 'Main' }] });
-    } else {
-      Alert.alert('Lỗi', 'Username hoặc mật khẩu không đúng.');
-    }
+    dispatch(loginUser({ usernameOrEmail: username, password }))
+      .unwrap()
+      .then(() => {
+        if (remember) {
+          // Nếu muốn lưu thêm flag remember, có thể dùng AsyncStorage tại đây
+        }
+        navigation.reset({ index: 0, routes: [{ name: 'Main' }] });
+      })
+      .catch((err) => {
+        Alert.alert('Đăng nhập thất bại', err);
+      });
   };
 
   return (
@@ -65,38 +61,37 @@ const LoginScreen = () => {
 
         {/* Username */}
         <Text style={styles.label}>Tên đăng nhập</Text>
-          <TextInput
-              style={styles.input}
-              placeholder="Tên đăng nhập"
-              value={username}
-              onChangeText={setUsername}
-              autoCapitalize="none"
+        <TextInput
+          style={styles.input}
+          placeholder="Tên đăng nhập"
+          value={username}
+          onChangeText={setUsername}
+          autoCapitalize="none"
         />
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.navigate('WelcomeScreen')}
-        > 
+        >
           <View style={styles.backIconWrapper}>
-          <Ionicons name="chevron-back" size={20} color="#333" />
+            <Ionicons name="chevron-back" size={20} color="#333" />
           </View>
         </TouchableOpacity>
 
         {/* Password */}
         <Text style={styles.label}>Mật khẩu</Text>
-       <View style={styles.passwordContainer}>
-  <TextInput
-    style={styles.passwordInput}
-    placeholder="Mật Khẩu"
-    placeholderTextColor="#999"
-    secureTextEntry={secure}
-    value={password}
-    onChangeText={setPassword}
-  />
-  <TouchableOpacity style={styles.eyeButton} onPress={() => setSecure(!secure)}>
-    <Ionicons name={secure ? 'eye-off' : 'eye'} size={20} color="#555" />
-  </TouchableOpacity>
-</View>
-
+        <View style={styles.passwordContainer}>
+          <TextInput
+            style={styles.passwordInput}
+            placeholder="Mật khẩu"
+            placeholderTextColor="#999"
+            secureTextEntry={secure}
+            value={password}
+            onChangeText={setPassword}
+          />
+          <TouchableOpacity style={styles.eyeButton} onPress={() => setSecure(!secure)}>
+            <Ionicons name={secure ? 'eye-off' : 'eye'} size={20} color="#555" />
+          </TouchableOpacity>
+        </View>
 
         {/* Remember + Forgot */}
         <View style={styles.rememberRow}>
@@ -109,14 +104,14 @@ const LoginScreen = () => {
             />
             <Text style={styles.rememberText}> Lưu tài khoản</Text>
           </View>
-          <TouchableOpacity onPress={() => navigation.navigate('Auth', {screen: 'ForgotPassword',})}>
+          <TouchableOpacity onPress={() => navigation.navigate('Auth', { screen: 'ForgotPassword' })}>
             <Text style={styles.forgotText}>Quên mật khẩu?</Text>
           </TouchableOpacity>
         </View>
 
         {/* Login Button */}
-        <TouchableOpacity style={styles.loginBtn} onPress={handleLogin}>
-          <Text style={styles.loginText}>Đăng nhập</Text>
+        <TouchableOpacity style={styles.loginBtn} onPress={handleLogin} disabled={loading}>
+          <Text style={styles.loginText}>{loading ? 'Đang đăng nhập...' : 'Đăng nhập'}</Text>
         </TouchableOpacity>
 
         {/* Divider */}
@@ -144,10 +139,9 @@ const LoginScreen = () => {
         {/* Sign up */}
         <View style={styles.signupRow}>
           <Text style={styles.signupText}>Chưa có tài khoản?</Text>
-          <TouchableOpacity onPress={() => navigation.navigate('Auth', {screen: 'Register',})}>
-          <Text style={styles.signupLink}> Đăng ký</Text>
-        </TouchableOpacity>
-
+          <TouchableOpacity onPress={() => navigation.navigate('Auth', { screen: 'Register' })}>
+            <Text style={styles.signupLink}> Đăng ký</Text>
+          </TouchableOpacity>
         </View>
       </View>
     </TouchableWithoutFeedback>
@@ -155,6 +149,7 @@ const LoginScreen = () => {
 };
 
 export default LoginScreen;
+
 
 const styles = StyleSheet.create({
   container: {
