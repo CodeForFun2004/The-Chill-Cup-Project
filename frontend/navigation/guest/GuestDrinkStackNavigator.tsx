@@ -2,6 +2,7 @@ import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import DrinkCategoryScreen from '../../screens/Customer/DrinkCategoryScreen';
 import DrinkDetailScreen from '../../screens/Customer/DrinkDetailScreen';
+import { SizeOption } from '../CustomerDrinkStackNavigator';
 
 export type GuestDrinkStackParamList = {
   DrinkCategoryScreen: undefined;
@@ -9,8 +10,15 @@ export type GuestDrinkStackParamList = {
     drink: {
       id: string;
       name: string;
-      price: string;
-      image: any;
+      basePrice: Number;
+      image: string;
+      sizes: SizeOption[];
+      toppingOptions: {
+        _id: string;
+        name: string;
+        price: number;
+        icon?: string;
+      }[];
     };
   };
 };

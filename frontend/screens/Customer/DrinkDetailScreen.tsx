@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import {
-  View, Text, Image, StyleSheet, TouchableOpacity, ScrollView, 
+  View, Text, Image, StyleSheet, TouchableOpacity,
   Dimensions, Alert, Animated
 } from 'react-native';
 import { RouteProp, useRoute, useNavigation } from '@react-navigation/native';
@@ -12,30 +12,19 @@ import { NavigationProp } from '@react-navigation/native';
 type DrinkDetailRouteProp = RouteProp<DrinkStackParamList, 'DrinkDetailScreen'>;
 type DrinkDetailNavigationProp = NavigationProp<DrinkStackParamList, 'DrinkDetailScreen'>;
 
-const availableToppings = [
-  { id: '1', name: 'Trân châu đen', price: 5000, icon: '⚫' },
-  { id: '2', name: 'Thạch trái cây', price: 7000, icon: '🍓' },
-  { id: '3', name: 'Pudding trứng', price: 6000, icon: '🍮' },
-  { id: '4', name: 'Kem cheese', price: 7000, icon: '🧀' },
-  { id: '5', name: 'Thạch matcha', price: 6000, icon: '🍵' },
-  { id: '6', name: 'Trân châu trắng', price: 6000, icon: '⚪' },
-];
-
-const sizeOptions = [
-  { size: 'S', name: 'Nhỏ', multiplier: 0.8, volume: '350ml' },
-  { size: 'M', name: 'Vừa', multiplier: 1.0, volume: '500ml' },
-  { size: 'L', name: 'Lớn', multiplier: 1.3, volume: '700ml' },
-];
-
 const DrinkDetailScreen = () => {
   const route = useRoute<DrinkDetailRouteProp>();
-  const navigation = useNavigation<DrinkDetailNavigationProp>();
-  const { drink } = route.params;
+  const rawDrink = route.params.drink;
+  const drink = {
+    ...rawDrink,
+    toppingOptions: rawDrink.toppingOptions ?? [],
+  };
 
-  const [selectedSize, setSelectedSize] = useState<'S' | 'M' | 'L'>('M');
+  const navigation = useNavigation<DrinkDetailNavigationProp>();
+  const [selectedSize, setSelectedSize] = useState(
+    drink.sizes.find(s => s.size === 'M')?.size || 'M'
+  );
   const [selectedToppings, setSelectedToppings] = useState<string[]>([]);
-  const [selectedIce, setSelectedIce] = useState('50');
-  const [selectedSweetness, setSelectedSweetness] = useState('50');
   const [quantity, setQuantity] = useState(1);
   const [isFavorite, setIsFavorite] = useState(false);
   const [scrollY] = useState(new Animated.Value(0));
@@ -77,27 +66,28 @@ const DrinkDetailScreen = () => {
   const toggleFavorite = useCallback(() => {
     setIsFavorite(prev => {
       const newFavoriteState = !prev;
-      
+
       Alert.alert(
         newFavoriteState ? 'Đã thêm vào yêu thích' : 'Đã xóa khỏi yêu thích',
         newFavoriteState ? `${drink.name} đã được thêm vào danh sách yêu thích` : `${drink.name} đã được xóa khỏi danh sách yêu thích`,
         [{ text: 'OK', style: 'default' }]
       );
-      
+
       return newFavoriteState;
     });
   }, [drink.name]);
 
   const calculateTotalPrice = useCallback(() => {
-    const basePrice = parseInt(drink.price.replace(/[^\d]/g, ''));
-    const sizeMultiplier = sizeOptions.find(s => s.size === selectedSize)?.multiplier || 1;
+    const basePrice = drink.basePrice;
+    const sizeMultiplier = drink.sizes.find((s) => s.size === selectedSize)?.multiplier || 1;
+
     const toppingsPrice = selectedToppings.reduce((total, toppingId) => {
-      const topping = availableToppings.find(t => t.id === toppingId);
+      const topping = (drink.toppingOptions ?? []).find(t => t._id === toppingId);
       return total + (topping?.price || 0);
     }, 0);
-    
+
     return Math.round((basePrice * sizeMultiplier + toppingsPrice) * quantity);
-  }, [drink.price, selectedSize, selectedToppings, quantity]);
+  }, [drink, selectedSize, selectedToppings, quantity]);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('vi-VN', {
@@ -111,19 +101,15 @@ const DrinkDetailScreen = () => {
       drink,
       size: selectedSize,
       toppings: selectedToppings,
-      ice: selectedIce,
-      sweetness: selectedSweetness,
       quantity,
       totalPrice: calculateTotalPrice()
     };
-    
+
     Alert.alert(
       'Thêm vào giỏ hàng',
       `Đã thêm ${quantity} ${drink.name} vào giỏ hàng!\nTổng: ${formatPrice(calculateTotalPrice())}`,
       [{ text: 'OK', style: 'default' }]
     );
-    
-    console.log('Order details:', orderDetails);
   };
 
   const headerOpacity = scrollY.interpolate({
@@ -146,10 +132,10 @@ const DrinkDetailScreen = () => {
             </TouchableOpacity>
             <Text style={styles.headerTitle} numberOfLines={1}>{drink.name}</Text>
             <TouchableOpacity style={styles.headerFavoriteButton} onPress={toggleFavorite}>
-              <Ionicons 
-                name={isFavorite ? "heart" : "heart-outline"} 
-                size={20} 
-                color={isFavorite ? "#FFB6C1" : "#fff"} 
+              <Ionicons
+                name={isFavorite ? "heart" : "heart-outline"}
+                size={20}
+                color={isFavorite ? "#FFB6C1" : "#fff"}
               />
             </TouchableOpacity>
           </View>
@@ -166,22 +152,22 @@ const DrinkDetailScreen = () => {
       >
         {/* Hero Image Section */}
         <View style={styles.imageContainer}>
-          <Image source={drink.image} style={styles.image} resizeMode="cover" />
+          <Image source={{ uri: drink.image }} style={styles.image} resizeMode="cover" />
           <LinearGradient
             colors={['transparent', 'rgba(0,0,0,0.3)']}
             style={styles.imageOverlay}
           />
-          
+
           {/* Navigation Buttons */}
           <TouchableOpacity style={styles.backButton} onPress={handleGoBack}>
             <Ionicons name="arrow-back" size={24} color="#fff" />
           </TouchableOpacity>
-          
+
           <TouchableOpacity style={styles.favoriteButton} onPress={toggleFavorite}>
-            <Ionicons 
-              name={isFavorite ? "heart" : "heart-outline"} 
-              size={24} 
-              color={isFavorite ? "#FF6B6B" : "#fff"} 
+            <Ionicons
+              name={isFavorite ? "heart" : "heart-outline"}
+              size={24}
+              color={isFavorite ? "#FF6B6B" : "#fff"}
             />
           </TouchableOpacity>
         </View>
@@ -192,7 +178,7 @@ const DrinkDetailScreen = () => {
           <View style={styles.basicInfo}>
             <Text style={styles.name}>{drink.name}</Text>
             <View style={styles.priceRow}>
-              <Text style={styles.basePrice}>{drink.price}</Text>
+              <Text style={styles.basePrice}>{drink.basePrice}</Text>
               <View style={styles.ratingContainer}>
                 <Ionicons name="star" size={16} color="#FFD700" />
                 <Text style={styles.rating}>4.8 (124)</Text>
@@ -204,7 +190,7 @@ const DrinkDetailScreen = () => {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>📝 Mô tả</Text>
             <Text style={styles.description}>
-              Một lựa chọn tuyệt vời cho ngày mới. {drink.name} được pha chế từ những nguyên liệu chất lượng cao, 
+              Một lựa chọn tuyệt vời cho ngày mới. {drink.name} được pha chế từ những nguyên liệu chất lượng cao,
               mang đến hương vị đậm đà và sảng khoái. Thích hợp cho mọi thời điểm trong ngày.
             </Text>
           </View>
@@ -213,9 +199,9 @@ const DrinkDetailScreen = () => {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>📏 Chọn size</Text>
             <View style={styles.optionsGrid}>
-              {sizeOptions.map(option => (
+              {drink.sizes.map((option: { size: boolean | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | Promise<string | number | bigint | boolean | React.ReactPortal | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | null | undefined> | React.Key | null | undefined; name: string | number | bigint | boolean | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<string | number | bigint | boolean | React.ReactPortal | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | null | undefined> | null | undefined; volume: string | number | bigint | boolean | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<string | number | bigint | boolean | React.ReactPortal | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | null | undefined> | null | undefined; }) => (
                 <TouchableOpacity
-                  key={option.size}
+                  // key={option.size}
                   style={[
                     styles.sizeOption,
                     selectedSize === option.size && styles.selectedOption,
@@ -249,25 +235,25 @@ const DrinkDetailScreen = () => {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>🧋 Chọn topping</Text>
             <View style={styles.toppingsGrid}>
-              {availableToppings.map(topping => (
+              {(drink.toppingOptions || []).map(topping => (
                 <TouchableOpacity
-                  key={topping.id}
+                  key={topping._id}
                   style={[
                     styles.toppingOption,
-                    selectedToppings.includes(topping.id) && styles.selectedOption,
+                    selectedToppings.includes(topping._id) && styles.selectedOption,
                   ]}
-                  onPress={() => toggleTopping(topping.id)}
+                  onPress={() => toggleTopping(topping._id)}
                 >
                   <Text style={styles.toppingIcon}>{topping.icon}</Text>
                   <Text style={[
                     styles.toppingName,
-                    selectedToppings.includes(topping.id) && styles.selectedOptionText
+                    selectedToppings.includes(topping._id) && styles.selectedOptionText
                   ]}>
                     {topping.name}
                   </Text>
                   <Text style={[
                     styles.toppingPrice,
-                    selectedToppings.includes(topping.id) && styles.selectedOptionText
+                    selectedToppings.includes(topping._id) && styles.selectedOptionText
                   ]}>
                     +{formatPrice(topping.price)}
                   </Text>
@@ -280,14 +266,14 @@ const DrinkDetailScreen = () => {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>🔢 Số lượng</Text>
             <View style={styles.quantityContainer}>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.quantityButton}
                 onPress={() => adjustQuantity(false)}
               >
                 <Ionicons name="remove" size={20} color="#4AA366" />
               </TouchableOpacity>
               <Text style={styles.quantityText}>{quantity}</Text>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.quantityButton}
                 onPress={() => adjustQuantity(true)}
               >

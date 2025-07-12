@@ -1,27 +1,72 @@
 import React, { useRef, useState, useEffect } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, FlatList,
-  TextInput, StyleSheet, Image
+  TextInput, StyleSheet, Image, ActivityIndicator
 } from 'react-native';
-import { drinkData } from '../../data/drinks';
 import ProductCard from '../../components/hompage/ProductCard';
-
-// Navigation types
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { GuestDrinkStackParamList } from '../../navigation/guest/GuestDrinkStackNavigator';
+import { SizeOption, ToppingOption } from '../../navigation/CustomerDrinkStackNavigator';
 
-// Combine Stack + Tab
+// Navigation type
 type DrinkCategoryNavigationProp = NativeStackNavigationProp<
   GuestDrinkStackParamList,
   'DrinkCategoryScreen'
 >;
 
+type Category = {
+  _id: string;
+  category: string;
+  icon: string;
+};
+
+type Product = {
+  _id: string;
+  name: string;
+  basePrice: number;
+  image: string;
+  sizes: SizeOption[];
+  toppingOptions: ToppingOption[];
+  categoryId: string[];
+};
+
 const DrinkCategoryScreen = ({ navigation }: { navigation: DrinkCategoryNavigationProp }) => {
   const [searchText, setSearchText] = useState('');
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [sizes, setSizes] = useState<SizeOption[]>([]);
+  const [loading, setLoading] = useState(true);
+
   const scrollViewRef = useRef<ScrollView>(null);
   const sectionRefs = useRef<(View | null)[]>([]);
   const [categoryPositions, setCategoryPositions] = useState<number[]>([]);
   const [activeTab, setActiveTab] = useState<number>(0);
+
+  const BASE_URL = 'http://192.168.11.108:8080';
+  // const BASE_URL = 'http://localhost:8080';
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [catRes, prodRes, sizeRes] = await Promise.all([
+          fetch(`${BASE_URL}/api/categories`),
+          fetch(`${BASE_URL}/api/products`),
+          fetch(`${BASE_URL}/api/sizes`),
+        ]);
+        const [catData, prodData, sizeData] = await Promise.all([
+          catRes.json(), prodRes.json(), sizeRes.json()
+        ]);
+        setCategories(catData);
+        setProducts(prodData);
+        setSizes(sizeData);
+      } catch (err) {
+        console.error('Fetch error:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -40,7 +85,7 @@ const DrinkCategoryScreen = ({ navigation }: { navigation: DrinkCategoryNavigati
       });
     }, 500);
     return () => clearTimeout(timer);
-  }, [searchText]);
+  }, [searchText, categories, products]);
 
   const scrollToCategory = (index: number) => {
     setActiveTab(index);
@@ -49,13 +94,22 @@ const DrinkCategoryScreen = ({ navigation }: { navigation: DrinkCategoryNavigati
     }
   };
 
-  // Modified filteredData to preserve all categories, even if drinks are filtered out
-  const filteredData = drinkData.map(category => ({
-    ...category,
-    drinks: category.drinks.filter(drink =>
-      drink.name.toLowerCase().includes(searchText.toLowerCase())
+  // Group product theo category
+  const groupedData = categories.map(cat => ({
+    ...cat,
+    drinks: products.filter(p =>
+      p.categoryId.some((c: any) => c._id === cat._id) &&
+      p.name.toLowerCase().includes(searchText.toLowerCase())
     ),
   }));
+
+  if (loading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color="#D17842" />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -68,21 +122,17 @@ const DrinkCategoryScreen = ({ navigation }: { navigation: DrinkCategoryNavigati
         />
       </View>
 
-      {/* Category Tabs with Icons */}
+      {/* Tabs */}
       <View style={styles.tabContainer}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.tabScrollContent}
-        >
-          {filteredData.map((cat, index) => (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabScrollContent}>
+          {groupedData.map((cat, index) => (
             <TouchableOpacity
-              key={cat.category}
+              key={cat._id}
               style={[styles.categoryItem, activeTab === index && styles.activeCategory]}
               onPress={() => scrollToCategory(index)}
             >
               <Image
-                source={cat.icon} // Icon is preserved from original drinkData
+                source={{ uri: cat.icon }}
                 style={styles.categoryIcon}
                 resizeMode="cover"
               />
@@ -99,29 +149,36 @@ const DrinkCategoryScreen = ({ navigation }: { navigation: DrinkCategoryNavigati
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 50 }}
       >
-        {filteredData.map((cat, index) => (
-          cat.drinks.length > 0 && ( // Only render sections with drinks
+        {groupedData.map((cat, index) => (
+          cat.drinks.length > 0 && (
             <View
-              key={cat.category}
+              key={cat._id}
               ref={ref => { sectionRefs.current[index] = ref; }}
               style={styles.section}
             >
               <Text style={styles.categoryTitle}>{cat.category}</Text>
               <FlatList
                 data={cat.drinks}
-                keyExtractor={item => item.id.toString()}
+                keyExtractor={item => item._id}
                 numColumns={2}
                 scrollEnabled={false}
                 columnWrapperStyle={{ justifyContent: 'space-between' }}
                 renderItem={({ item }) => (
                   <ProductCard
-                    key={item.id}
-                    image={item.image}
+                    key={item._id}
+                    image={{ uri: item.image }}
                     name={item.name}
-                    price={item.price}
+                    price={`${item.basePrice.toLocaleString()}₫`}
                     onPress={() => {
                       navigation.navigate('DrinkDetailScreen', {
-                        drink: item 
+                        drink: {
+                          id: item._id,
+                          name: item.name,
+                          image: item.image,
+                          basePrice: Number(item.basePrice),
+                          sizes: sizes,
+                          toppingOptions: item.toppingOptions ?? [],
+                        },
                       });
                     }}
                   />
@@ -140,15 +197,11 @@ const theme = {
   background: '#ffffff',
   text: '#333',
   gray: '#ccc',
-  green: '#4CAF50',
 };
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.background },
-  searchContainer: {
-    padding: 12,
-    backgroundColor: '#fff',
-  },
+  searchContainer: { padding: 12, backgroundColor: '#fff' },
   searchInput: {
     backgroundColor: '#f0f0f0',
     borderRadius: 12,
@@ -162,9 +215,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: theme.gray,
   },
-  tabScrollContent: {
-    paddingHorizontal: 12,
-  },
+  tabScrollContent: { paddingHorizontal: 12 },
   categoryItem: {
     alignItems: 'center',
     paddingVertical: 8,
@@ -172,23 +223,14 @@ const styles = StyleSheet.create({
     marginRight: 8,
     borderRadius: 12,
   },
-  activeCategory: {
-    backgroundColor: theme.primary,
-  },
-  categoryIcon: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    marginBottom: 4,
-  },
+  activeCategory: { backgroundColor: theme.primary },
+  categoryIcon: { width: 50, height: 50, borderRadius: 25, marginBottom: 4 },
   categoryText: {
     fontSize: 12,
     color: theme.text,
     textAlign: 'center',
   },
-  activeCategoryText: {
-    color: '#fff',
-  },
+  activeCategoryText: { color: '#fff' },
   section: { padding: 16 },
   categoryTitle: {
     fontSize: 22,
