@@ -9,6 +9,7 @@ const Stack = createNativeStackNavigator<StaffStackParamList>();
  export type StaffStackParamList = {
   StaffDashboard: undefined
   OrderManagement: undefined
+  Auth: undefined
 }
 
 

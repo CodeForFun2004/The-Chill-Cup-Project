@@ -1,10 +1,17 @@
+"use client"
+
 import type React from "react"
 import { View, Text, ScrollView, StyleSheet, SafeAreaView, StatusBar, TouchableOpacity, Dimensions } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
-import { useSelector } from "react-redux"
+import { useSelector, useDispatch } from "react-redux"
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack"
+import { syncOrdersFromData } from "../../redux/slices/staffSlice"
+import { useFocusEffect } from "@react-navigation/native"
+import { useCallback, useState } from "react"
+import type { RootState } from "../../redux/store"
+import { PieChart } from "react-native-chart-kit"
 import type { StaffStackParamList } from "../../navigation/staff/StaffNavigator"
-// Types
+
 
 
 type StaffDashboardNavigationProp = NativeStackNavigationProp<StaffStackParamList, "StaffDashboard">
@@ -13,28 +20,42 @@ interface StaffDashboardScreenProps {
   navigation: StaffDashboardNavigationProp
 }
 
-interface RootState {
-  staff: {
-    orderStats: {
-      totalOrders: number
-      pendingOrders: number
-      completedOrders: number
-      cancelledOrders: number
-    }
-    revenueStats: {
-      dailyRevenue: number
-      weeklyRevenue: number
-      monthlyRevenue: number
-      averageOrderValue: number
-    }
-  }
-}
-
 const { width } = Dimensions.get("window")
 const cardWidth = (width - 48) / 2 // 2 cards per row with margins
 
-const StaffDashboardScreen: React.FC<StaffDashboardScreenProps> = ({ navigation }) => {
-  const { orderStats, revenueStats } = useSelector((state: RootState) => state.staff)
+const StaffDashboard: React.FC<StaffDashboardScreenProps> = ({ navigation }) => {
+  const dispatch = useDispatch()
+
+  const [timeFilter, setTimeFilter] = useState<"week" | "month">("week")
+  const [selectedDate, setSelectedDate] = useState(new Date())
+
+  // Safe selector with fallback values
+  const staffState = useSelector((state: RootState) => state.staff)
+
+  // Provide default values if staff state is undefined
+  const orderStats = staffState?.orderStats || {
+    totalOrders: 0,
+    pendingOrders: 0,
+    completedOrders: 0,
+    cancelledOrders: 0,
+    preparingOrders: 0,
+    readyOrders: 0,
+    deliveringOrders: 0,
+  }
+
+  const revenueStats = staffState?.revenueStats || {
+    dailyRevenue: 0,
+    weeklyRevenue: 0,
+    monthlyRevenue: 0,
+    averageOrderValue: 0,
+  }
+
+  // Sync data khi màn hình được focus
+  useFocusEffect(
+    useCallback(() => {
+      dispatch(syncOrdersFromData())
+    }, [dispatch]),
+  )
 
   // Format currency
   const formatCurrency = (amount: number): string => {
@@ -44,68 +65,37 @@ const StaffDashboardScreen: React.FC<StaffDashboardScreenProps> = ({ navigation 
     }).format(amount)
   }
 
-  // Stats cards data
-  const orderStatsCards = [
+  // Order Status Chart Data
+  const orderChartData = [
     {
-      title: "Tổng đơn hàng",
-      value: orderStats.totalOrders.toString(),
-      icon: "receipt-outline",
-      color: "#10B981",
-      bgColor: "#ECFDF5",
-    },
-    {
-      title: "Đang chờ",
-      value: orderStats.pendingOrders.toString(),
-      icon: "time-outline",
+      name: "Chờ xử lý",
+      population: orderStats.pendingOrders,
       color: "#F59E0B",
-      bgColor: "#FFFBEB",
+      legendFontColor: "#6B7280",
+      legendFontSize: 12,
     },
     {
-      title: "Hoàn thành",
-      value: orderStats.completedOrders.toString(),
-      icon: "checkmark-circle-outline",
-      color: "#059669",
-      bgColor: "#F0FDF4",
-    },
-    {
-      title: "Đã hủy",
-      value: orderStats.cancelledOrders.toString(),
-      icon: "close-circle-outline",
-      color: "#DC2626",
-      bgColor: "#FEF2F2",
-    },
-  ]
-
-  const revenueStatsCards = [
-    {
-      title: "Doanh thu hôm nay",
-      value: formatCurrency(revenueStats.dailyRevenue),
-      icon: "today-outline",
+      name: "Đang pha chế",
+      population: orderStats.preparingOrders,
       color: "#8B5CF6",
-      bgColor: "#F5F3FF",
+      legendFontColor: "#6B7280",
+      legendFontSize: 12,
     },
     {
-      title: "Doanh thu tuần",
-      value: formatCurrency(revenueStats.weeklyRevenue),
-      icon: "calendar-outline",
+      name: "Sẵn sàng",
+      population: orderStats.readyOrders,
       color: "#06B6D4",
-      bgColor: "#F0F9FF",
+      legendFontColor: "#6B7280",
+      legendFontSize: 12,
     },
     {
-      title: "Doanh thu tháng",
-      value: formatCurrency(revenueStats.monthlyRevenue),
-      icon: "stats-chart-outline",
-      color: "#EC4899",
-      bgColor: "#FDF2F8",
+      name: "Hoàn thành",
+      population: orderStats.completedOrders,
+      color: "#10B981",
+      legendFontColor: "#6B7280",
+      legendFontSize: 12,
     },
-    {
-      title: "Giá trị TB/đơn",
-      value: formatCurrency(revenueStats.averageOrderValue),
-      icon: "trending-up-outline",
-      color: "#F97316",
-      bgColor: "#FFF7ED",
-    },
-  ]
+  ].filter((item) => item.population > 0)
 
   const quickActions = [
     {
@@ -122,17 +112,14 @@ const StaffDashboardScreen: React.FC<StaffDashboardScreenProps> = ({ navigation 
       color: "#F59E0B",
       onPress: () => navigation.navigate("OrderManagement"),
     },
+    {
+      title: "Đang pha chế",
+      subtitle: `${orderStats.preparingOrders} đơn đang làm`,
+      icon: "restaurant-outline",
+      color: "#8B5CF6",
+      onPress: () => navigation.navigate("OrderManagement"),
+    },
   ]
-
-  const renderStatsCard = (item: any, index: number) => (
-    <View key={index} style={[styles.statsCard, { backgroundColor: item.bgColor }]}>
-      <View style={styles.statsCardHeader}>
-        <Ionicons name={item.icon} size={24} color={item.color} />
-        <Text style={[styles.statsValue, { color: item.color }]}>{item.value}</Text>
-      </View>
-      <Text style={styles.statsTitle}>{item.title}</Text>
-    </View>
-  )
 
   const renderQuickAction = (item: any, index: number) => (
     <TouchableOpacity key={index} style={styles.quickActionCard} onPress={item.onPress} activeOpacity={0.7}>
@@ -147,32 +134,117 @@ const StaffDashboardScreen: React.FC<StaffDashboardScreenProps> = ({ navigation 
     </TouchableOpacity>
   )
 
+  // Show loading state if staff data is not available
+  if (!staffState) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <Text style={styles.loadingText}>Đang tải dữ liệu...</Text>
+        </View>
+      </SafeAreaView>
+    )
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
-      {/* Header */}
+      {/* Header với logout */}
       <View style={styles.header}>
         <View>
           <Text style={styles.headerTitle}>Dashboard</Text>
           <Text style={styles.headerSubtitle}>Chào mừng trở lại!</Text>
         </View>
-        <TouchableOpacity style={styles.profileButton}>
-          <Ionicons name="person-circle-outline" size={32} color="#10B981" />
-        </TouchableOpacity>
+        <View style={styles.headerActions}>
+          <TouchableOpacity style={styles.profileButton}>
+            <Ionicons name="person-circle-outline" size={32} color="#10B981" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.logoutButton}
+            onPress={() => {
+              // Navigate to Auth
+              navigation.reset({
+                index: 0,
+                routes: [{ name: "Auth" }],
+              })
+            }}
+          >
+            <Ionicons name="log-out-outline" size={24} color="#DC2626" />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Order Statistics */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Thống kê đơn hàng</Text>
-          <View style={styles.statsGrid}>{orderStatsCards.map(renderStatsCard)}</View>
+        {/* Time Filter */}
+        <View style={styles.filterSection}>
+          <Text style={styles.sectionTitle}>Thống kê theo thời gian</Text>
+          <View style={styles.timeFilterContainer}>
+            <TouchableOpacity
+              style={[styles.filterButton, timeFilter === "week" && styles.activeFilterButton]}
+              onPress={() => setTimeFilter("week")}
+            >
+              <Text style={[styles.filterButtonText, timeFilter === "week" && styles.activeFilterButtonText]}>
+                Tuần này
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.filterButton, timeFilter === "month" && styles.activeFilterButton]}
+              onPress={() => setTimeFilter("month")}
+            >
+              <Text style={[styles.filterButtonText, timeFilter === "month" && styles.activeFilterButtonText]}>
+                Tháng này
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
-        {/* Revenue Statistics */}
+        {/* Order Status Chart */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Thống kê doanh thu</Text>
-          <View style={styles.statsGrid}>{revenueStatsCards.map(renderStatsCard)}</View>
+          <Text style={styles.sectionTitle}>Trạng thái đơn hàng</Text>
+          <View style={styles.chartContainer}>
+            {orderChartData.length > 0 ? (
+              <PieChart
+                data={orderChartData}
+                width={width - 32}
+                height={220}
+                chartConfig={{
+                  backgroundColor: "#ffffff",
+                  backgroundGradientFrom: "#ffffff",
+                  backgroundGradientTo: "#ffffff",
+                  color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+                }}
+                accessor="population"
+                backgroundColor="transparent"
+                paddingLeft="15"
+                absolute
+              />
+            ) : (
+              <View style={styles.noDataContainer}>
+                <Text style={styles.noDataText}>Không có dữ liệu</Text>
+              </View>
+            )}
+          </View>
+        </View>
+
+        {/* Revenue Overview */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Tổng quan doanh thu</Text>
+          <View style={styles.revenueOverview}>
+            <View style={styles.revenueCard}>
+              <View style={styles.revenueIconContainer}>
+                <Ionicons name="trending-up" size={24} color="#10B981" />
+              </View>
+              <View style={styles.revenueInfo}>
+                <Text style={styles.revenueLabel}>{timeFilter === "week" ? "Tuần này" : "Tháng này"}</Text>
+                <Text style={styles.revenueValue} >
+                  {formatCurrency(timeFilter === "week" ? revenueStats.weeklyRevenue : revenueStats.monthlyRevenue)}
+                  
+                </Text>
+                
+                <Text style={styles.revenueSubtext}>TB/đơn: {formatCurrency(revenueStats.averageOrderValue)}</Text>
+              </View>
+            </View>
+          </View>
         </View>
 
         {/* Quick Actions */}
@@ -197,6 +269,12 @@ const StaffDashboardScreen: React.FC<StaffDashboardScreenProps> = ({ navigation 
               <Text style={styles.summaryLabel}>Đơn hàng trung bình:</Text>
               <Text style={styles.summaryValue}>{formatCurrency(revenueStats.averageOrderValue)}</Text>
             </View>
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Đang chờ xử lý:</Text>
+              <Text style={[styles.summaryValue, { color: orderStats.pendingOrders > 0 ? "#F59E0B" : "#10B981" }]}>
+                {orderStats.pendingOrders}
+              </Text>
+            </View>
           </View>
         </View>
       </ScrollView>
@@ -208,6 +286,15 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F9FAFB",
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingText: {
+    fontSize: 16,
+    color: "#6B7280",
   },
   header: {
     flexDirection: "row",
@@ -334,6 +421,109 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#1F2937",
   },
+  headerActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  logoutButton: {
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: "#FEF2F2",
+  },
+  filterSection: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: "#FFFFFF",
+    borderBottomWidth: 1,
+    borderBottomColor: "#E5E7EB",
+  },
+  timeFilterContainer: {
+    flexDirection: "row",
+    backgroundColor: "#F3F4F6",
+    borderRadius: 8,
+    padding: 4,
+    marginTop: 8,
+  },
+  filterButton: {
+    flex: 1,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+    alignItems: "center",
+  },
+  activeFilterButton: {
+    backgroundColor: "#10B981",
+  },
+  filterButtonText: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#6B7280",
+  },
+  activeFilterButtonText: {
+    color: "#FFFFFF",
+  },
+  chartContainer: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    padding: 16,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  noDataContainer: {
+    height: 220,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  noDataText: {
+    fontSize: 16,
+    color: "#9CA3AF",
+  },
+  revenueOverview: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    padding: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  revenueCard: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  revenueIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: "#ECFDF5",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 16,
+  },
+  revenueInfo: {
+    flex: 1,
+  },
+  revenueLabel: {
+    fontSize: 14,
+    color: "#6B7280",
+    marginBottom: 4,
+  },
+  revenueValue: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: "#1F2937",
+    marginBottom: 4,
+  },
+  revenueSubtext: {
+    fontSize: 12,
+    color: "#9CA3AF",
+  },
 })
 
-export default StaffDashboardScreen
+export default StaffDashboard
