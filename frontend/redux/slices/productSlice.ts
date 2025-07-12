@@ -1,24 +1,19 @@
-// 📁 redux/slices/productSlice.ts
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import axios from '../../api/axios';
 import { RootState } from '../rootReducer';
-
-export interface Product {
-  _id: string;
-  name: string;
-  basePrice: number;
-  image: string;
-  categoryId: { _id: string };
-}
+import { Product, GroupedProduct } from '../../types/types';
+import { groupProductsByCategory } from '../../utils/groupProducts';
 
 interface ProductState {
   products: Product[];
+  groupedProducts: GroupedProduct[];
   loading: boolean;
   error: string | null;
 }
 
 const initialState: ProductState = {
   products: [],
+  groupedProducts: [],
   loading: false,
   error: null,
 };
@@ -38,7 +33,13 @@ export const loadProducts = createAsyncThunk<Product[], void, { state: RootState
 const productSlice = createSlice({
   name: 'product',
   initialState,
-  reducers: {},
+  reducers: {
+    // Không cần setGroupedProducts nữa nếu tự động group trong fulfilled
+    // Nhưng nếu muốn để dùng ngoài UI thì có thể giữ lại:
+    setGroupedProducts(state, action: PayloadAction<GroupedProduct[]>) {
+      state.groupedProducts = action.payload;
+    },
+  },
   extraReducers: (builder) => {
     builder
       .addCase(loadProducts.pending, (state) => {
@@ -48,6 +49,9 @@ const productSlice = createSlice({
       .addCase(loadProducts.fulfilled, (state, action: PayloadAction<Product[]>) => {
         state.loading = false;
         state.products = action.payload;
+        console.log('💥 Products loaded:', action.payload);
+        state.groupedProducts = groupProductsByCategory(action.payload);
+        console.log('💥 Grouped products:', state.groupedProducts);
       })
       .addCase(loadProducts.rejected, (state, action) => {
         state.loading = false;
@@ -55,5 +59,7 @@ const productSlice = createSlice({
       });
   },
 });
+
+export const { setGroupedProducts } = productSlice.actions; // 💥 export action nếu muốn dispatch thủ công ngoài UI
 
 export default productSlice.reducer;
