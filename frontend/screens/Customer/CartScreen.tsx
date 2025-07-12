@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { View, ScrollView, StyleSheet } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
-import { RootState } from '../../redux/store';
+import { RootState } from '../../redux/rootReducer';
 import {
   setCartItems,
   increaseQuantity,
@@ -25,9 +25,8 @@ import { mockData } from '../../data/carts';
 
 
 const CartScreen = () => {
-
-  
-const navigation = useNavigation<NativeStackNavigationProp<CustomerStackParamList>>();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<CustomerStackParamList>>();
 
   const dispatch = useDispatch();
   const { items, delivery } = useSelector((state: RootState) => state.cart);
@@ -36,20 +35,25 @@ const navigation = useNavigation<NativeStackNavigationProp<CustomerStackParamLis
     dispatch(setCartItems(mockData));
   }, []);
 
-  const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const subtotal = items.reduce(
+    (sum, item) => sum + item.price * item.quantity,
+    0
+  );
   const total = subtotal + delivery;
 
   const handleCheckout = () => {
-    navigation.navigate('Checkout');
+    navigation.navigate("Checkout");
   };
-  
 
   return (
     <View style={styles.wrapper}>
       <CartHeader onClearCart={() => dispatch(clearCart())} />
 
-      <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 100 }}>
-        {items.map(item => (
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={{ paddingBottom: 100 }}
+      >
+        {items.map((item) => (
           <CartItem
             key={item.id}
             name={item.name}
