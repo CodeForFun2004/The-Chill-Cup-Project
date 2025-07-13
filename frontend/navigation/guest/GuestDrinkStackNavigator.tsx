@@ -2,7 +2,7 @@ import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import DrinkCategoryScreen from '../../screens/Customer/DrinkCategoryScreen';
 import DrinkDetailScreen from '../../screens/Customer/DrinkDetailScreen';
-import { SizeOption, ToppingOption } from '../../types/types';
+import { Category, SizeOption, ToppingOption } from '../../types/types';
 
 export type GuestDrinkStackParamList = {
   DrinkCategoryScreen: undefined;
@@ -15,6 +15,7 @@ export type GuestDrinkStackParamList = {
       basePrice: number;
       sizeOptions: SizeOption[];
       toppingOptions: ToppingOption[];
+      category: Category[];
     };
   };
 };

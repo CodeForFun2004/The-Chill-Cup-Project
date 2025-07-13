@@ -3,8 +3,30 @@ export interface Category {
     category: string;
     icon: string;
   }
+
+  export interface Store {
+    _id: string;
+    name: string;
+    address: string;
+    contact?: string;
+    openHours?: string;
+    isActive: boolean;
+    mapUrl?: string;
+    image?: string;
+    staff: {
+      _id: string;
+      username: string;
+      fullname: string;
+      email?: string;
+      // 👉 thêm các field khác từ User nếu cần
+    };
+    createdAt: string;
+    updatedAt: string;
+  }
+  
   
   export interface SizeOption {
+    _id: string;
     size: 'S' | 'M' | 'L';
     name: string;
     multiplier: number;
@@ -24,24 +46,15 @@ export interface Category {
     description: string;
     basePrice: number;
     image: string;
-    status: 'new' | 'old';
+    status: string;
     rating: number;
     categoryId: Category[];
-    storeId: {
-      _id: string;
-      name: string;
-      address: string;
-      contact: string;
-      openHours: string;
-      isActive: boolean;
-      mapUrl: string;
-      image: string;
-    };
-    sizeOptions: SizeOption[];        // 💥 thêm đúng model Size
-    toppingOptions: ToppingOption[];  // 💥 thêm đúng model Topping
-    isBanned: boolean;                // 💥 thêm vì backend có
+    storeId: Store;
+    sizeOptions: SizeOption[];   // 💥 đã fix đúng
+    toppingOptions: ToppingOption[];
   }
   
+
   
   
   export interface GroupedProduct {

@@ -15,6 +15,8 @@ import { loadCategories } from '../../redux/slices/categorySlice';
 import { groupProductsByCategory } from '../../utils/groupProducts';
 import { formatCurrency } from '../../utils/formatCurrency';
 
+
+
 type DrinkCategoryNavigationProp = NativeStackNavigationProp<
   GuestDrinkStackParamList,
   'DrinkCategoryScreen'
@@ -153,6 +155,7 @@ const DrinkCategoryScreen = ({ navigation }: { navigation: DrinkCategoryNavigati
                         drink: {
                           id: drink._id,
                           name: drink.name,
+                          category: drink.categoryId,
                           image: drink.image,
                           description: drink.description,
                           basePrice: drink.basePrice,
@@ -227,3 +230,5 @@ const styles = StyleSheet.create({
 });
 
 export default DrinkCategoryScreen;
+
+

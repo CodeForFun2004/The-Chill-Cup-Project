@@ -1,9 +1,10 @@
 import React, { useEffect } from 'react';
-import { View, ScrollView, StyleSheet } from 'react-native';
-import { useDispatch, useSelector } from 'react-redux';
+import { View, ScrollView, StyleSheet, Text } from 'react-native';
+import { useAppDispatch, useAppSelector } from '../../redux/hooks';
+
 import { RootState } from '../../redux/rootReducer';
 import {
-  setCartItems,
+  loadCartFromAPI,
   increaseQuantity,
   decreaseQuantity,
   clearCart,
@@ -19,21 +20,23 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { CustomerStackParamList } from '../../navigation/customer/CustomerStackNavigator';
 
-import { mockData } from '../../data/carts';
-
-
-
+import type { AppDispatch } from '../../redux/store';
 
 const CartScreen = () => {
   const navigation =
     useNavigation<NativeStackNavigationProp<CustomerStackParamList>>();
 
-  const dispatch = useDispatch();
-  const { items, delivery } = useSelector((state: RootState) => state.cart);
+    const dispatch = useAppDispatch();
+    const { items, delivery, loading, error } = useAppSelector(
+      (state) => state.cart
+    );
+    
+
+  console.log('🛒 items from Redux:', items);
 
   useEffect(() => {
-    dispatch(setCartItems(mockData));
-  }, []);
+    dispatch(loadCartFromAPI());
+  }, [dispatch]);
 
   const subtotal = items.reduce(
     (sum, item) => sum + item.price * item.quantity,
@@ -42,8 +45,24 @@ const CartScreen = () => {
   const total = subtotal + delivery;
 
   const handleCheckout = () => {
-    navigation.navigate("Checkout");
+    navigation.navigate('Checkout');
   };
+
+  if (loading) {
+    return (
+      <View style={styles.centered}>
+        <Text>Đang tải giỏ hàng...</Text>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.centered}>
+        <Text style={{ color: 'red' }}>Lỗi: {error}</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.wrapper}>
@@ -53,22 +72,30 @@ const CartScreen = () => {
         style={styles.container}
         contentContainerStyle={{ paddingBottom: 100 }}
       >
-        {items.map((item) => (
-          <CartItem
-            key={item.id}
-            name={item.name}
-            brand={item.brand}
-            price={item.price}
-            quantity={item.quantity}
-            image={item.image}
-            onIncrease={() => dispatch(increaseQuantity(item.id))}
-            onDecrease={() => dispatch(decreaseQuantity(item.id))}
-          />
-        ))}
+        {items.length === 0 ? (
+          <View style={styles.centered}>
+            <Text>🛒 Giỏ hàng của bạn đang trống</Text>
+          </View>
+        ) : (
+          <>
+            {items.map((item) => (
+              <CartItem
+                key={item.id.toString()}
+                name={item.name}
+                category={item.category} 
+                price={item.price}
+                quantity={item.quantity}
+                image={item.image}
+                onIncrease={() => dispatch(increaseQuantity(item.id.toString()))}
+                onDecrease={() => dispatch(decreaseQuantity(item.id.toString()))}
+              />
+            ))}
 
-        <PromoCodeInput />
-        <CartSummary subtotal={subtotal} delivery={delivery} />
-        <CartFooter total={total} onCheckout={handleCheckout} />
+            <PromoCodeInput />
+            <CartSummary subtotal={subtotal} delivery={delivery} />
+            <CartFooter total={total} onCheckout={handleCheckout} />
+          </>
+        )}
       </ScrollView>
     </View>
   );
@@ -85,5 +112,10 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
     backgroundColor: '#F4F4F4',
+  },
+  centered: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });

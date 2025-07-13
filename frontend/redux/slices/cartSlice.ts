@@ -3,12 +3,12 @@ import axios from '../../api/axios';
 import { RootState } from '../rootReducer';
 
 export type CartItem = {
-  id: number | string;   // backend có thể trả string id
+  id: string;
   name: string;
-  brand: string;
-  price: number;         // giá đơn vị, chưa nhân quantity
+  category: string;
+  price: number;
   quantity: number;
-  image: any;
+  image: string;
   size?: string;
   toppings?: string[];
 };
@@ -30,158 +30,128 @@ const initialState: CartState = {
 };
 
 // ✅ Load cart từ API
-export const loadCartFromAPI = createAsyncThunk<
-  CartItem[],
-  void,
-  { state: RootState; rejectValue: string }
->('cart/loadCartFromAPI', async (_, thunkAPI) => {
-  const token = thunkAPI.getState().auth.accessToken;
-  try {
-    const res = await axios.get('/cart', {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    return res.data.items;
-  } catch (err: any) {
-    return thunkAPI.rejectWithValue(err.response?.data?.message || 'Failed to load cart');
+export const loadCartFromAPI = createAsyncThunk<CartItem[], void, { state: RootState; rejectValue: string }>(
+  'cart/loadCartFromAPI',
+  async (_, thunkAPI) => {
+    const token = thunkAPI.getState().auth.accessToken;
+    try {
+      const res = await axios.get('/cart', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return res.data.items;
+    } catch (err: any) {
+      return thunkAPI.rejectWithValue(err.response?.data?.message || 'Failed to load cart');
+    }
   }
-});
+);
 
-// ✅ Thêm item vào cart (API)
-export const addItemToCart = createAsyncThunk<
-  CartItem[],
-  CartItem,
-  { state: RootState; rejectValue: string }
->('cart/addItemToCart', async (item, thunkAPI) => {
-  const token = thunkAPI.getState().auth.accessToken;
-  try {
-    const res = await axios.post('/cart/add', item, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    return res.data.updatedCart;
-  } catch (err: any) {
-    return thunkAPI.rejectWithValue(err.response?.data?.message || 'Failed to add item');
+// ✅ Thêm item vào cart (API POST /cart)
+export const addItemToCart = createAsyncThunk<CartItem[], CartItem, { state: RootState; rejectValue: string }>(
+  'cart/addItemToCart',
+  async (item, thunkAPI) => {
+    const token = thunkAPI.getState().auth.accessToken;
+    try {
+      const res = await axios.post('/cart', item, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return res.data.updatedCart;
+    } catch (err: any) {
+      return thunkAPI.rejectWithValue(err.response?.data?.message || 'Failed to add item');
+    }
   }
-});
+);
 
-// ✅ Xoá item khỏi cart (API)
-export const removeItemFromCart = createAsyncThunk<
-  CartItem[],
-  number | string,
-  { state: RootState; rejectValue: string }
->('cart/removeItemFromCart', async (itemId, thunkAPI) => {
-  const token = thunkAPI.getState().auth.accessToken;
-  try {
-    const res = await axios.delete(`/cart/remove/${itemId}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    return res.data.updatedCart;
-  } catch (err: any) {
-    return thunkAPI.rejectWithValue(err.response?.data?.message || 'Failed to remove item');
+// ✅ Xoá item khỏi cart (API DELETE /cart/item/:itemId)
+export const removeItemFromCart = createAsyncThunk<CartItem[], string, { state: RootState; rejectValue: string }>(
+  'cart/removeItemFromCart',
+  async (itemId, thunkAPI) => {
+    const token = thunkAPI.getState().auth.accessToken;
+    try {
+      const res = await axios.delete(`/cart/item/${itemId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return res.data.updatedCart;
+    } catch (err: any) {
+      return thunkAPI.rejectWithValue(err.response?.data?.message || 'Failed to remove item');
+    }
   }
-});
+);
 
-// ✅ Cập nhật quantity (API)
-export const updateItemQuantity = createAsyncThunk<
-  CartItem[],
-  { itemId: number | string; quantity: number },
-  { state: RootState; rejectValue: string }
->('cart/updateItemQuantity', async ({ itemId, quantity }, thunkAPI) => {
-  const token = thunkAPI.getState().auth.accessToken;
-  try {
-    const res = await axios.put(`/cart/update/${itemId}`, { quantity }, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    return res.data.updatedCart;
-  } catch (err: any) {
-    return thunkAPI.rejectWithValue(err.response?.data?.message || 'Failed to update quantity');
+// ✅ Clear cart (API DELETE /cart)
+export const clearCart = createAsyncThunk<CartItem[], void, { state: RootState; rejectValue: string }>(
+  'cart/clearCart',
+  async (_, thunkAPI) => {
+    const token = thunkAPI.getState().auth.accessToken;
+    try {
+      const res = await axios.delete('/cart', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return res.data.updatedCart;
+    } catch (err: any) {
+      return thunkAPI.rejectWithValue(err.response?.data?.message || 'Failed to clear cart');
+    }
   }
-});
+);
+
+// ✅ Apply discount (API POST /cart/apply-discount)
+export const applyDiscount = createAsyncThunk<CartItem[], { code: string }, { state: RootState; rejectValue: string }>(
+  'cart/applyDiscount',
+  async ({ code }, thunkAPI) => {
+    const token = thunkAPI.getState().auth.accessToken;
+    try {
+      const res = await axios.post('/cart/apply-discount', { code }, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return res.data.updatedCart;
+    } catch (err: any) {
+      return thunkAPI.rejectWithValue(err.response?.data?.message || 'Failed to apply discount');
+    }
+  }
+);
 
 const cartSlice = createSlice({
   name: 'cart',
   initialState,
   reducers: {
-    // ✅ UI-only logic
     setCartItems(state, action: PayloadAction<CartItem[]>) {
       state.items = action.payload;
     },
-    increaseQuantity(state, action: PayloadAction<number | string>) {
+    increaseQuantity(state, action: PayloadAction<string>) {
       const item = state.items.find(i => i.id === action.payload);
       if (item) item.quantity += 1;
     },
-    decreaseQuantity(state, action: PayloadAction<number | string>) {
+    decreaseQuantity(state, action: PayloadAction<string>) {
       const item = state.items.find(i => i.id === action.payload);
       if (item && item.quantity > 1) item.quantity -= 1;
     },
-    clearCart(state) {
+    clearLocalCart(state) {
       state.items = [];
     },
   },
   extraReducers: (builder) => {
     builder
-      // Load cart
-      .addCase(loadCartFromAPI.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(loadCartFromAPI.fulfilled, (state, action) => {
-        state.loading = false;
-        state.items = action.payload;
-      })
-      .addCase(loadCartFromAPI.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload || 'Failed to load cart';
-      })
+      .addCase(loadCartFromAPI.pending, (state) => { state.loading = true; state.error = null; })
+      .addCase(loadCartFromAPI.fulfilled, (state, action) => { state.loading = false; state.items = action.payload; })
+      .addCase(loadCartFromAPI.rejected, (state, action) => { state.loading = false; state.error = action.payload || 'Failed to load cart'; })
 
-      // Add item
-      .addCase(addItemToCart.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(addItemToCart.fulfilled, (state, action) => {
-        state.loading = false;
-        state.items = action.payload;
-      })
-      .addCase(addItemToCart.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload || 'Failed to add item';
-      })
+      .addCase(addItemToCart.pending, (state) => { state.loading = true; state.error = null; })
+      .addCase(addItemToCart.fulfilled, (state, action) => { state.loading = false; state.items = action.payload; })
+      .addCase(addItemToCart.rejected, (state, action) => { state.loading = false; state.error = action.payload || 'Failed to add item'; })
 
-      // Remove item
-      .addCase(removeItemFromCart.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(removeItemFromCart.fulfilled, (state, action) => {
-        state.loading = false;
-        state.items = action.payload;
-      })
-      .addCase(removeItemFromCart.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload || 'Failed to remove item';
-      })
+      .addCase(removeItemFromCart.pending, (state) => { state.loading = true; state.error = null; })
+      .addCase(removeItemFromCart.fulfilled, (state, action) => { state.loading = false; state.items = action.payload; })
+      .addCase(removeItemFromCart.rejected, (state, action) => { state.loading = false; state.error = action.payload || 'Failed to remove item'; })
 
-      // Update quantity
-      .addCase(updateItemQuantity.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(updateItemQuantity.fulfilled, (state, action) => {
-        state.loading = false;
-        state.items = action.payload;
-      })
-      .addCase(updateItemQuantity.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload || 'Failed to update quantity';
-      });
+      .addCase(clearCart.pending, (state) => { state.loading = true; state.error = null; })
+      .addCase(clearCart.fulfilled, (state, action) => { state.loading = false; state.items = action.payload; })
+      .addCase(clearCart.rejected, (state, action) => { state.loading = false; state.error = action.payload || 'Failed to clear cart'; })
+
+      .addCase(applyDiscount.pending, (state) => { state.loading = true; state.error = null; })
+      .addCase(applyDiscount.fulfilled, (state, action) => { state.loading = false; state.items = action.payload; })
+      .addCase(applyDiscount.rejected, (state, action) => { state.loading = false; state.error = action.payload || 'Failed to apply discount'; });
   },
 });
 
-export const {
-  setCartItems,
-  increaseQuantity,
-  decreaseQuantity,
-  clearCart,
-} = cartSlice.actions;
+export const { setCartItems, increaseQuantity, decreaseQuantity, clearLocalCart } = cartSlice.actions;
 
 export default cartSlice.reducer;
