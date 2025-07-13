@@ -13,6 +13,7 @@ import { Category, GroupedProduct } from '../../types/types';
 import { loadProducts, setGroupedProducts } from '../../redux/slices/productSlice';
 import { loadCategories } from '../../redux/slices/categorySlice';
 import { groupProductsByCategory } from '../../utils/groupProducts';
+import { formatCurrency } from '../../utils/formatCurrency';
 
 type DrinkCategoryNavigationProp = NativeStackNavigationProp<
   GuestDrinkStackParamList,
@@ -146,16 +147,20 @@ const DrinkCategoryScreen = ({ navigation }: { navigation: DrinkCategoryNavigati
                   <ProductCard
                     image={{ uri: drink.image }}
                     name={drink.name}
-                    price={drink.basePrice.toString()}
+                    price={formatCurrency(drink.basePrice)}
                     onPress={() =>
                       navigation.navigate('DrinkDetailScreen', {
                         drink: {
                           id: drink._id,
                           name: drink.name,
-                          price: drink.basePrice.toString(),
-                          image: { uri: drink.image },
+                          image: drink.image,
+                          description: drink.description,
+                          basePrice: drink.basePrice,
+                          sizeOptions: drink.sizeOptions, // [{ size: 'S', name: 'Small', multiplier: 1, volume: '250ml' }]
+                          toppingOptions: drink.toppingOptions, // [{ _id, name, price, icon }]
                         },
                       })
+                      
                     }
                   />
                 )}

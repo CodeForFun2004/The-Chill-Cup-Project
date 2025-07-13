@@ -4,13 +4,27 @@ export interface Category {
     icon: string;
   }
   
+  export interface SizeOption {
+    size: 'S' | 'M' | 'L';
+    name: string;
+    multiplier: number;
+    volume: string;
+  }
+  
+  export interface ToppingOption {
+    _id: string;
+    name: string;
+    price: number;
+    icon: string;
+  }
+  
   export interface Product {
     _id: string;
     name: string;
     description: string;
     basePrice: number;
     image: string;
-    status: string;
+    status: 'new' | 'old';
     rating: number;
     categoryId: Category[];
     storeId: {
@@ -23,7 +37,11 @@ export interface Category {
       mapUrl: string;
       image: string;
     };
+    sizeOptions: SizeOption[];        // 💥 thêm đúng model Size
+    toppingOptions: ToppingOption[];  // 💥 thêm đúng model Topping
+    isBanned: boolean;                // 💥 thêm vì backend có
   }
+  
   
   
   export interface GroupedProduct {
