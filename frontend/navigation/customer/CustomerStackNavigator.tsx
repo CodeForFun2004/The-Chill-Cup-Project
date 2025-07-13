@@ -25,9 +25,9 @@ interface Order {
   orderNumber: string;
   date: string;
   time: string;
-  status: 'Completed' | 'Cancelled' | 'Pending' | 'Processing' | 'Preparing' | 'Ready' | 'Delivering';
+  status: 'completed' | 'cancelled' | 'pending' | 'processing' | 'preparing' | 'ready' | 'delivering';
   total: number;
-  items: OrderItem[];
+  items: { name: string; quantity: number; price: number }[];
   estimatedDelivery?: string;
   deliveryAddress?: string;
   phoneNumber?: string;
