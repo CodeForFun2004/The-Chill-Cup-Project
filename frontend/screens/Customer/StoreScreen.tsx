@@ -14,7 +14,6 @@ import {
 } from 'react-native';
 import * as Location from 'expo-location';
 import { Ionicons } from '@expo/vector-icons';
-import { STORES } from '../../data/stores';
 import { useOrder } from "../../contexts/OrderContext";
 import { useNavigation } from "@react-navigation/native";
 
@@ -30,7 +29,7 @@ interface Store {
   latitude: number;
   longitude: number;
   phone: string;
-  image: any;
+  image: string; // URL string
   distance?: number;
 }
 
@@ -41,7 +40,7 @@ const getDistance = (
   lon2: number
 ): number => {
   const toRad = (value: number): number => (value * Math.PI) / 180;
-  const R = 6371;
+  const R = 6371; // km
   const dLat = toRad(lat2 - lat1);
   const dLon = toRad(lon2 - lon1);
   const a =
@@ -69,7 +68,7 @@ const highlightText = (text: string, highlight: string) => {
 export default function StoreScreen() {
   const [search, setSearch] = useState('');
   const [location, setLocation] = useState<Coordinates | null>(null);
-  const [selectedStore, setSelectedStore] = useState<Store | null>(null);
+  const [stores, setStores] = useState<Store[]>([]);
   const { setStore } = useOrder();
   const navigation = useNavigation();
 
@@ -85,13 +84,40 @@ export default function StoreScreen() {
     })();
   }, []);
 
+  useEffect(() => {
+    const fetchStores = async () => {
+      try {
+        const response = await fetch('http://192.168.11.108:8080/api/stores');
+        const data = await response.json();
+        const mappedStores: Store[] = data.map((s: any) => ({
+          id: s._id,
+          name: s.name,
+          address: s.address,
+          latitude: s.latitude, 
+          longitude: s.longitude,
+          phone: s.contact,
+          image: s.image,
+        }));
+        setStores(mappedStores);
+      } catch (error) {
+        console.error(error);
+        Alert.alert('Lỗi', 'Không thể tải danh sách cửa hàng');
+      }
+    };
+
+    fetchStores();
+  }, []);
+
   const fullSortedStores = useMemo(() => {
+    if (stores.length === 0) return [];
+
     if (!location)
-      return STORES.map((s) => ({
+      return stores.map((s) => ({
         ...s,
         distance: 0,
       }));
-    const mapped = STORES.map((s) => ({
+
+    const mapped = stores.map((s) => ({
       ...s,
       distance: getDistance(
         location.latitude,
@@ -102,7 +128,7 @@ export default function StoreScreen() {
     }));
     mapped.sort((a, b) => a.distance - b.distance);
     return mapped;
-  }, [location]);
+  }, [stores, location]);
 
   const nearestStore = fullSortedStores[0];
 
@@ -117,7 +143,7 @@ export default function StoreScreen() {
 
   const handleSelect = (store: Store): void => {
     setStore(store);
-  
+
     Alert.alert(
       'Đã chọn',
       `Địa chỉ giao hàng: ${store.name}`,
@@ -137,12 +163,8 @@ export default function StoreScreen() {
     store: Store;
     isNearest?: boolean;
   }) => (
-    <View
-      style={[
-        styles.cardBase,
-      ]}
-    >
-      <Image source={store.image} style={styles.thumbnail} />
+    <View style={styles.cardBase}>
+      <Image source={{ uri: store.image }} style={styles.thumbnail} />
       <View style={styles.details}>
         <Text style={styles.storeName}>{highlightText(store.name, search)}</Text>
         <Text style={styles.storeAddress}>
@@ -311,4 +333,3 @@ const styles = StyleSheet.create({
     backgroundColor: '#fef08a',
   },
 });
-
