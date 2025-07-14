@@ -4,12 +4,19 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import StaffDashboard from '../../screens/Staff/StaffDashboard';
 import OrderManagement from '../../screens/Staff/StaffOrders';
 
-const Stack = createNativeStackNavigator();
+export type StaffStackParamList = {
+  StaffDashboard: undefined;
+  OrderManagement: {
+    orderId: string;
+  };
+};
+
+const Stack = createNativeStackNavigator<StaffStackParamList>();
 
 const StaffNavigator = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
-    <Stack.Screen name="Dashboard" component={StaffDashboard} />
-    <Stack.Screen name="Orders" component={OrderManagement} />
+    <Stack.Screen name="StaffDashboard" component={StaffDashboard} />
+    <Stack.Screen name="OrderManagement" component={OrderManagement} />
   </Stack.Navigator>
 );
 

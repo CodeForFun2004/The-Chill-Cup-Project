@@ -20,23 +20,23 @@ const StaffDashboard = () => {
   const navigation = useNavigation();
 
   const handleLogout = () => {
-    Alert.alert('Logout', 'Are you sure you want to logout?', [
-      { text: 'Cancel' },
+    Alert.alert('Đăng xuất', 'Bạn có chắc chắn muốn đăng xuất?', [
+      { text: 'Huỷ' },
       {
-        text: 'Logout',
+        text: 'Đăng xuất',
         onPress: () => {
           dispatch(logout());
           navigation.dispatch(
             CommonActions.reset({
               index: 0,
-              routes: [{ name: 'Login' }], // hoặc 'CustomerHomeStack' nếu muốn về giao diện khách
+              routes: [{ name: 'StaffDashboard' }],
             })
           );
         },
         style: 'destructive',
       },
     ]);
-  };
+  }
 
   return (
     <SafeAreaView style={styles.container}>

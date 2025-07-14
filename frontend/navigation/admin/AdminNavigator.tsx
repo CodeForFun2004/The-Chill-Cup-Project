@@ -12,7 +12,7 @@ import ManagePromotions from "../../screens/Admin/ManagePromotions";
 import ManageUsers from "../../screens/Admin/ManageUsers";
 
 export type AdminTabParamList = {
-  Dashboard: undefined;
+  AdminDashboard: undefined;
   ProductTopping: undefined;
   OrderDelivery: undefined;
   Stores: undefined;
@@ -36,7 +36,7 @@ const AdminNavigator = () => {
           let icon;
 
           switch (route.name) {
-            case "Dashboard":
+            case "AdminDashboard":
               icon = <Ionicons name="stats-chart" size={size} color={color} />;
               break;
             case "ProductTopping":
@@ -62,7 +62,7 @@ const AdminNavigator = () => {
         },
       })}
     >
-      <Tab.Screen name="Dashboard" component={AdminDashboard} options={{ title: "Dashboard" }} />
+      <Tab.Screen name="AdminDashboard" component={AdminDashboard} options={{ title: "AdminDashboard" }} />
       <Tab.Screen name="ProductTopping" component={ProductToppingStack} options={{ title: "Menu" }} />
       <Tab.Screen name="OrderDelivery" component={OrderDelivery} options={{ title: "Đơn & Giao hàng" }} />
       <Tab.Screen name="Stores" component={ManageStores} options={{ title: "Cửa hàng" }} />
