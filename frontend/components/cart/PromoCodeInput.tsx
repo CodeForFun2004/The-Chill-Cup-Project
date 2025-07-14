@@ -1,117 +1,113 @@
-import React from 'react';
-import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { TextInput } from 'react-native-gesture-handler';
+import { useAppSelector } from '../../redux/hooks'; // Để truy cập trạng thái loading và error
 
-export const PromoCodeInput = () => {
-    return (
-      <View style={styles.promoContainer}>
-        <TextInput placeholder="Promo code" style={styles.promoInput} />
-        <TouchableOpacity style={styles.promoButton}>
-          <Text style={styles.promoButtonText}>Apply</Text>
-        </TouchableOpacity>
-      </View>
-    );
+interface PromoCodeInputProps {
+  onApply: (code: string) => void;
+  onRemove: () => void; // Hàm để xóa mã khuyến mãi
+  appliedCode: string | null; // Mã khuyến mãi hiện tại đã được áp dụng
+}
+
+export const PromoCodeInput: React.FC<PromoCodeInputProps> = ({ onApply, onRemove, appliedCode }) => {
+  const [promoCode, setPromoCode] = useState(appliedCode || '');
+  const { loading, error } = useAppSelector(state => state.cart);
+
+  useEffect(() => {
+    // Đồng bộ giá trị input với mã khuyến mãi đã áp dụng từ Redux
+    // Điều này quan trọng khi giỏ hàng được tải lại hoặc mã khuyến mãi bị xóa từ bên ngoài
+    if (appliedCode && appliedCode !== promoCode) {
+      setPromoCode(appliedCode);
+    } else if (!appliedCode && promoCode) {
+      setPromoCode(''); // Xóa input nếu mã đã bị hủy
+    }
+  }, [appliedCode]);
+
+
+  const handleApply = () => {
+    if (promoCode.trim() && !loading) {
+      onApply(promoCode.trim());
+    }
   };
 
-  const styles = StyleSheet.create({
-    container: {
-      flexDirection: 'row',
-      backgroundColor: '#fff',
-      borderRadius: 16,
-      padding: 12,
-      marginBottom: 12,
-      alignItems: 'center',
-      elevation: 2,
-    },
-    image: {
-      width: 64,
-      height: 64,
-      borderRadius: 8,
-      marginRight: 12,
-    },
-    info: {
-      flex: 1,
-    },
-    name: {
-      fontWeight: 'bold',
-      fontSize: 16,
-    },
-    brand: {
-      fontSize: 13,
-      color: '#999',
-    },
-    price: {
-      fontSize: 15,
-      marginTop: 4,
-    },
-    quantityBox: {
-      flexDirection: 'row',
-      alignItems: 'center',
-    },
-    qtyButton: {
-      backgroundColor: '#EDEDED',
-      padding: 6,
-      borderRadius: 6,
-    },
-    qtyText: {
-      fontSize: 16,
-      fontWeight: 'bold',
-    },
-    qtyCount: {
-      marginHorizontal: 8,
-      fontSize: 16,
-    },
-    promoContainer: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: '#fff',
-      padding: 12,
-      borderRadius: 16,
-      marginBottom: 16,
-      elevation: 2,
-    },
-    promoInput: {
-      flex: 1,
-      paddingVertical: 8,
-      paddingHorizontal: 12,
-      borderRadius: 8,
-      borderColor: '#ccc',
-      borderWidth: 1,
-      marginRight: 10,
-    },
-    promoButton: {
-      backgroundColor: '#4AA366',
-      paddingVertical: 10,
-      paddingHorizontal: 16,
-      borderRadius: 8,
-    },
-    promoButtonText: {
-      color: '#fff',
-      fontWeight: 'bold',
-    },
-    summaryContainer: {
-      backgroundColor: '#fff',
-      padding: 16,
-      borderRadius: 16,
-      elevation: 2,
-      marginBottom: 16,
-    },
-    summaryRow: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      marginBottom: 8,
-    },
-    checkoutButton: {
-      backgroundColor: '#4AA366',
-      paddingVertical: 16,
-      borderRadius: 24,
-      alignItems: 'center',
-      marginBottom: 20,
-    },
-    checkoutText: {
-      color: '#fff',
-      fontWeight: 'bold',
-      fontSize: 16,
-    },
-  });
-  
+  const handleRemove = () => {
+    if (!loading) {
+      onRemove();
+    }
+  };
+
+  return (
+    <View style={styles.promoContainer}>
+      <TextInput
+        placeholder="Mã giảm giá"
+        style={styles.promoInput}
+        value={promoCode}
+        onChangeText={setPromoCode}
+        autoCapitalize="none"
+        editable={!loading && !appliedCode} // Không cho chỉnh sửa khi đang loading hoặc đã áp dụng
+      />
+      {loading ? (
+        <View style={styles.promoButton}>
+          <ActivityIndicator size="small" color="#fff" />
+        </View>
+      ) : (
+        <>
+          {appliedCode ? (
+            <TouchableOpacity style={styles.promoButton} onPress={handleRemove}>
+              <Text style={styles.promoButtonText}>Hủy</Text>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity style={styles.promoButton} onPress={handleApply}>
+              <Text style={styles.promoButtonText}>Áp dụng</Text>
+            </TouchableOpacity>
+          )}
+        </>
+      )}
+      {error && <Text style={styles.errorText}>{error}</Text>}
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  // Sử dụng lại các styles đã có của bạn
+  promoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    padding: 12,
+    borderRadius: 16,
+    marginBottom: 16,
+    elevation: 2,
+    position: 'relative', // Để position absolute của errorText hoạt động
+  },
+  promoInput: {
+    flex: 1,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    borderColor: '#ccc',
+    borderWidth: 1,
+    marginRight: 10,
+  },
+  promoButton: {
+    backgroundColor: '#4AA366',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    minWidth: 80, // Đảm bảo nút có kích thước ổn định
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  promoButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  errorText: {
+    color: 'red',
+    fontSize: 12,
+    position: 'absolute',
+    bottom: -15, // Đặt lỗi ở dưới input
+    left: 12,
+    right: 12,
+  },
+});
