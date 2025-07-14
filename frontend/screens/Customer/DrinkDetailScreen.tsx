@@ -121,28 +121,77 @@ const DrinkDetailScreen = () => {
     [basePrice],
   )
 
+  const calculateUnitPrice = useCallback(() => {
+    const sizeMultiplier = sizeOptions.find((s) => s.size === selectedSize)?.multiplier || 1;
+    const toppingsPrice = selectedToppings.reduce((total, toppingId) => {
+      const topping = availableToppings.find((t) => t._id === toppingId);
+      return total + (topping?.price || 0);
+    }, 0);
+    return Math.round(basePrice * sizeMultiplier + toppingsPrice); // KHÔNG NHÂN QUANTITY Ở ĐÂY
+  }, [basePrice, sizeOptions, availableToppings, selectedSize, selectedToppings]);
+
+  // const handleAddToCart = async () => {
+  //   const item = {
+  //     id: drink.id, // or drink.id depending on backend
+  //     name: drink.name,
+  //     category: drink.category[0]?.category || '', // 💥 lấy tên category đầu tiên
+  //     price: calculateUnitPrice(), // tổng giá sau size + topping, chưa nhân quantity
+  //     quantity,
+  //     image: drink.image,
+  //     size: selectedSize,
+  //     toppings: selectedToppings,
+  //   };
+
+  //   console.log("Adding item to cart:", item); // <--- Thêm log nà
+  
+  //   try {
+  //     await dispatch(addItemToCart(item)).unwrap();
+  //     Alert.alert(
+  //       'Thành công',
+  //       `Đã thêm ${quantity} ${drink.name} vào giỏ hàng!`,
+  //       [{ text: 'OK', style: 'default' }]
+  //     );
+  //     navigation.goBack(); // quay về hoặc mở giỏ hàng tuỳ ý
+  //   } catch (error) {
+  //     Alert.alert('Lỗi', String(error));
+  //   }
+  // };
+
   const handleAddToCart = async () => {
-    const item = {
-      id: drink.id, // or drink.id depending on backend
-      name: drink.name,
-      category: drink.category[0]?.category || '', // 💥 lấy tên category đầu tiên
-      price: calculateTotalPrice(), // tổng giá sau size + topping, chưa nhân quantity
-      quantity,
-      image: drink.image,
+    // Thay đổi cấu trúc item để khớp với backend
+    const itemToSend = {
+      productId: drink.id, // <-- Đổi 'id' thành 'productId'
       size: selectedSize,
-      toppings: selectedToppings,
+      toppings: selectedToppings, // <-- Cái này đã khớp (mảng ID strings)
+      quantity,
+      // Các trường khác như name, image, category, price KHÔNG CẦN gửi lên backend
+      // vì backend sẽ tự populate/tính toán dựa trên productId, size, toppings.
+      // Backend của bạn chỉ cần các thông tin này để tạo CartItem:
+      // { productId, size, toppings, quantity }
     };
   
+    console.log("Sending item to backend:", itemToSend); // Log dữ liệu gửi đi
+  
     try {
-      await dispatch(addItemToCart(item)).unwrap();
+      // Đảm bảo addItemToCart thunk nhận đúng kiểu dữ liệu
+      // Bạn cần cập nhật CartItem type trong cartSlice.ts để khớp với itemToSend
+      await dispatch(addItemToCart(itemToSend)).unwrap(); // <--- Gửi itemToSend
+  
       Alert.alert(
         'Thành công',
         `Đã thêm ${quantity} ${drink.name} vào giỏ hàng!`,
         [{ text: 'OK', style: 'default' }]
       );
-      navigation.goBack(); // quay về hoặc mở giỏ hàng tuỳ ý
-    } catch (error) {
-      Alert.alert('Lỗi', String(error));
+      navigation.goBack();
+    } catch (error: any) {
+      console.error("Failed to add item to cart:", error);
+      let errorMessage = "Không thể thêm sản phẩm vào giỏ hàng. Vui lòng thử lại.";
+      if (error.response?.data?.error) { // Backend của bạn trả về { error: "..." }
+        errorMessage = error.response.data.error;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      Alert.alert('Lỗi', errorMessage);
     }
   };
   
