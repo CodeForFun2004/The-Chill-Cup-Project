@@ -4,7 +4,7 @@ import { useNavigation, CommonActions } from "@react-navigation/native"
 import type { StackNavigationProp } from "@react-navigation/stack"
 import type { ShipperStackParamList } from "../../navigation/shipper/ShipperNavigator"
 import { useDispatch } from 'react-redux';
-import { logout } from '../../redux/slices/authSlice';
+import { logoutUser } from '../../redux/slices/authSlice'; // <-- Import thunk này
 
 type NavigationProp = StackNavigationProp<ShipperStackParamList, "ShipperDashboard">
 
@@ -92,24 +92,27 @@ const ShipperDashboard = () => {
     }
   }
 
+
   const handleLogout = () => {
     Alert.alert('Đăng xuất', 'Bạn có chắc chắn muốn đăng xuất?', [
       { text: 'Huỷ' },
       {
         text: 'Đăng xuất',
-        onPress: () => {
-          dispatch(logout());
+        onPress: async () => { // <--- Thêm async vào đây
+          await dispatch(logoutUser() as any); // <-- Dispatch thunk logoutUser
+          // Sau khi logout thành công (cả Redux và AsyncStorage đã được clear)
+          // Điều hướng người dùng về màn hình khách hoặc màn hình bắt đầu
           navigation.dispatch(
             CommonActions.reset({
               index: 0,
-              routes: [{ name: 'ShipperDashboard' }],
+              routes: [{ name: 'Main' }], // <-- Đảm bảo đây là Guest Navigator hoặc màn hình khởi đầu cho khách
             })
           );
         },
         style: 'destructive',
       },
     ]);
-  }
+  };
 
   return (
     <View style={styles.container}>

@@ -36,7 +36,8 @@ api.interceptors.response.use(
       } catch (err) {
         // Optional: clear auth, force logout
         await AsyncStorage.multiRemove(['accessToken', 'refreshToken', 'user']);
-        store.dispatch({ type: 'auth/logout' });
+        //store.dispatch({ type: 'auth/logout' });
+        store.dispatch(logout()); // <-- SỬA TẠI ĐÂY
         return Promise.reject(err);
       }
     }

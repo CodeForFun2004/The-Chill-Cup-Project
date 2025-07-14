@@ -10,7 +10,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { useDispatch } from 'react-redux'
-import { logout } from '../../redux/slices/authSlice';
+import { logoutUser } from '../../redux/slices/authSlice';
 import { CommonActions, useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -24,19 +24,21 @@ const StaffDashboard = () => {
       { text: 'Huỷ' },
       {
         text: 'Đăng xuất',
-        onPress: () => {
-          dispatch(logout());
+        onPress: async () => { // <--- Thêm async vào đây
+          await dispatch(logoutUser() as any); // <-- Dispatch thunk logoutUser
+          // Sau khi logout thành công (cả Redux và AsyncStorage đã được clear)
+          // Điều hướng người dùng về màn hình khách hoặc màn hình bắt đầu
           navigation.dispatch(
             CommonActions.reset({
               index: 0,
-              routes: [{ name: 'StaffDashboard' }],
+              routes: [{ name: 'Main' }], // <-- Đảm bảo đây là Guest Navigator hoặc màn hình khởi đầu cho khách
             })
           );
         },
         style: 'destructive',
       },
     ]);
-  }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
