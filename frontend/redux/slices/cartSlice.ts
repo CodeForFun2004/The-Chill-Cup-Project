@@ -13,6 +13,18 @@ export type CartItem = {
   toppings?: string[];
 };
 
+type RawCartItem = {
+  _id: string;
+  name: string;
+  image: string;
+  size?: string;
+  quantity: number;
+  unitPrice: number;
+  category?: string;
+  toppings?: { _id: string; name: string; price: number; icon: string }[];
+};
+
+
 type CartState = {
   items: CartItem[];
   delivery: number;
@@ -29,11 +41,15 @@ const initialState: CartState = {
   error: null,
 };
 
+
+
 // ✅ Load cart từ API
-export const loadCartFromAPI = createAsyncThunk<CartItem[], void, { state: RootState; rejectValue: string }>(
+export const loadCartFromAPI = createAsyncThunk<RawCartItem[], void, { state: RootState; rejectValue: string }>(
+
   'cart/loadCartFromAPI',
   async (_, thunkAPI) => {
     const token = thunkAPI.getState().auth.accessToken;
+    console.log('[loadCartFromAPI] token:', token);  // ← log để check
     try {
       const res = await axios.get('/cart', {
         headers: { Authorization: `Bearer ${token}` },
@@ -131,7 +147,22 @@ const cartSlice = createSlice({
   extraReducers: (builder) => {
     builder
       .addCase(loadCartFromAPI.pending, (state) => { state.loading = true; state.error = null; })
-      .addCase(loadCartFromAPI.fulfilled, (state, action) => { state.loading = false; state.items = action.payload; })
+      .addCase(loadCartFromAPI.fulfilled, (state, action) => { 
+        console.log('✅ Fetched cart from API:', action.payload);
+        console.log('[Reducer] fetched items:', action.payload);
+        state.loading = false; 
+        state.items = action.payload.map(item => ({
+          id: item._id,  // map _id → id
+          name: item.name,
+          category: item.category || '',  // fallback nếu backend chưa trả
+          price: item.unitPrice,  // map unitPrice → price
+          quantity: item.quantity,
+          image: item.image,
+          size: item.size,
+          toppings: item.toppings ? item.toppings.map(t => t.name) : [],
+        }));
+         })
+
       .addCase(loadCartFromAPI.rejected, (state, action) => { state.loading = false; state.error = action.payload || 'Failed to load cart'; })
 
       .addCase(addItemToCart.pending, (state) => { state.loading = true; state.error = null; })

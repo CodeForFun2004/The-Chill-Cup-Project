@@ -98,6 +98,8 @@ const CartScreen = () => {
         )}
       </ScrollView>
     </View>
+  
+
   );
 };
 

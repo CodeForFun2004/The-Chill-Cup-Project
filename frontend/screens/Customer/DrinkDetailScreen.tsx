@@ -12,7 +12,7 @@ import { useDispatch } from 'react-redux';
 import { AppDispatch } from '../../redux/store';
 import { addItemToCart } from '../../redux/slices/cartSlice';
 
-const dispatch = useDispatch<AppDispatch>();
+
 
 
 
@@ -20,6 +20,7 @@ type DrinkDetailRouteProp = RouteProp<GuestDrinkStackParamList, "DrinkDetailScre
 type DrinkDetailNavigationProp = NavigationProp<GuestDrinkStackParamList, "DrinkDetailScreen">
 
 const DrinkDetailScreen = () => {
+  const dispatch = useDispatch<AppDispatch>();
   const route = useRoute<DrinkDetailRouteProp>()
   const navigation = useNavigation<DrinkDetailNavigationProp>()
   const { drink } = route.params

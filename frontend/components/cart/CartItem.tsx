@@ -23,7 +23,7 @@ export const CartItem: React.FC<CartItemProps> = ({
 }) => {
   return (
     <View style={styles.container}>
-      <Image source={image} style={styles.image} />
+      <Image source={{uri:image}} style={styles.image} />
       <View style={styles.info}>
         <Text style={styles.name}>{name}</Text>
         <Text style={styles.category}>{category}</Text>
