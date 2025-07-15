@@ -1,69 +1,9 @@
-// import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-
-// // Type cho từng item trong đơn hàng
-// export interface OrderItem {
-//   name: string;
-//   quantity: number;
-//   price: number;
-//   image?: any;
-// }
-
-// // Type cho đơn hàng
-// export interface Order {
-//   id: string;                  // Mã định danh nội bộ
-//   orderNumber: string;         // Mã hiển thị đơn hàng (ORD-XXXX)
-//   items: OrderItem[];
-//   total: number;
-//   address: string;
-//   paymentMethod: string;
-//   deliveryTime: string;
-//   date: string;
-//   time: string;
-//   status: 'Completed' | 'Cancelled' | 'Pending' | 'Processing' | 'Preparing' | 'Ready' | 'Delivering';
-//   estimatedDelivery?: string;
-//   deliveryAddress?: string;
-//   phoneNumber?: string;
-// }
-
-// // Trạng thái khởi tạo rỗng
-// const initialState: Order = {
-//   id: '',
-//   orderNumber: '',
-//   items: [],
-//   total: 0,
-//   address: '',
-//   paymentMethod: '',
-//   deliveryTime: '',
-//   date: '',
-//   time: '',
-//   status: 'Processing',
-//   estimatedDelivery: '',
-//   deliveryAddress: '',
-//   phoneNumber: '',
-// };
-
-// // Slice Redux
-// const orderSlice = createSlice({
-//   name: 'order',
-//   initialState,
-//   reducers: {
-//     setOrderInfo: (state, action: PayloadAction<Order>) => {
-//       return { ...state, ...action.payload };
-//     },
-//     clearOrderInfo: () => initialState,
-//   },
-// });
-
-// export const { setOrderInfo, clearOrderInfo } = orderSlice.actions;
-// export default orderSlice.reducer;
-
-
 // redux/orderSlice.ts
 import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import api from '../../api/axios'; // Đảm bảo đường dẫn đúng đến instance axios của bạn
+import api from '../../api/axios'; // Đảm bảo đường dẫn này đúng với instance axios của bạn
 
-// Định nghĩa kiểu dữ liệu cho một Product bên trong OrderItem (vì nó được populate)
+// Định nghĩa kiểu dữ liệu cho một Product bên trong OrderItem khi đã được populate
 interface OrderProduct {
   _id: string;
   name: string;
@@ -72,50 +12,51 @@ interface OrderProduct {
   image: string;
   status: string;
   rating: number;
-  sizeOptions: string[];
-  toppingOptions: string[];
+  sizeOptions: string[]; // IDs của các tùy chọn size
+  toppingOptions: string[]; // IDs của các tùy chọn topping
   storeId: string;
   categoryId: string[];
   isBanned: boolean;
   __v: number;
 }
 
-// Định nghĩa kiểu dữ liệu cho một CartItem (bây giờ là OrderItem)
+// Định nghĩa kiểu dữ liệu cho một mục sản phẩm trong đơn hàng
 interface OrderItem {
-  productId: OrderProduct; // Đã được populate
-  name: string; // Tên sản phẩm từ Cart (có thể không cần nếu dùng productId.name)
-  size?: string; // Nếu có trường size trong CartItem
-  toppings?: { id: string; name: string }[]; // Nếu có toppings
+  productId: OrderProduct; // Đối tượng sản phẩm đã được populate từ backend
+  name: string; // Tên sản phẩm, có thể dùng productId.name
+  size?: string; // Kích cỡ sản phẩm (ví dụ: "L", "M", "S")
+  toppings?: { id: string; name: string }[]; // Toppings kèm theo (ID và tên)
   quantity: number;
-  price: number; // Giá đã tính cho item này
+  price: number; // Giá đã tính cho item này (quantity * basePrice + toppingPrices)
   _id: string;
 }
 
-// Định nghĩa kiểu dữ liệu đầy đủ cho một đơn hàng từ API getOrderById
+// Định nghĩa kiểu dữ liệu đầy đủ cho một đơn hàng (như trả về từ API getOrderById)
 interface Order {
   _id: string;
   userId: string;
   storeId: string;
   orderNumber: string;
   items: OrderItem[]; // Danh sách các sản phẩm trong đơn hàng
-  subtotal: number;
-  discount?: number; // Optional nếu không phải lúc nào cũng có
-  tax: number;
-  total: number;
-  deliveryFee: number;
+  subtotal: number; // Tổng tiền trước thuế và phí giao hàng, sau giảm giá
+  discount?: number; // Số tiền giảm giá nếu có
+  tax: number; // Thuế áp dụng
+  total: number; // Tổng tiền cuối cùng
+  deliveryFee: number; // Phí giao hàng
   deliveryAddress: string;
   phone: string;
   paymentMethod: 'vnpay' | 'cod';
-  deliveryTime: string;
-  status: string; // e.g., 'pending', 'confirmed', 'shipping', 'delivered', 'cancelled'
+  deliveryTime: string; // Thời gian giao hàng ước tính (ví dụ: "25-35 phút")
+  status: 'pending' | 'confirmed' | 'shipping' | 'delivered' | 'cancelled'; // Trạng thái đơn hàng
   cancelReason: string | null;
-  shipperAssigned: string | null;
-  appliedPromoCode?: string | null; // Có thể có từ createOrder, nhưng không xuất hiện trong getOrderById
+  shipperAssigned: string | null; // ID của shipper nếu có
+  appliedPromoCode?: string | null; // Mã khuyến mãi đã áp dụng
   createdAt: string;
-  updatedAt?: string; // Có thể có hoặc không tùy model
+  updatedAt?: string;
   __v: number;
 }
 
+// Payload cho action createOrder
 interface CreateOrderPayload {
   deliveryAddress: string;
   phone: string;
@@ -123,13 +64,15 @@ interface CreateOrderPayload {
   storeId: string;
 }
 
+// Định nghĩa trạng thái của slice order
 interface OrderState {
-  currentOrder: Order | null;
-  loading: boolean;
-  error: string | null;
-  orderCreatedSuccessfully: boolean; // Đổi tên để rõ ràng hơn
+  currentOrder: Order | null; // Đơn hàng hiện tại sau khi tạo và fetch chi tiết
+  loading: boolean; // Trạng thái loading cho các thao tác order
+  error: string | null; // Thông báo lỗi nếu có
+  orderCreatedSuccessfully: boolean; // Cờ báo hiệu order đã được tạo thành công trên backend
 }
 
+// Trạng thái khởi tạo của slice order
 const initialState: OrderState = {
   currentOrder: null,
   loading: false,
@@ -137,7 +80,13 @@ const initialState: OrderState = {
   orderCreatedSuccessfully: false,
 };
 
-// ✅ Thunk để tạo đơn hàng mới
+// --- THUNKS ---
+
+/**
+ * @thunk createOrder
+ * @description Gửi yêu cầu tạo đơn hàng mới lên backend.
+ * Trả về ID của đơn hàng vừa tạo khi thành công.
+ */
 export const createOrder = createAsyncThunk(
   'order/createOrder',
   async (orderData: CreateOrderPayload, thunkAPI) => {
@@ -151,10 +100,9 @@ export const createOrder = createAsyncThunk(
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      // API createOrder trả về { message, order }, nhưng chúng ta cần orderId
-      // để gọi getOrderById. API getOrderById trả về đầy đủ Order object.
-      // Dựa trên yêu cầu, chúng ta sẽ trả về orderId để fetch lại.
-      return response.data.order._id; // Trả về chỉ _id của order mới tạo
+      // Backend API createOrder trả về { message: string, order: { _id: string, ... } }
+      // Chúng ta chỉ cần trả về _id để dùng cho fetchOrderById
+      return response.data.order._id as string;
     } catch (error: any) {
       const message = error.response?.data?.error || error.response?.data?.message || 'Failed to create order';
       console.error('Error creating order:', error.response?.data || error.message || error);
@@ -163,7 +111,11 @@ export const createOrder = createAsyncThunk(
   }
 );
 
-// ✅ Thunk để lấy chi tiết đơn hàng theo ID
+/**
+ * @thunk fetchOrderById
+ * @description Lấy chi tiết đầy đủ của một đơn hàng dựa trên ID.
+ * Trả về đối tượng Order đầy đủ khi thành công.
+ */
 export const fetchOrderById = createAsyncThunk(
   'order/fetchOrderById',
   async (orderId: string, thunkAPI) => {
@@ -173,12 +125,12 @@ export const fetchOrderById = createAsyncThunk(
         return thunkAPI.rejectWithValue('No access token found. Please log in.');
       }
 
-      const response = await api.get(`/orders/${orderId}`, { // Endpoint là '/orders/:orderId'
+      const response = await api.get(`/orders/${orderId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      console.log('Order details fetched successfully:', response.data);
-      return response.data; // API trả về trực tiếp Order object
+      // Backend API getOrderById trả về trực tiếp đối tượng Order
+      return response.data as Order;
     } catch (error: any) {
       const message = error.response?.data?.error || error.response?.data?.message || 'Failed to fetch order details';
       console.error('Error fetching order details:', error.response?.data || error.message || error);
@@ -187,10 +139,17 @@ export const fetchOrderById = createAsyncThunk(
   }
 );
 
+// --- ORDER SLICE ---
+
 const orderSlice = createSlice({
   name: 'order',
   initialState,
   reducers: {
+    /**
+     * @action resetOrderState
+     * @description Đặt lại toàn bộ trạng thái của slice order về trạng thái ban đầu.
+     * Hữu ích sau khi đơn hàng được xử lý xong (ví dụ: sau khi điều hướng đến màn hình thành công).
+     */
     resetOrderState: (state) => {
       state.currentOrder = null;
       state.loading = false;
@@ -200,39 +159,42 @@ const orderSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // Xử lý tạo đơn hàng
+      // --- Xử lý trạng thái của createOrder thunk ---
       .addCase(createOrder.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-        state.orderCreatedSuccessfully = false;
+        state.loading = true; // Bắt đầu loading
+        state.error = null; // Xóa lỗi cũ
+        state.orderCreatedSuccessfully = false; // Reset cờ thành công
+        state.currentOrder = null; // Xóa dữ liệu order cũ
       })
       .addCase(createOrder.fulfilled, (state, action: PayloadAction<string>) => {
-        state.loading = false;
-        // Sau khi tạo thành công, chúng ta chỉ nhận được orderId
-        // state.currentOrder sẽ được cập nhật bởi fetchOrderById
-        state.orderCreatedSuccessfully = true;
-        state.currentOrder = null; // Đặt lại để chuẩn bị cho fetch details
+        state.loading = false; // Kết thúc loading
+        state.orderCreatedSuccessfully = true; // Đặt cờ thành công
+        // currentOrder vẫn là null, nó sẽ được fetchOrderById cập nhật sau
       })
       .addCase(createOrder.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload as string;
-        state.orderCreatedSuccessfully = false;
+        state.loading = false; // Kết thúc loading
+        state.error = action.payload as string; // Lưu thông báo lỗi
+        state.orderCreatedSuccessfully = false; // Đặt cờ thành công là false
+        state.currentOrder = null; // Xóa dữ liệu order nếu có lỗi
       })
-      // Xử lý lấy chi tiết đơn hàng
+      // --- Xử lý trạng thái của fetchOrderById thunk ---
       .addCase(fetchOrderById.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-        state.orderCreatedSuccessfully = false; // Reset trạng thái thành công khi fetch lại
+        state.loading = true; // Bắt đầu loading (để fetch details)
+        state.error = null; // Xóa lỗi cũ
+        // KHÔNG reset orderCreatedSuccessfully ở đây.
+        // Nó phải giữ nguyên giá trị true từ createOrder.fulfilled.
       })
       .addCase(fetchOrderById.fulfilled, (state, action: PayloadAction<Order>) => {
-        state.loading = false;
-        state.currentOrder = action.payload; // Cập nhật currentOrder với dữ liệu đầy đủ
-        state.error = null; // Đảm bảo lỗi được xóa nếu có
+        state.loading = false; // Kết thúc loading
+        state.currentOrder = action.payload; // Cập nhật currentOrder với dữ liệu đầy đủ từ API
+        state.error = null; // Xóa lỗi nếu fetch thành công
+        state.orderCreatedSuccessfully = true; // Đảm bảo cờ thành công vẫn là true
       })
       .addCase(fetchOrderById.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload as string;
-        state.currentOrder = null; // Xóa order nếu fetch chi tiết thất bại
+        state.loading = false; // Kết thúc loading
+        state.error = action.payload as string; // Lưu thông báo lỗi
+        state.currentOrder = null; // Xóa dữ liệu order nếu fetch thất bại
+        state.orderCreatedSuccessfully = false; // Đặt cờ thành công là false
       });
   },
 });
