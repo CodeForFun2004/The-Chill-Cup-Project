@@ -41,7 +41,7 @@ export type CustomerStackParamList = {
   Vouchers: undefined;
   LoyaltyScreen: undefined;
   VNPayGateway: undefined;
-  OrderSuccess: undefined;
+  OrderSuccess: { orderId: string }; // ✅ Định nghĩa rằng OrderSuccess nhận tham số orderId
   OrderHistory: undefined;
   Notifications: undefined;
   OrderDetail: {

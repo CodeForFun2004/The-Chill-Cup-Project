@@ -18,6 +18,7 @@ export type CartItem = {
   image: string;
   size?: string;
   toppings?: string[]; // <-- Mảng TÊN topping (ví dụ: ["Trân châu trắng", "Trân châu đen"])
+
 };
 
 // Định nghĩa kiểu dữ liệu cho payload khi thêm item vào giỏ hàng
@@ -76,6 +77,7 @@ type CartState = {
   // Thêm các trạng thái loading cụ thể cho từng hành động nếu cần UI chi tiết hơn
   // isUpdatingQuantity: boolean;
   // isApplyingDiscount: boolean;
+  storeId: string | '686cbb78985742f661838493'; // ✅ Thêm storeId vào CartState
 };
 
 const initialState: CartState = {
@@ -88,6 +90,7 @@ const initialState: CartState = {
   appliedPromotionCode: null,
   loading: false,
   error: null,
+  storeId:  '686cbb78985742f661838493'// ✅ Thêm storeId vào CartState
   // isUpdatingQuantity: false,
   // isApplyingDiscount: false,
 };
