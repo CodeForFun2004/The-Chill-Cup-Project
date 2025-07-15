@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useSelector } from 'react-redux';
-import { RootState } from '../../redux/store';
+import { RootState } from '../../redux/rootReducer';
 import { formatCurrency } from '../../utils/formatCurrency';
 
 const OrderSummaryDetails = () => {

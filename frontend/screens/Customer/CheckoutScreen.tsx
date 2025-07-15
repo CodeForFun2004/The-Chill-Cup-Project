@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, ScrollView, StyleSheet } from 'react-native';
 import { useSelector } from 'react-redux';
-import { RootState } from '../../redux/store';
+import { RootState } from '../../redux/rootReducer'; // Đảm bảo đường dẫn này đúng
 
 import LocationInfo from '../../components/checkout/LocationInfo';
 import OrderSummary from '../../components/checkout/OrderSummary';
@@ -11,12 +11,34 @@ import CheckoutHeader from '../../components/checkout/CheckoutHeader';
 
 const CheckoutScreen = () => {
   const [paymentMethod, setPaymentMethod] = useState<'vnpay' | 'cod'>('cod');
-  const [location, setLocation] = useState('123 Sakura Street, Downtown City Center, 5 miles away');
-  const [phone, setPhone] = useState('+84 123 456 789');
+  // Khởi tạo state location và phone với giá trị mặc định rỗng hoặc 'N/A'
+  // Chúng ta sẽ cập nhật chúng bằng dữ liệu từ Redux sau
+  const [location, setLocation] = useState<string>('');
+  const [phone, setPhone] = useState<string>('');
 
-  const { items, delivery, taxRate } = useSelector((state: RootState) => state.cart);
-  const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const tax = Math.round(subtotal * taxRate);
+  // Lấy thông tin profile từ Redux store
+  const userProfile = useSelector((state: RootState) => state.user.profile);
+  const { subtotal, delivery, discountAmount, total } = useSelector((state: RootState) => state.cart);
+
+  // Sử dụng useEffect để cập nhật location và phone khi userProfile có dữ liệu
+  useEffect(() => {
+    if (userProfile) {
+      // Cập nhật địa chỉ và số điện thoại từ profile, nếu có
+      // Nếu không có, có thể để giá trị mặc định là rỗng hoặc một thông báo
+      setLocation(userProfile.address || 'Chưa có địa chỉ');
+      setPhone(userProfile.phone || 'Chưa có số điện thoại');
+    }
+  }, [userProfile]); // Dependency array: chạy lại khi userProfile thay đổi
+
+  console.log('===== CHECKOUT SCREEN =====');
+  console.log('Tạm tính: ', subtotal);
+  console.log('Phí ship: ', delivery);
+  console.log('Tổng tiền: ', total);
+  console.log('Current username: ', userProfile?.username);
+  
+  console.log('Địa chỉ hiện tại:', location);
+  console.log('Số điện thoại hiện tại:', phone);
+
 
   return (
     <View style={styles.container}>
@@ -28,7 +50,7 @@ const CheckoutScreen = () => {
           setLocation={setLocation}
           setPhone={setPhone}
         />
-        <OrderSummary subtotal={subtotal} delivery={delivery} tax={tax} />
+        <OrderSummary subTotal={subtotal} delivery={delivery} discountAmount={discountAmount} total={total} />
         <PaymentMethod selected={paymentMethod} onSelect={setPaymentMethod} />
         <PlaceOrderButton
           paymentMethod={paymentMethod}
