@@ -11,7 +11,7 @@ import {
 
 
 import { View, StyleSheet} from "react-native";
-import { NavigatorScreenParams } from "@react-navigation/native";
+import { NavigatorScreenParams, getFocusedRouteNameFromRoute } from "@react-navigation/native";
 import CustomerHomeStack from "./CustomerHomeStack";
 import StoreScreen from "../../screens/Customer/StoreScreen";
 import CustomerStackNavigator from "./CustomerStackNavigator";
@@ -86,6 +86,15 @@ const CustomerNavigator = () => {
     <Tab.Screen
       name="CartStack"
       component={CustomerStackNavigator}
+      options={({ route }) => {
+        const routeName = getFocusedRouteNameFromRoute(route) ?? '';
+        return {
+          tabBarStyle: [
+            styles.tabBar,
+            routeName === 'OrderSuccess' ? { display: 'none' } : {},
+          ],
+        };
+      }}
       listeners={({ navigation }) => ({
         tabPress: e => {
           e.preventDefault();

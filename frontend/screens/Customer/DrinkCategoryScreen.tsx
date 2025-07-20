@@ -9,7 +9,6 @@ import { AppDispatch } from '../../redux/store';
 import { RootState } from '../../redux/rootReducer';
 import { GuestDrinkStackParamList } from '../../navigation/guest/GuestDrinkStackNavigator';
 import ProductCard from '../../components/hompage/ProductCard';
-import { Category, GroupedProduct } from '../../types/types';
 import { loadProducts, setGroupedProducts } from '../../redux/slices/productSlice';
 import { loadCategories } from '../../redux/slices/categorySlice';
 import { groupProductsByCategory } from '../../utils/groupProducts';
@@ -72,14 +71,34 @@ const DrinkCategoryScreen = ({ navigation }: { navigation: DrinkCategoryNavigati
     return () => clearTimeout(timer);
   }, [groupedProducts]);
 
-  const scrollToCategory = (index: number) => {
-    setActiveTab(index);
-    if (categoryPositions[index] !== undefined) {
-      scrollViewRef.current?.scrollTo({ y: categoryPositions[index] - 10, animated: true });
+
+  // Scroll đến đúng section dựa trên categoryId
+  const scrollToCategory = (categoryId: string) => {
+    const sectionIndex = sortedGroupedProducts.findIndex(cat => cat._id === categoryId); // Sử dụng sortedGroupedProducts
+    if (sectionIndex !== -1) {
+      setActiveTab(sectionIndex);
+      if (categoryPositions[sectionIndex] !== undefined) {
+        scrollViewRef.current?.scrollTo({ y: categoryPositions[sectionIndex] - 10, animated: true });
+      }
     }
   };
 
-  const filteredProducts = groupedProducts.map(cat => ({
+  // Sắp xếp categories và groupedProducts
+  const sortedCategories = [...categories];
+  const specialCategoryName = 'Món Mới Phải Thử';
+  const specialCategoryIndex = sortedCategories.findIndex(cat => cat.category === specialCategoryName);
+
+  if (specialCategoryIndex > 0) {
+    const [special] = sortedCategories.splice(specialCategoryIndex, 1);
+    sortedCategories.unshift(special);
+  }
+
+  // Sắp xếp groupedProducts theo thứ tự của sortedCategories
+  const sortedGroupedProducts = sortedCategories
+    .map(sortedCat => groupedProducts.find(gp => gp._id === sortedCat._id))
+    .filter(Boolean) as typeof groupedProducts; // Lọc bỏ các giá trị undefined và ép kiểu lại
+
+  const filteredProducts = sortedGroupedProducts.map(cat => ({ // Sử dụng sortedGroupedProducts
     ...cat,
     drinks: cat.drinks.filter(drink =>
       drink.name.toLowerCase().includes(searchText.toLowerCase())
@@ -106,22 +125,26 @@ const DrinkCategoryScreen = ({ navigation }: { navigation: DrinkCategoryNavigati
           {catLoading ? (
             <ActivityIndicator size="small" color="#D17842" />
           ) : (
-            categories.map((cat, index) => (
-              <TouchableOpacity
-                key={cat._id}
-                style={[styles.categoryItem, activeTab === index && styles.activeCategory]}
-                onPress={() => scrollToCategory(index)}
-              >
-                <Image
-                  source={{ uri: cat.icon }}
-                  style={styles.categoryIcon}
-                  resizeMode="cover"
-                />
-                <Text style={[styles.categoryText, activeTab === index && styles.activeCategoryText]}>
-                  {cat.category}
-                </Text>
-              </TouchableOpacity>
-            ))
+            sortedCategories.map((cat) => { // Sử dụng sortedCategories đã sắp xếp
+              const sectionIndex = sortedGroupedProducts.findIndex(g => g._id === cat._id); // Tìm index trong sortedGroupedProducts
+              return (
+                <TouchableOpacity
+                  key={cat._id}
+                  style={[styles.categoryItem, activeTab === sectionIndex && sectionIndex !== -1 && styles.activeCategory]}
+                  onPress={() => scrollToCategory(cat._id)}
+                  disabled={sectionIndex === -1}
+                >
+                  <Image
+                    source={{ uri: cat.icon }}
+                    style={styles.categoryIcon}
+                    resizeMode="cover"
+                  />
+                  <Text style={[styles.categoryText, activeTab === sectionIndex && sectionIndex !== -1 && styles.activeCategoryText]}>
+                    {cat.category}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })
           )}
         </ScrollView>
       </View>
@@ -131,7 +154,7 @@ const DrinkCategoryScreen = ({ navigation }: { navigation: DrinkCategoryNavigati
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 50 }}
       >
-        {filteredProducts.map((cat, index) => (
+        {filteredProducts.map((cat, index) => ( // filteredProducts đã dựa trên sortedGroupedProducts
           cat.drinks.length > 0 && (
             <View
               key={cat._id}
@@ -163,7 +186,7 @@ const DrinkCategoryScreen = ({ navigation }: { navigation: DrinkCategoryNavigati
                           toppingOptions: drink.toppingOptions, // [{ _id, name, price, icon }]
                         },
                       })
-                      
+
                     }
                   />
                 )}
@@ -230,5 +253,3 @@ const styles = StyleSheet.create({
 });
 
 export default DrinkCategoryScreen;
-
-

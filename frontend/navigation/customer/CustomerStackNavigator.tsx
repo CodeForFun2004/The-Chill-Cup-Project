@@ -79,6 +79,7 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
+import CustomerHomeScreen from '../../screens/Customer/CustomerHomeScreen';
 import CartScreen from '../../screens/Customer/CartScreen';
 import CheckoutScreen from '../../screens/Customer/CheckoutScreen';
 import VouchersScreen from '../../screens/Customer/VouchersScreen';
@@ -98,6 +99,7 @@ import { Order } from '../../redux/slices/orderSlice';
 import VNPayGatewayScreen from '../../screens/Customer/VNPayGatewayScreen';
 
 export type CustomerStackParamList = {
+  Home: undefined;
   Cart: undefined;
   Checkout: undefined;
   Vouchers: undefined;
@@ -118,15 +120,17 @@ export type CustomerStackParamList = {
 
 const Stack = createNativeStackNavigator<CustomerStackParamList>();
 
+
 const CustomerStackNavigator = () => {
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Navigator initialRouteName="Home" screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="Home" component={CustomerHomeScreen} />
       <Stack.Screen name="Cart" component={CartScreen} />
       <Stack.Screen name="Checkout" component={CheckoutScreen} />
       <Stack.Screen name="Vouchers" component={VouchersScreen} />
       <Stack.Screen name="LoyaltyScreen" component={LoyaltyScreen} />
       <Stack.Screen name="VNPayGateway" component={VNPayGatewayScreen} />
-      <Stack.Screen name="OrderSuccess" component={OrderSuccessScreen} />
+      <Stack.Screen name="OrderSuccess" component={OrderSuccessScreen} options={{ headerShown: false }} />
       <Stack.Screen name="OrderHistory" component={OrderHistoryScreen} />
       <Stack.Screen name="OrderDetail" component={OrderDetailScreen} />
       <Stack.Screen name="OrderTracking" component={OrderTrackingScreen} />
