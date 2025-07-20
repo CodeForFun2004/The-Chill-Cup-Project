@@ -1,30 +1,41 @@
 import React from 'react';
-import { View, StyleSheet, TouchableOpacity, Text } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Text, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useSelector } from 'react-redux';
 import { MaterialIcons } from '@expo/vector-icons';
-import { RootState } from '../../redux/store';
+import { RootState } from '../../redux/rootReducer';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+// ✅ Import lại Order từ orderSlice để đảm bảo định nghĩa kiểu thống nhất
+
 import { CustomerStackParamList } from '../../navigation/customer/CustomerStackNavigator';
 
 const OrderSuccessActions = () => {
-  const order = useSelector((state: RootState) => state.order);
+  // ✅ Lấy currentOrder từ order state, KHÔNG phải toàn bộ order state
+  const currentOrder = useSelector((state: RootState) => state.order.currentOrder);
+  // OrderState bao gồm currentOrder, loading, error, v.v.
+  // currentOrder mới là đối tượng Order thực sự.
+
   const navigation = useNavigation<NativeStackNavigationProp<CustomerStackParamList>>();
 
   const handleBackToHome = () => {
+    // Lưu ý: getParent().navigate là cách chuyển giữa các top-level navigators.
+    // Nếu CustomerHomeStack là tên của navigator chứa Home, thì đúng.
     const parentNav = navigation.getParent();
-    parentNav?.navigate('CustomerHomeStack', {
-      screen: 'CustomerHomeScreen',
+    parentNav?.navigate('CustomerHomeStack', { // Đảm bảo 'CustomerHomeStack' là tên Stack Navigator chính
+      screen: 'CustomerHomeScreen', // Đảm bảo 'CustomerHomeScreen' là tên màn hình Home trong CustomerHomeStack
     });
   };
 
   const handleTrackOrder = () => {
-    if (!order || !order.id) {
+    // ✅ Kiểm tra currentOrder, không phải order (OrderState)
+    if (!currentOrder || !currentOrder._id) { // Dùng _id thay vì id vì MongoDB dùng _id
       console.warn('Không có đơn hàng hợp lệ để theo dõi.');
+      Alert.alert('Lỗi', 'Không tìm thấy chi tiết đơn hàng để theo dõi.'); // Thêm Alert cho người dùng
       return;
     }
 
-    navigation.navigate('OrderTracking', { order });
+    // ✅ Truyền currentOrder (đối tượng Order đầy đủ)
+    navigation.navigate('OrderTracking', { order: currentOrder }); 
   };
 
   return (

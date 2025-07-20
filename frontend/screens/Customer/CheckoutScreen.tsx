@@ -273,8 +273,7 @@ const { subtotal, delivery, discountAmount, total, storeId: cartStoreId } = cart
             console.log('Order created and details fetched. Navigating to OrderSuccess.');
             // Điều hướng và truyền orderId
             navigation.navigate('OrderSuccess', { orderId: currentOrder._id });
-            // Reset trạng thái order sau khi điều hướng để chuẩn bị cho lần đặt hàng tiếp theo
-            dispatch(resetOrderState()); 
+       
         } 
         // Nếu có lỗi ở bất kỳ bước nào (tạo đơn hoặc fetch chi tiết)
         else if (orderError) {
