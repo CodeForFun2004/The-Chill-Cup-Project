@@ -223,7 +223,7 @@
 //   },
 // });
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, ScrollView, StyleSheet, ActivityIndicator, Alert, Text } from 'react-native';
 import { useSelector } from 'react-redux';
 import { useNavigation } from '@react-navigation/native';
@@ -256,6 +256,12 @@ const { subtotal, delivery, discountAmount, total, storeId: cartStoreId } = cart
     // Lấy trạng thái từ orderSlice
     const { loading: orderLoading, error: orderError, orderCreatedSuccessfully, currentOrder } = useSelector((state: RootState) => state.order);
 
+
+    // Reset trạng thái order khi vào CheckoutScreen (componentDidMount)
+    useEffect(() => {
+        dispatch(resetOrderState());
+    }, [dispatch]);
+
     // Cập nhật location và phone từ userProfile
     useEffect(() => {
         if (userProfile) {
@@ -266,20 +272,19 @@ const { subtotal, delivery, discountAmount, total, storeId: cartStoreId } = cart
 
     // ✅ Effect này sẽ xử lý điều hướng và thông báo lỗi
     // (Đây là phần quan trọng nhất để điều hướng đến OrderSuccessScreen)
+    // Lưu lại orderId cũ để tránh điều hướng nhầm đơn cũ
+    const prevOrderIdRef = useRef<string | undefined>(undefined);
     useEffect(() => {
-        // Nếu đơn hàng đã được tạo thành công (orderCreatedSuccessfully là true)
-        // VÀ chi tiết đơn hàng đã được fetch và lưu vào currentOrder
-        if (orderCreatedSuccessfully && currentOrder) {
+        // Nếu đơn hàng đã được tạo thành công và currentOrder mới
+        if (orderCreatedSuccessfully && currentOrder && currentOrder._id !== prevOrderIdRef.current) {
             console.log('Order created and details fetched. Navigating to OrderSuccess.');
-            // Điều hướng và truyền orderId
+            prevOrderIdRef.current = currentOrder._id;
             navigation.navigate('OrderSuccess', { orderId: currentOrder._id });
-       
         } 
         // Nếu có lỗi ở bất kỳ bước nào (tạo đơn hoặc fetch chi tiết)
         else if (orderError) {
             console.log('Order error:', orderError);
             Alert.alert('Lỗi đặt hàng', orderError);
-            // Reset trạng thái lỗi sau khi hiển thị để không lặp lại Alert
             dispatch(resetOrderState()); 
         }
     }, [orderCreatedSuccessfully, currentOrder, orderError, navigation, dispatch]);

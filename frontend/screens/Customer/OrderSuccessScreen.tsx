@@ -1,36 +1,4 @@
-// import React from 'react';
-// import {  StyleSheet, ScrollView } from 'react-native';
-// import OrderSuccessHeader from '../../components/order-success/OrderSuccessHeader';
-// import OrderSummaryDetails from '../../components/order-success/OrderSummaryDetails';
-// import OrderSuccessActions from '../../components/order-success/OrderSuccessActions';
-
-
-// const OrderSuccessScreen = () => {
-//   return (
-//     <ScrollView contentContainerStyle={styles.container}>
-//       <OrderSuccessHeader />
-//       <OrderSummaryDetails />
-//       <OrderSuccessActions />
-//     </ScrollView>
-//   );
-// };
-
-// export default OrderSuccessScreen;
-
-// const styles = StyleSheet.create({
-//   container: {
-//     flexGrow: 1,
-//     padding: 24,
-//     backgroundColor: '#fff',
-//     justifyContent: 'space-between',
-//     paddingBottom: 100,
-//   },
-// });
-
-
-
-
-// frontend/screens/Customer/OrderSuccessScreen.tsx
+// // frontend/screens/Customer/OrderSuccessScreen.tsx
 // import React, { useEffect } from 'react';
 // import { StyleSheet, ScrollView, Text, ActivityIndicator, View } from 'react-native';
 // import { useRoute, RouteProp } from '@react-navigation/native';
@@ -44,27 +12,30 @@
 // import { useAppDispatch } from '../../redux/hooks';
 // import { fetchOrderById } from '../../redux/slices/orderSlice';
 
-// // Định nghĩa kiểu cho route của OrderSuccessScreen
 // type OrderSuccessScreenRouteProp = RouteProp<CustomerStackParamList, 'OrderSuccess'>;
 
 // const OrderSuccessScreen = () => {
 //   const route = useRoute<OrderSuccessScreenRouteProp>();
-//   const { orderId } = route.params; // Lấy orderId từ params
+//   const { orderId } = route.params; 
 
 //   const dispatch = useAppDispatch();
 
-//   // Lấy currentOrder từ orderSlice
 //   const { currentOrder, loading, error } = useSelector((state: RootState) => state.order);
 
-//   // useEffect để đảm bảo order được fetch nếu chưa có (trường hợp load lại screen hoặc deep link)
+//   // ✅ Thêm log để theo dõi orderId và trạng thái order
 //   useEffect(() => {
-//     // Chỉ fetch nếu orderId tồn tại VÀ (chưa có currentOrder HOẶC currentOrder._id không khớp với orderId)
+//     console.log('OrderSuccessScreen: orderId from params:', orderId);
+//     console.log('OrderSuccessScreen: currentOrder in Redux state:', currentOrder);
+//     console.log('OrderSuccessScreen: loading state:', loading);
+//     console.log('OrderSuccessScreen: error state:', error);
+
 //     if (orderId && (!currentOrder || currentOrder._id !== orderId)) {
+//       console.log('OrderSuccessScreen: Dispatching fetchOrderById for:', orderId);
 //       dispatch(fetchOrderById(orderId));
 //     }
-//   }, [orderId, currentOrder, dispatch]);
+//   }, [orderId, currentOrder, dispatch, loading, error]); // Thêm loading, error vào dependency array để theo dõi
 
-//   // Xử lý trạng thái loading/error/no data
+//   // ... (phần loading/error/no data display vẫn giữ nguyên)
 //   if (loading && !currentOrder) {
 //     return (
 //       <View style={styles.centeredContainer}>
@@ -82,8 +53,6 @@
 //     );
 //   }
 
-//   // Nếu đã có orderId nhưng currentOrder chưa khớp hoặc chưa load xong
-//   // hoặc currentOrder đã load nhưng không có dữ liệu (ví dụ orderId không hợp lệ)
 //   if (!currentOrder || currentOrder._id !== orderId) {
 //     return (
 //       <View style={styles.centeredContainer}>
@@ -95,10 +64,9 @@
 //   return (
 //     <ScrollView contentContainerStyle={styles.container}>
 //       <OrderSuccessHeader />
-//       {/* ✅ Truyền đối tượng order đầy đủ xuống OrderSummaryDetails */}
 //       <OrderSummaryDetails order={currentOrder} /> 
-//       {/* ✅ Đảm bảo OrderSuccessActions nhận prop orderId nếu nó cần */}
-//       <OrderSuccessActions  /> 
+//       {/* <OrderSuccessActions orderId={currentOrder._id} />  */}
+//        <OrderSuccessActions /> 
 //     </ScrollView>
 //   );
 // };
@@ -132,8 +100,6 @@
 //   },
 // });
 
-
-
 // frontend/screens/Customer/OrderSuccessScreen.tsx
 import React, { useEffect } from 'react';
 import { StyleSheet, ScrollView, Text, ActivityIndicator, View } from 'react-native';
@@ -145,31 +111,48 @@ import { CustomerStackParamList } from '../../navigation/customer/CustomerStackN
 import OrderSuccessHeader from '../../components/order-success/OrderSuccessHeader';
 import OrderSummaryDetails from '../../components/order-success/OrderSummaryDetails';
 import OrderSuccessActions from '../../components/order-success/OrderSuccessActions';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAppDispatch } from '../../redux/hooks';
-import { fetchOrderById } from '../../redux/slices/orderSlice';
+// ✅ Import resetOrderState từ orderSlice
+import { fetchOrderById, resetOrderState } from '../../redux/slices/orderSlice'; 
 
 type OrderSuccessScreenRouteProp = RouteProp<CustomerStackParamList, 'OrderSuccess'>;
 
+
 const OrderSuccessScreen = () => {
   const route = useRoute<OrderSuccessScreenRouteProp>();
-  const { orderId } = route.params; 
-
+  const { orderId } = route.params;
   const dispatch = useAppDispatch();
-
+  const navigation = useNavigation<NativeStackNavigationProp<CustomerStackParamList>>();
   const { currentOrder, loading, error } = useSelector((state: RootState) => state.order);
 
-  // ✅ Thêm log để theo dõi orderId và trạng thái order
   useEffect(() => {
     console.log('OrderSuccessScreen: orderId from params:', orderId);
-    console.log('OrderSuccessScreen: currentOrder in Redux state:', currentOrder);
-    console.log('OrderSuccessScreen: loading state:', loading);
-    console.log('OrderSuccessScreen: error state:', error);
-
-    if (orderId && (!currentOrder || currentOrder._id !== orderId)) {
-      console.log('OrderSuccessScreen: Dispatching fetchOrderById for:', orderId);
+    if (orderId) {
       dispatch(fetchOrderById(orderId));
     }
-  }, [orderId, currentOrder, dispatch, loading, error]); // Thêm loading, error vào dependency array để theo dõi
+    // Cleanup khi unmount
+    return () => {
+      console.log('OrderSuccessScreen: Component unmounting, dispatching resetOrderState.');
+      dispatch(resetOrderState());
+    };
+  }, [orderId, dispatch]);
+
+  // Hàm xử lý về trang chủ: reset order state và xóa orderId khỏi AsyncStorage
+  const handleBackToHome = async () => {
+    dispatch(resetOrderState());
+    try {
+      await AsyncStorage.removeItem('orderId');
+    } catch (e) {
+      console.warn('Không thể xóa orderId khỏi AsyncStorage:', e);
+    }
+    navigation.reset({
+      index: 0,
+      routes: [{ name: 'Cart' }],
+    });
+  };
 
   // ... (phần loading/error/no data display vẫn giữ nguyên)
   if (loading && !currentOrder) {
@@ -200,9 +183,9 @@ const OrderSuccessScreen = () => {
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <OrderSuccessHeader />
-      <OrderSummaryDetails order={currentOrder} /> 
-      {/* <OrderSuccessActions orderId={currentOrder._id} />  */}
-       <OrderSuccessActions /> 
+      <OrderSummaryDetails order={currentOrder} />
+      {/* Nút về trang chủ sẽ gọi handleBackToHome */}
+      <OrderSuccessActions onBackToHome={handleBackToHome} />
     </ScrollView>
   );
 };

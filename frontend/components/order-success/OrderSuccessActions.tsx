@@ -9,7 +9,11 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { CustomerStackParamList } from '../../navigation/customer/CustomerStackNavigator';
 
-const OrderSuccessActions = () => {
+interface OrderSuccessActionsProps {
+  onBackToHome?: () => void;
+}
+
+const OrderSuccessActions: React.FC<OrderSuccessActionsProps> = ({ onBackToHome }) => {
   // ✅ Lấy currentOrder từ order state, KHÔNG phải toàn bộ order state
   const currentOrder = useSelector((state: RootState) => state.order.currentOrder);
   // OrderState bao gồm currentOrder, loading, error, v.v.
@@ -17,13 +21,17 @@ const OrderSuccessActions = () => {
 
   const navigation = useNavigation<NativeStackNavigationProp<CustomerStackParamList>>();
 
+
   const handleBackToHome = () => {
-    // Lưu ý: getParent().navigate là cách chuyển giữa các top-level navigators.
-    // Nếu CustomerHomeStack là tên của navigator chứa Home, thì đúng.
-    const parentNav = navigation.getParent();
-    parentNav?.navigate('CustomerHomeStack', { // Đảm bảo 'CustomerHomeStack' là tên Stack Navigator chính
-      screen: 'CustomerHomeScreen', // Đảm bảo 'CustomerHomeScreen' là tên màn hình Home trong CustomerHomeStack
-    });
+    if (onBackToHome) {
+      onBackToHome();
+    } else {
+      // fallback: vẫn giữ logic cũ nếu không truyền prop
+      const parentNav = navigation.getParent();
+      parentNav?.navigate('CustomerHomeStack', {
+        screen: 'CustomerHomeScreen',
+      });
+    }
   };
 
   const handleTrackOrder = () => {
