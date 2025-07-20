@@ -4,14 +4,14 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import StaffDashboard from '../../screens/Staff/StaffDashboard';
 import OrderManagement from '../../screens/Staff/StaffOrders';
 
+export type StaffStackParamList = {
+  StaffDashboard: undefined;
+  OrderManagement: {
+    orderId: string;
+  };
+};
+
 const Stack = createNativeStackNavigator<StaffStackParamList>();
-
- export type StaffStackParamList = {
-  StaffDashboard: undefined
-  OrderManagement: undefined
-  Auth: undefined
-}
-
 
 const StaffNavigator = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>

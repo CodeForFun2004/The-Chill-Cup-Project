@@ -15,6 +15,8 @@ import {
 import * as Location from 'expo-location';
 import { Ionicons } from '@expo/vector-icons';
 import { STORES } from '../../data/stores';
+import { useOrder } from "../../contexts/OrderContext";
+import { useNavigation } from "@react-navigation/native";
 
 interface Coordinates {
   latitude: number;
@@ -44,17 +46,32 @@ const getDistance = (
   const dLon = toRad(lon2 - lon1);
   const a =
     Math.sin(dLat / 2) ** 2 +
-    Math.cos(toRad(lat1)) *
-      Math.cos(toRad(lat2)) *
-      Math.sin(dLon / 2) ** 2;
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
+};
+
+const highlightText = (text: string, highlight: string) => {
+  if (!highlight) return <Text>{text}</Text>;
+  const regex = new RegExp(`(${highlight})`, 'gi');
+  const parts = text.split(regex);
+  return parts.map((part, index) =>
+    regex.test(part) ? (
+      <Text key={index} style={styles.highlight}>
+        {part}
+      </Text>
+    ) : (
+      <Text key={index}>{part}</Text>
+    )
+  );
 };
 
 export default function StoreScreen() {
   const [search, setSearch] = useState('');
   const [location, setLocation] = useState<Coordinates | null>(null);
   const [selectedStore, setSelectedStore] = useState<Store | null>(null);
+  const { setStore } = useOrder();
+  const navigation = useNavigation();
 
   useEffect(() => {
     (async () => {
@@ -68,11 +85,11 @@ export default function StoreScreen() {
     })();
   }, []);
 
-  const sortedStores = useMemo(() => {
+  const fullSortedStores = useMemo(() => {
     if (!location)
       return STORES.map((s) => ({
         ...s,
-        distance: parseFloat(s.distance || '0'),
+        distance: 0,
       }));
     const mapped = STORES.map((s) => ({
       ...s,
@@ -84,27 +101,53 @@ export default function StoreScreen() {
       ),
     }));
     mapped.sort((a, b) => a.distance - b.distance);
-    return mapped.filter(
-      (s) =>
-        s.name.toLowerCase().includes(search.toLowerCase()) ||
-        s.address.toLowerCase().includes(search.toLowerCase())
-    );
-  }, [location, search]);
+    return mapped;
+  }, [location]);
 
-  const nearestStore = sortedStores[0];
-  const otherStores = sortedStores.slice(1);
+  const nearestStore = fullSortedStores[0];
+
+  const filteredStores = useMemo(() => {
+    return fullSortedStores.filter(
+      (s) =>
+        s.id !== nearestStore?.id &&
+        (s.name.toLowerCase().includes(search.toLowerCase()) ||
+          s.address.toLowerCase().includes(search.toLowerCase()))
+    );
+  }, [search, fullSortedStores, nearestStore]);
 
   const handleSelect = (store: Store): void => {
-    setSelectedStore(store);
-    Alert.alert('Đã chọn', `Địa chỉ giao hàng: ${store.name}`);
+    setStore(store);
+  
+    Alert.alert(
+      'Đã chọn',
+      `Địa chỉ giao hàng: ${store.name}`,
+      [
+        {
+          text: 'OK',
+          onPress: () => navigation.goBack(),
+        },
+      ],
+      { cancelable: false }
+    );
   };
 
-  const StoreCard = ({ store }: { store: Store }) => (
-    <View style={styles.card}>
+  const StoreCard = ({
+    store,
+  }: {
+    store: Store;
+    isNearest?: boolean;
+  }) => (
+    <View
+      style={[
+        styles.cardBase,
+      ]}
+    >
       <Image source={store.image} style={styles.thumbnail} />
       <View style={styles.details}>
-        <Text style={styles.storeName}>{store.name}</Text>
-        <Text style={styles.storeAddress}>{store.address}</Text>
+        <Text style={styles.storeName}>{highlightText(store.name, search)}</Text>
+        <Text style={styles.storeAddress}>
+          {highlightText(store.address, search)}
+        </Text>
         <Text style={styles.storeDistance}>
           📍 {store.distance?.toFixed(2)} km
         </Text>
@@ -149,19 +192,23 @@ export default function StoreScreen() {
               value={search}
               onChangeText={setSearch}
             />
-
             {nearestStore && (
-              <View style={styles.section}>
+              <View>
                 <Text style={styles.sectionTitle}>🏠 Gần bạn nhất</Text>
-                <StoreCard store={nearestStore} />
+                <StoreCard store={nearestStore} isNearest />
               </View>
             )}
             <Text style={styles.sectionTitle}>📍 Các cửa hàng khác</Text>
           </View>
         }
-        data={otherStores}
+        data={filteredStores}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => <StoreCard store={item} />}
+        ListEmptyComponent={
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>Không tìm thấy cửa hàng nào.</Text>
+          </View>
+        }
         contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 50 }}
       />
     </SafeAreaView>
@@ -169,9 +216,18 @@ export default function StoreScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f8fafc' },
-  header: { padding: 20 },
-  greeting: { fontSize: 20, fontWeight: '700', marginBottom: 10 },
+  container: {
+    flex: 1,
+    backgroundColor: '#f8fafc',
+  },
+  header: {
+    width: '100%',
+  },
+  greeting: {
+    fontSize: 20,
+    fontWeight: '700',
+    marginBottom: 10,
+  },
   searchBox: {
     backgroundColor: '#fff',
     borderRadius: 12,
@@ -180,9 +236,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#e2e8f0',
   },
-  section: { marginTop: 20 },
-  sectionTitle: { fontSize: 18, fontWeight: '700', marginVertical: 10 },
-  card: {
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginVertical: 10,
+  },
+  cardBase: {
     flexDirection: 'row',
     backgroundColor: '#fff',
     borderRadius: 14,
@@ -194,11 +253,30 @@ const styles = StyleSheet.create({
     elevation: 2,
     alignItems: 'center',
   },
-  thumbnail: { width: 60, height: 60, borderRadius: 10, marginRight: 12 },
-  details: { flex: 1 },
-  storeName: { fontSize: 16, fontWeight: '700', marginBottom: 4 },
-  storeAddress: { fontSize: 13, color: '#64748b' },
-  storeDistance: { fontSize: 12, color: '#94a3b8', marginTop: 4 },
+  thumbnail: {
+    width: 60,
+    height: 60,
+    borderRadius: 10,
+    marginRight: 12,
+  },
+  details: {
+    flex: 1,
+    minHeight: 80,
+  },
+  storeName: {
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  storeAddress: {
+    fontSize: 13,
+    color: '#64748b',
+  },
+  storeDistance: {
+    fontSize: 12,
+    color: '#94a3b8',
+    marginTop: 4,
+  },
   rowActions: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -217,5 +295,20 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginLeft: 'auto',
   },
-  ctaText: { color: '#fff', fontWeight: '700' },
+  ctaText: {
+    color: '#fff',
+    fontWeight: '700',
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    marginTop: 40,
+  },
+  emptyText: {
+    fontSize: 16,
+    color: '#94a3b8',
+  },
+  highlight: {
+    backgroundColor: '#fef08a',
+  },
 });
+

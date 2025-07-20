@@ -13,14 +13,14 @@ export const users: User[] = [
     username: "user1",
     password: "123",
     role: "customer",
-    id: "M162445270",
+    id: "M17012004",
     name: "Khách hàng A",
   },
   {
     username: "user2",
     password: "123",
     role: "customer",
-    id: "M162445270",
+    id: "M21012005",
     name: "Khách hàng B",
   },
   {

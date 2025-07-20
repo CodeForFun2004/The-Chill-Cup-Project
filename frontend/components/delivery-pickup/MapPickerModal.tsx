@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { Modal, View, Text, TouchableOpacity, StyleSheet, Dimensions } from "react-native";
-// import MapView, { Marker } from "react-native-maps";
 import * as Location from "expo-location";
 import { useOrder } from "../../contexts/OrderContext";
+// import MapView, { Marker } from "react-native-maps";
 
 const { width, height } = Dimensions.get("window");
 
@@ -55,13 +55,6 @@ export default function MapPickerModal({ visible, onClose }: { visible: boolean;
       <View style={styles.overlay}>
         <View style={styles.container}>
           <Text style={styles.label}>Chọn vị trí giao hàng</Text>
-          <MapView
-            style={styles.map}
-            region={region}
-            onRegionChangeComplete={handleRegionChange}
-          >
-            <Marker coordinate={{ latitude: region.latitude, longitude: region.longitude }} />
-          </MapView>
           <Text style={styles.address}>{addressText || "Đang lấy địa chỉ..."}</Text>
           <TouchableOpacity style={styles.confirm} onPress={handleConfirm}>
             <Text style={styles.confirmText}>Xác nhận vị trí</Text>

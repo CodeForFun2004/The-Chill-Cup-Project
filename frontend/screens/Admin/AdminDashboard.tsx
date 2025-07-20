@@ -10,12 +10,13 @@ import {
   Dimensions,
 } from 'react-native';
 import { useDispatch } from 'react-redux';
-import { logout } from '../../redux/slices/authSlice';
+import { logoutUser } from '../../redux/slices/authSlice'; 
 import { CommonActions, useNavigation } from '@react-navigation/native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LineChart, BarChart } from 'react-native-chart-kit';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { AdminTabParamList } from '../../navigation/admin/AdminNavigator';
+
 
 const screenWidth = Dimensions.get('window').width;
 
@@ -30,12 +31,14 @@ const AdminDashboard = () => {
       { text: 'Huỷ' },
       {
         text: 'Đăng xuất',
-        onPress: () => {
-          dispatch(logout());
+        onPress: async () => { // <--- Thêm async vào đây
+          await dispatch(logoutUser() as any); // <-- Dispatch thunk logoutUser
+          // Sau khi logout thành công (cả Redux và AsyncStorage đã được clear)
+          // Điều hướng người dùng về màn hình khách hoặc màn hình bắt đầu
           navigation.dispatch(
             CommonActions.reset({
               index: 0,
-              routes: [{ name: 'Login' }],
+              routes: [{ name: 'Main' }], // <-- Đảm bảo đây là Guest Navigator hoặc màn hình khởi đầu cho khách
             })
           );
         },
@@ -77,15 +80,6 @@ const AdminDashboard = () => {
         </TouchableOpacity>
 
         {isActionsExpanded && <ActionsGrid onTaskPress={handleTaskPress} />}
-
-        <View style={styles.actionContainer}>
-          <TouchableOpacity style={styles.actionBtn} onPress={() => navigation.navigate('Products')}>
-            <Text style={styles.actionText}>Quản lý Thức Uống</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.actionBtn} onPress={() => navigation.navigate('ToppingManagement')}>
-            <Text style={styles.actionText}>Quản lý Topping</Text>
-          </TouchableOpacity>
-        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -160,17 +154,19 @@ const ChartsSection = () => {
 
 const ActionsGrid = ({ onTaskPress }: { onTaskPress: (task: any) => void }) => {
   const adminTasks = [
-    { name: 'Sản phẩm', icon: 'cube-outline', screen: 'Products', color: '#3b82f6' },
-    { name: 'Đơn hàng', icon: 'receipt-outline', screen: 'Orders', color: '#10b981' },
+    { name: 'Sản phẩm', icon: 'cube-outline', screen: 'ProductTopping', color: '#3b82f6' },
     { name: 'Cửa hàng', icon: 'storefront-outline', screen: 'Stores', iconType: 'MaterialCommunityIcons', color: '#f97316' },
     { name: 'Khuyến mãi', icon: 'pricetags-outline', screen: 'Promotions', color: '#ef4444' },
-    { name: 'Giao hàng', icon: 'truck-delivery-outline', screen: 'Delivery', iconType: 'MaterialCommunityIcons', color: '#8b5cf6' },
-    { name: 'Người dùng', icon: 'people-outline', screen: 'ManageUsers', color: '#636e72' }, // Assuming a ManageUsers screen exists
+    { name: 'Đơn & Giao hàng', icon: 'truck-delivery-outline', screen: 'OrderDelivery', iconType: 'MaterialCommunityIcons', color: '#8b5cf6' },
+    { name: 'Người dùng', icon: 'people-outline', screen: 'Users', color: '#636e72' },
   ];
 
-  return (
-    <View style={styles.actionsGridContainer}>
-      {adminTasks.map(task => (
+  const row1 = adminTasks.slice(0, 3);
+  const row2 = adminTasks.slice(3);
+
+  const renderRow = (rowItems: typeof adminTasks) => (
+    <View style={styles.actionRow}>
+      {rowItems.map(task => (
         <TouchableOpacity key={task.name} style={styles.actionButton} onPress={() => onTaskPress(task)}>
           <View style={[styles.actionIconContainer, { backgroundColor: task.color }]}>
             {task.iconType === 'MaterialCommunityIcons' ? (
@@ -184,7 +180,16 @@ const ActionsGrid = ({ onTaskPress }: { onTaskPress: (task: any) => void }) => {
       ))}
     </View>
   );
+
+  return (
+    <View>
+      {renderRow(row1)}
+      {renderRow(row2)}
+    </View>
+  );
 };
+
+
 
 // Chart Configuration
 const chartConfig = {
@@ -240,23 +245,24 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   statCard: {
-    backgroundColor: '#fff',
-    width: '48.5%',
-    borderRadius: 8,
-    padding: 15,
-    marginBottom: 15,
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderLeftWidth: 4,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 5,
-  },
-  statCardText: {
-    marginLeft: 12,
-  },
+  backgroundColor: '#fff',
+  width: '48.5%',
+  borderRadius: 8,
+  padding: 15,
+  marginBottom: 15,
+  alignItems: 'center',          // Căn giữa theo chiều ngang
+  justifyContent: 'center',      // Căn giữa theo chiều dọc
+  borderLeftWidth: 4,
+  elevation: 2,
+  shadowColor: '#000',
+  shadowOpacity: 0.05,
+  shadowOffset: { width: 0, height: 4 },
+  shadowRadius: 5,
+},
+statCardText: {
+  marginTop: 10,                 // Thay vì marginLeft
+  alignItems: 'center',
+},
   statCardValue: {
     fontSize: 20,
     fontWeight: 'bold',
@@ -328,6 +334,14 @@ const styles = StyleSheet.create({
   actionContainer: { flexDirection: 'row', justifyContent: 'center', marginVertical: 20 },
   actionBtn: { backgroundColor: '#007AFF', padding: 16, borderRadius: 10, marginHorizontal: 10 },
   actionText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+  actionRow: {
+  flexDirection: 'row',
+  justifyContent: 'center',
+  marginBottom: 10,
+  gap: 10, // hoặc dùng marginHorizontal ở button nếu bạn chưa có gap support
+},
+/* Removed duplicate actionButton style */
+
 });
 
 export default AdminDashboard;

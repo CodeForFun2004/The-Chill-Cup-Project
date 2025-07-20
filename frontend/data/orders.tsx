@@ -17,6 +17,7 @@ export interface Order {
   estimatedDelivery?: string;
   deliveryAddress?: string;
   phoneNumber?: string;
+  rejectionReason?: string;
 }
 // Dữ liệu mẫu ban đầu
 const mockOrderHistory: Order[] = [
@@ -126,4 +127,11 @@ export let orders: Order[] = [...mockOrderHistory];
 // ✅ Hàm thêm order mới (để gọi sau khi đặt hàng thành công)
 export const addOrder = (newOrder: Order) => {
   orders.unshift(newOrder); // thêm lên đầu
+};
+
+export const updateOrderStatus = (id: string, newStatus: Order['status']) => {
+  const index = orders.findIndex((o) => o.id === id);
+  if (index >= 0) {
+    orders[index].status = newStatus;
+  }
 };

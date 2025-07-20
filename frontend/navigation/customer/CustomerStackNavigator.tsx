@@ -41,7 +41,7 @@ export type CustomerStackParamList = {
   Vouchers: undefined;
   LoyaltyScreen: undefined;
   VNPayGateway: undefined;
-  OrderSuccess: undefined;
+  OrderSuccess: { orderId: string }; // ✅ Định nghĩa rằng OrderSuccess nhận tham số orderId
   OrderHistory: undefined;
   Notifications: undefined;
   OrderDetail: {
@@ -73,3 +73,22 @@ const CustomerStackNavigator = () => {
 };
 
 export default CustomerStackNavigator;
+
+// import React from 'react';
+// import { createNativeStackNavigator } from '@react-navigation/native-stack';
+// import { Text, View } from 'react-native';
+// import CartScreen from '../../screens/Customer/CartScreen';
+
+// const Stack = createNativeStackNavigator();
+
+// // const DummyCart = () => <View><Text>Dummy Cart Screen</Text></View>;
+
+// const CustomerStackNavigator = () => {
+//   return (
+//     <Stack.Navigator screenOptions={{ headerShown: false }}>
+//       <Stack.Screen name="Cart" component={CartScreen} />
+//     </Stack.Navigator>
+//   );
+// };
+
+// export default CustomerStackNavigator;
