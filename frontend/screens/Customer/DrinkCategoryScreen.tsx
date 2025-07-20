@@ -42,16 +42,13 @@ const DrinkCategoryScreen = ({ navigation }: { navigation: DrinkCategoryNavigati
   const [categoryPositions, setCategoryPositions] = useState<number[]>([]);
   const [activeTab, setActiveTab] = useState<number>(0);
 
-  const BASE_URL = 'http://192.168.11.108:8080';
-  // const BASE_URL = 'http://localhost:8080';
-
   useEffect(() => {
     const fetchData = async () => {
       try {
         const [catRes, prodRes, sizeRes] = await Promise.all([
-          fetch(`${BASE_URL}/api/categories`),
-          fetch(`${BASE_URL}/api/products`),
-          fetch(`${BASE_URL}/api/sizes`),
+          fetch(`http://192.168.11.108:8080/api/categories`),
+          fetch(`http://192.168.11.108:8080/api/products`),
+          fetch(`http://192.168.11.108:8080/api/sizes`),
         ]);
         const [catData, prodData, sizeData] = await Promise.all([
           catRes.json(), prodRes.json(), sizeRes.json()

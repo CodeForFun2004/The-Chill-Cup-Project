@@ -29,6 +29,12 @@ export const users: User[] = [
     role: "admin",
     id: "A001",
     name: "Quản trị viên",
+  },{
+    username: "admin",
+    password: "123",
+    role: "admin",
+    id: "A001",
+    name: "Quản trị viên",
   },
   {
     username: "staff1",
