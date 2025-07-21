@@ -10,34 +10,16 @@ import {
   StatusBar,
   Alert,
   Image,
-  ImageSourcePropType
+  Platform, // Import Platform for StatusBar on Android
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
 import { CustomerStackParamList } from '../../navigation/customer/CustomerStackNavigator';
-import { formatCurrency } from '../../utils/formatCurrency';
+import { formatCurrency } from '../../utils/formatCurrency'; // Assuming this path is correct
 
-// Import types
-interface OrderItem {
-  name: string;
-  quantity: number;
-  price: number;
-  image?: ImageSourcePropType;
-}
-
-interface Order {
-  id: string;
-  orderNumber: string;
-  date: string;
-  time: string;
-  status: 'Completed' | 'Cancelled' | 'Pending' | 'Processing' | 'Preparing' | 'Ready' | 'Delivering';
-  total: number;
-  items: OrderItem[];
-  estimatedDelivery?: string;
-  deliveryAddress?: string;
-  phoneNumber?: string;
-}
+// ✅ Import the Order and OrderItem types directly from your Redux slice
+import { Order, OrderItem } from '../../redux/slices/orderSlice';
 
 type OrderDetailScreenNavigationProp = NativeStackNavigationProp<
   CustomerStackParamList,
@@ -51,24 +33,42 @@ interface OrderDetailScreenProps {
   route: OrderDetailScreenRouteProp;
 }
 
+// Helper to format date and time from an ISO string
+const formatDateTime = (isoString: string | undefined): string => {
+  if (!isoString) return 'N/A';
+  try {
+    const date = new Date(isoString);
+    // Adjust locale and options as needed for your desired format
+    const formattedDate = date.toLocaleDateString('en-US', { day: '2-digit', month: '2-digit', year: 'numeric' }); // e.g., 10/27/2023
+    const formattedTime = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }); // e.g., 21:05
+    return `${formattedDate} at ${formattedTime}`;
+  } catch (error) {
+    console.error("Error formatting date:", error);
+    return 'Invalid Date';
+  }
+};
+
 const OrderDetailScreen: React.FC<OrderDetailScreenProps> = ({ route, navigation }) => {
   const { order } = route.params;
 
+  // Use the order.status directly, but convert to lowercase for internal comparisons
+  const currentOrderStatus = order.status.toLowerCase();
+
   const getStatusColor = (status: Order['status']): string => {
-    switch (status.toLowerCase()) {
+    switch (status.toLowerCase()) { // ✅ Consistent lowercase comparison
       case 'completed':
-        return '#4CAF50';
+        return '#4CAF50'; // Green
       case 'cancelled':
-        return '#F44336';
+        return '#F44336'; // Red
       case 'pending':
-        return '#FF9800';
+        return '#FF9800'; // Orange/Amber for pending
       case 'processing':
       case 'preparing':
       case 'ready':
       case 'delivering':
-        return '#2196F3';
+        return '#2196F3'; // Blue for in-progress statuses
       default:
-        return '#757575';
+        return '#757575'; // Gray for unknown/default
     }
   };
 
@@ -78,16 +78,21 @@ const OrderDetailScreen: React.FC<OrderDetailScreenProps> = ({ route, navigation
       'Add these items to your cart?',
       [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Add to Cart', onPress: () => {
-          // Navigate to cart or add items logic
-          Alert.alert('Success', 'Items added to cart!');
-        }},
+        {
+          text: 'Add to Cart',
+          onPress: () => {
+            // ✅ Implement actual reorder logic here, e.g., dispatching an action to add items to cart
+            Alert.alert('Success', 'Items added to cart!');
+            // Potentially navigate to cart: navigation.navigate('Cart');
+          },
+        },
       ]
     );
   };
 
   const handleGetReceipt = (): void => {
     Alert.alert('Receipt', 'Receipt will be sent to your email.');
+    // ✅ Implement actual receipt logic (e.g., call API to send email)
   };
 
   const handleTrackOrder = (): void => {
@@ -95,14 +100,27 @@ const OrderDetailScreen: React.FC<OrderDetailScreenProps> = ({ route, navigation
   };
 
   const canTrackOrder = (): boolean => {
+    // ✅ Consistent lowercase comparison for trackable statuses
     const trackableStatuses = ['processing', 'preparing', 'ready', 'delivering'];
-    return trackableStatuses.includes(order.status.toLowerCase());
+    return trackableStatuses.includes(currentOrderStatus);
+  };
+
+  // Helper to format payment method display name
+  const getPaymentMethodDisplayName = (method: 'vnpay' | 'cod') => {
+    switch (method) {
+      case 'vnpay':
+        return 'VNPay';
+      case 'cod':
+        return 'Cash on Delivery (COD)';
+      default:
+        return 'Unknown';
+    }
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-      
+
       <View style={styles.header}>
         <TouchableOpacity
           onPress={() => navigation.goBack()}
@@ -125,20 +143,30 @@ const OrderDetailScreen: React.FC<OrderDetailScreenProps> = ({ route, navigation
               <Text style={styles.statusText}>{order.status}</Text>
             </View>
           </View>
-          <Text style={styles.orderDateTime}>{order.date} at {order.time}</Text>
+          {/* ✅ Fixed: Use formatDateTime helper for createdAt */}
+          <Text style={styles.orderDateTime}>{formatDateTime(order.createdAt)}</Text>
         </View>
 
         {/* Order Items */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Order Items</Text>
           {order.items.map((item: OrderItem, index: number) => (
-            <View key={index} style={styles.itemRow}>
+            // Using item._id from OrderItem for key, if not present fall back to index (though _id is better)
+            <View key={item._id || index} style={styles.itemRow}>
               <View style={styles.itemInfo}>
-                <Text style={styles.itemName}>{item.name}</Text>
+                <Text style={styles.itemName}>{item.productId?.name || item.name}</Text> 
+                {/* Display size and toppings if they exist on the item */}
+                {item.size && <Text style={styles.itemQuantity}>Size: {item.size}</Text>}
+                {item.toppings && item.toppings.length > 0 && (
+                  <Text style={styles.itemQuantity}>Toppings: {item.toppings.map(t => t.name).join(', ')}</Text>
+                )}
                 <Text style={styles.itemQuantity}>Qty: {item.quantity}</Text>
-                {item.image && <Image source={item.image} style={styles.image} />}
+                {/* ✅ Fixed: Use item.productId.image which is a URL string */}
+                {item.productId?.image && <Image source={{ uri: item.productId.image }} style={styles.image} />}
               </View>
-              <Text style={styles.itemPrice}>{formatCurrency(item.price)}</Text>
+              {/* Display total price for this specific item row (price per unit * quantity) */}
+              {/* <Text style={styles.itemPrice}>{formatCurrency(item.price * item.quantity)}</Text> */}
+              <Text style={styles.itemPrice}>{formatCurrency(item.productId?.basePrice * item.quantity)}</Text>
             </View>
           ))}
         </View>
@@ -148,18 +176,28 @@ const OrderDetailScreen: React.FC<OrderDetailScreenProps> = ({ route, navigation
           <Text style={styles.sectionTitle}>Order Summary</Text>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Subtotal</Text>
-            <Text style={styles.summaryValue}>{formatCurrency(order.total * 0.9)}</Text>
+            {/* ✅ Fixed: Use order.subtotal directly */}
+            <Text style={styles.summaryValue}>{formatCurrency(order.subtotal)}</Text>
           </View>
+          {order.discount && order.discount > 0 && ( 
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Discount</Text>
+              <Text style={styles.summaryValue}>- {formatCurrency(order.discount)}</Text>
+            </View>
+          )}
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Tax</Text>
-            <Text style={styles.summaryValue}>{formatCurrency(order.total * 0.1)}</Text>
+            {/* ✅ Fixed: Use order.tax directly */}
+            <Text style={styles.summaryValue}>{formatCurrency(order.tax)}</Text>
           </View>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Delivery Fee</Text>
-            <Text style={styles.summaryValue}>$0.00</Text>
+            {/* ✅ Fixed: Use order.deliveryFee directly */}
+            <Text style={styles.summaryValue}>{formatCurrency(order.deliveryFee)}</Text>
           </View>
           <View style={[styles.summaryRow, styles.totalRow]}>
             <Text style={styles.totalLabel}>Total</Text>
+            {/* ✅ Correct total */}
             <Text style={styles.totalValue}>{formatCurrency(order.total)}</Text>
           </View>
         </View>
@@ -168,10 +206,17 @@ const OrderDetailScreen: React.FC<OrderDetailScreenProps> = ({ route, navigation
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Payment Method</Text>
           <View style={styles.paymentRow}>
-            <Ionicons name="card-outline" size={24} color="#007AFF" />
+            {/* Choose icon based on payment method */}
+            {order.paymentMethod === 'vnpay' ? (
+              <Ionicons name="card-outline" size={24} color="#007AFF" />
+            ) : (
+              <Ionicons name="cash-outline" size={24} color="#4CAF50" />
+            )}
             <View style={styles.paymentInfo}>
-              <Text style={styles.paymentMethod}>Credit Card</Text>
-              <Text style={styles.paymentDetails}>**** **** **** 1234</Text>
+              <Text style={styles.paymentMethod}>{getPaymentMethodDisplayName(order.paymentMethod)}</Text>
+              {/* Display additional details if needed for specific payment methods */}
+              {order.paymentMethod === 'vnpay' && <Text style={styles.paymentDetails}>Online Payment</Text>}
+              {order.paymentMethod === 'cod' && <Text style={styles.paymentDetails}>Cash on delivery</Text>}
             </View>
           </View>
         </View>
@@ -180,38 +225,46 @@ const OrderDetailScreen: React.FC<OrderDetailScreenProps> = ({ route, navigation
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Delivery Information</Text>
           <View style={styles.deliveryInfo}>
-            <View style={styles.deliveryRow}>
-              <Ionicons name="location-outline" size={20} color="#8E8E93" />
-              <Text style={styles.deliveryText}>123 Coffee Street, Brew City, BC 12345</Text>
-            </View>
-            <View style={styles.deliveryRow}>
-              <Ionicons name="time-outline" size={20} color="#8E8E93" />
-              <Text style={styles.deliveryText}>Delivered in 25 minutes</Text>
-            </View>
+            {order.deliveryAddress && (
+              <View style={styles.deliveryRow}>
+                <Ionicons name="location-outline" size={20} color="#8E8E93" />
+                <Text style={styles.deliveryText}>{order.deliveryAddress}</Text>
+              </View>
+            )}
+            {order.phone && ( 
+              <View style={styles.deliveryRow}>
+                <Ionicons name="call-outline" size={20} color="#8E8E93" />
+                <Text style={styles.deliveryText}>{order.phone}</Text>
+              </View>
+            )}
+            {order.deliveryTime && ( 
+              <View style={styles.deliveryRow}>
+                <Ionicons name="time-outline" size={20} color="#8E8E93" />
+                <Text style={styles.deliveryText}>Est. delivery: {order.deliveryTime}</Text>
+              </View>
+            )}
           </View>
         </View>
 
-              {/* Action Buttons */}
-      <View style={styles.actionButtons}>
-        {/* Track Order Button - for orders in progress */}
-        {canTrackOrder() && (
-          <TouchableOpacity style={styles.trackButton} onPress={handleTrackOrder}>
-            <Ionicons name="location-outline" size={20} color="#FFFFFF" />
-            <Text style={styles.trackButtonText}>Track Order</Text>
-          </TouchableOpacity>
-        )}
-        
-        {/* Reorder Button - for completed orders */}
-        {order.status.toLowerCase() === 'completed' && (
-          <TouchableOpacity style={styles.reorderButton} onPress={handleReorder}>
-            <Ionicons name="refresh-outline" size={20} color="#FFFFFF" />
-            <Text style={styles.reorderButtonText}>Reorder</Text>
-          </TouchableOpacity>
-        )}
-      </View>
+        {/* Action Buttons */}
+        <View style={styles.actionButtons}>
+          {/* Track Order Button - for orders in progress */}
+          {canTrackOrder() && (
+            <TouchableOpacity style={styles.trackButton} onPress={handleTrackOrder}>
+              <Ionicons name="location-outline" size={20} color="#FFFFFF" />
+              <Text style={styles.trackButtonText}>Track Order</Text>
+            </TouchableOpacity>
+          )}
+
+          {/* Reorder Button - for completed or cancelled orders */}
+          {(currentOrderStatus === 'completed' || currentOrderStatus === 'cancelled') && (
+            <TouchableOpacity style={styles.reorderButton} onPress={handleReorder}>
+              <Ionicons name="refresh-outline" size={20} color="#FFFFFF" />
+              <Text style={styles.reorderButtonText}>Reorder</Text>
+            </TouchableOpacity>
+          )}
+        </View>
       </ScrollView>
-
-
     </SafeAreaView>
   );
 };
@@ -231,6 +284,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
     borderBottomColor: '#E5E5EA',
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0, // Handle Android status bar
   },
   backButton: {
     padding: 8,
@@ -303,13 +357,14 @@ const styles = StyleSheet.create({
   itemRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start', // Changed to flex-start for multi-line item info
     paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#F2F2F7',
   },
   itemInfo: {
     flex: 1,
+    marginRight: 10, // Give some space before price
   },
   itemName: {
     fontSize: 16,
@@ -320,11 +375,19 @@ const styles = StyleSheet.create({
   itemQuantity: {
     fontSize: 14,
     color: '#8E8E93',
+    marginBottom: 2, // Space between quantity and toppings/image
   },
   itemPrice: {
     fontSize: 16,
     fontWeight: '600',
     color: '#000',
+  },
+  image: {
+    width: 80, // Smaller image size for better fit in item row
+    height: 80,
+    borderRadius: 8,
+    marginTop: 8,
+    alignSelf: 'flex-start', // Align image to the start
   },
   summaryRow: {
     flexDirection: 'row',
@@ -420,12 +483,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#FFFFFF',
-  },
-  image: {
-    width: 120,
-    height: 120,
-    borderRadius: 8,
-    marginTop: 8,
   },
 });
 
