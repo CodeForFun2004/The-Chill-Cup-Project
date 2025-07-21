@@ -10,7 +10,7 @@ import {
   Dimensions,
 } from 'react-native';
 import { useDispatch } from 'react-redux';
-import { logout } from '../../redux/slices/authSlice';
+import { logoutUser } from '../../redux/slices/authSlice'; 
 import { CommonActions, useNavigation } from '@react-navigation/native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LineChart, BarChart } from 'react-native-chart-kit';
@@ -31,12 +31,14 @@ const AdminDashboard = () => {
       { text: 'Huỷ' },
       {
         text: 'Đăng xuất',
-        onPress: () => {
-          dispatch(logout());
+        onPress: async () => { // <--- Thêm async vào đây
+          await dispatch(logoutUser() as any); // <-- Dispatch thunk logoutUser
+          // Sau khi logout thành công (cả Redux và AsyncStorage đã được clear)
+          // Điều hướng người dùng về màn hình khách hoặc màn hình bắt đầu
           navigation.dispatch(
             CommonActions.reset({
               index: 0,
-              routes: [{ name: 'Login' }],
+              routes: [{ name: 'Main' }], // <-- Đảm bảo đây là Guest Navigator hoặc màn hình khởi đầu cho khách
             })
           );
         },

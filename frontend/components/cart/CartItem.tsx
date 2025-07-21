@@ -4,7 +4,7 @@ import { formatCurrency } from '../../utils/formatCurrency';
 
 type CartItemProps = {
   name: string;
-  brand: string;
+  category: string;
   price: number;
   quantity: number;
   image: any;
@@ -14,7 +14,7 @@ type CartItemProps = {
 
 export const CartItem: React.FC<CartItemProps> = ({
   name,
-  brand,
+  category,
   price,
   quantity,
   image,
@@ -23,10 +23,10 @@ export const CartItem: React.FC<CartItemProps> = ({
 }) => {
   return (
     <View style={styles.container}>
-      <Image source={image} style={styles.image} />
+      <Image source={{uri:image}} style={styles.image} />
       <View style={styles.info}>
         <Text style={styles.name}>{name}</Text>
-        <Text style={styles.brand}>{brand}</Text>
+        <Text style={styles.category}>{category}</Text>
         <Text style={styles.price}>{formatCurrency(price)}</Text>
       </View>
       <View style={styles.quantityBox}>
@@ -65,7 +65,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 16,
   },
-  brand: {
+  category: {
     fontSize: 13,
     color: '#999',
   },

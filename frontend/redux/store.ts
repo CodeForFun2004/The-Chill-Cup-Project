@@ -1,20 +1,17 @@
+// redux/store.ts
 import { configureStore } from '@reduxjs/toolkit';
-import authReducer from './slices/authSlice';
-import cartReducer from './slices/cartSlice'; 
-import orderReducer from './slices/orderSlice'; 
-import notificationReducer from './slices/notificationSlice'
+import rootReducer from './rootReducer';
+import { setupAxiosInterceptors } from '../api/axios'; // Import hàm setup
 
-const store = configureStore({
-  reducer: {
-    auth: authReducer,
-    cart: cartReducer, 
-    order: orderReducer, // ✅ Thêm dòng này
-    notification: notificationReducer,
-  },
-  
+// ✅ Import cả logout và setAccessToken action creators từ authSlice
+import { logout, setAccessToken } from './slices/authSlice'; 
+
+export const store = configureStore({
+  reducer: rootReducer,
 });
 
-export type RootState = ReturnType<typeof store.getState>;
-export type AppDispatch = typeof store.dispatch;
+// ✅ Sau khi store được tạo, gọi hàm setupAxiosInterceptors với store.dispatch
+// và một object chứa cả logout và setAccessToken
+setupAxiosInterceptors(store.dispatch, { logout, setAccessToken }); 
 
-export default store;
+export type AppDispatch = typeof store.dispatch;

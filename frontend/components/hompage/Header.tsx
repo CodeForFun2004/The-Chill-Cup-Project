@@ -3,12 +3,12 @@ import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { Feather, Entypo } from '@expo/vector-icons';
 import { useSelector } from 'react-redux';
-import { RootState } from '../../redux/store';
+import { RootState } from '../../redux/rootReducer';
 import { useNavigation } from '@react-navigation/native';
 
 const Header = () => {
-  const userInfo = useSelector((state: RootState) => state.auth.userInfo);
-  const greetingName = userInfo?.name?.trim() || 'bạn mới';
+  const userInfo = useSelector((state: RootState) => state.auth.user);
+  const greetingName = userInfo?.username?.trim() || 'bạn mới';
   const navigation = useNavigation();
 
   return (

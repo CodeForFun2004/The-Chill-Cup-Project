@@ -3,20 +3,26 @@ import { View, Text, StyleSheet } from 'react-native';
 import { formatCurrency } from '../../utils/formatCurrency';
 
 type Props = {
-  subtotal: number;
+  subTotal: number;
   delivery: number;
-  tax: number;
+  discountAmount: number;
+  total: number;
 };
 
-const OrderSummary: React.FC<Props> = ({ subtotal, delivery, tax }) => {
-  const total = subtotal + delivery + tax;
+const OrderSummary: React.FC<Props> = ({ subTotal, delivery, discountAmount , total }) => {
+ 
 
   return (
     <View style={styles.container}>
       <Text style={styles.heading}>Tóm tắt đơn hàng</Text>
-      <Row label="Tạm tính" value={formatCurrency(subtotal)} />
-      <Row label="Phí giao hàng" value={delivery === 0 ? 'Miễn phí' : formatCurrency(delivery)} />
-      <Row label="Thuế" value={formatCurrency(tax)} />
+      <Row label="Tạm tính" value={formatCurrency(subTotal)} />
+      <Row label="Phí giao hàng" value={formatCurrency(delivery)} />
+      {discountAmount > 0 && ( // Chỉ hiển thị dòng giảm giá nếu có giảm giá
+        <View style={styles.summaryRow}>
+          <Text style={styles.discountLabel}>Giảm giá</Text>
+          <Text style={styles.discountValue}>- {formatCurrency(discountAmount)}</Text>
+        </View>
+      )}
       <Row label="Tổng cộng" value={formatCurrency(total)} bold green />
       <Text style={styles.estimated}>⏱ Thời gian giao hàng dự kiến: 25-35 phút</Text>
     </View>
@@ -75,5 +81,18 @@ const styles = StyleSheet.create({
     marginTop: 12,
     color: '#e53935',
     fontStyle: 'italic',
+  },
+  summaryRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  discountLabel: {
+    color: '#E74C3C', // Màu đỏ cho giảm giá
+  },
+  discountValue: {
+    color: '#E74C3C',
+    fontWeight: 'bold',
+    fontSize: 14,
   },
 });

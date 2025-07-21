@@ -2,7 +2,7 @@ export const mockData = [
     {
       id: 1,
       name: 'Bạc Xỉu',
-      brand: 'Pizza Italiano',
+      category: 'Pizza Italiano',
       price: 55000,
       quantity: 1,
       image: require('../assets/images/coffee/bac-xiu.png'),
@@ -10,7 +10,7 @@ export const mockData = [
     {
       id: 2,
       name: 'Hồng Trà Sữa Trân Châu',
-      brand: 'Melt House',
+      category: 'Melt House',
       price: 55000,
       quantity: 1,
       image: require('../assets/images/bubble-tea/hong-tra-sua-tran-chau.png'),
@@ -18,7 +18,7 @@ export const mockData = [
     {
       id: 3,
       name: 'Matcha Latte',
-      brand: 'Burger Hunt',
+      category: 'Burger Hunt',
       price: 59000,
       quantity: 1,
       image: require('../assets/images/matcha/matcha-latte.png'),
