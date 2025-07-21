@@ -13,6 +13,8 @@ import {
   Modal,
   TextInput,
   Alert,
+  ActivityIndicator,
+  ScrollView,
   type ListRenderItem,
 } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
@@ -23,6 +25,8 @@ import type { StaffOrder } from "../../redux/slices/staffSlice"
 import {
   fetchStaffOrders,
   updateOrderStatusByStaff,
+  assignShipperToOrder,
+  fetchAvailableShippers,
   setFilterStatus,
 } from "../../redux/slices/staffSlice"
 
@@ -44,17 +48,25 @@ interface RootState {
     filterStatus: "All" | "pending" | "processing" | "preparing" | "ready" | "delivering" | "completed" | "cancelled"
     loading: boolean
     error: string | null
+    shippers: Array<{
+      _id: string
+      fullname: string
+      staffId: string
+      status: "available" | "assigned"
+    }>
+    shippersLoading: boolean
   }
 }
 
 const OrderManagementScreen: React.FC<OrderManagementScreenProps> = ({ navigation }) => {
   const dispatch = useDispatch()
-  const { orders, filterStatus, loading, error } = useSelector((state: RootState) => state.staff)
+  const { orders, filterStatus, loading, error, shippers, shippersLoading } = useSelector((state: RootState) => state.staff)
 
   const [selectedOrder, setSelectedOrder] = useState<StaffOrder | null>(null)
   const [showStatusModal, setShowStatusModal] = useState(false)
-  const [showNoteModal, setShowNoteModal] = useState(false)
-  const [noteText, setNoteText] = useState("")
+  const [showShipperModal, setShowShipperModal] = useState(false)
+  const [showCancelModal, setShowCancelModal] = useState(false)
+  const [cancelReason, setCancelReason] = useState("")
 
   // Focus effect để fetch orders
   useFocusEffect(
@@ -123,8 +135,7 @@ const OrderManagementScreen: React.FC<OrderManagementScreenProps> = ({ navigatio
   // Handle status update using API
   const handleStatusUpdate = (status: StaffOrder["status"]) => {
     if (selectedOrder) {
-      dispatch(updateOrderStatusByStaff({ orderId: selectedOrder._id, status }) as any)
-      setShowStatusModal(false)
+      handleStatusChange(selectedOrder, status)
       setSelectedOrder(null)
     }
   }
@@ -134,26 +145,60 @@ const OrderManagementScreen: React.FC<OrderManagementScreenProps> = ({ navigatio
     dispatch(updateOrderStatusByStaff({ orderId, status: 'processing' }) as any)
   }
 
-  // Handle cancel order
-  const handleCancelOrder = (orderId: string) => {
-    Alert.alert("Xác nhận hủy đơn", "Bạn có chắc chắn muốn hủy đơn hàng này?", [
-      { text: "Không", style: "cancel" },
-      {
-        text: "Hủy đơn",
-        style: "destructive",
-        onPress: () => dispatch(updateOrderStatusByStaff({ orderId, status: 'cancelled' }) as any),
-      },
-    ])
+  // Handle status change with special logic for shipper assignment and cancel reason
+  const handleStatusChange = async (order: StaffOrder, newStatus: string) => {
+    if (newStatus === 'cancelled') {
+      setSelectedOrder(order)
+      setShowCancelModal(true)
+    } else if (newStatus === 'delivering' && order.status === 'ready') {
+      setSelectedOrder(order)
+      dispatch(fetchAvailableShippers() as any)
+      setShowShipperModal(true)
+    } else {
+      try {
+        await dispatch(updateOrderStatusByStaff({ orderId: order._id, status: newStatus }) as any)
+        dispatch(fetchStaffOrders({}) as any)
+      } catch (error) {
+        console.error('Error updating order status:', error)
+      }
+    }
+    setShowStatusModal(false)
   }
 
-  // Handle add note (này cần API riêng hoặc gửi qua status update)
-  const handleAddNote = () => {
-    if (selectedOrder && noteText.trim()) {
-      // TODO: Implement note API or include in status update
-      console.log('Add note:', noteText.trim(), 'for order:', selectedOrder._id)
-      setShowNoteModal(false)
-      setNoteText("")
-      setSelectedOrder(null)
+  const handleAssignShipper = async (shipperId: string) => {
+    if (selectedOrder) {
+      // Tìm shipper được chọn
+      const shipper = shippers.find(s => s._id === shipperId)
+      if (shipper && shipper.status === 'available') {
+        try {
+          // Gán shipper và cập nhật trạng thái đơn hàng thành 'delivering'
+          await dispatch(assignShipperToOrder({ orderId: selectedOrder._id, assignShipperId: shipperId }) as any)
+          await dispatch(updateOrderStatusByStaff({ orderId: selectedOrder._id, status: 'delivering' }) as any)
+          dispatch(fetchStaffOrders({}) as any)
+          setShowShipperModal(false)
+        } catch (error) {
+          console.error('Error assigning shipper:', error)
+        }
+      } else {
+        Alert.alert('Chỉ có thể chọn shipper đang có sẵn!')
+      }
+    }
+  }
+
+  const handleCancelOrder = async () => {
+    if (selectedOrder && cancelReason.trim()) {
+      try {
+        await dispatch(updateOrderStatusByStaff({ 
+          orderId: selectedOrder._id, 
+          status: 'cancelled',
+          cancelReason: cancelReason.trim()
+        }) as any)
+        dispatch(fetchStaffOrders({}) as any)
+        setShowCancelModal(false)
+        setCancelReason("")
+      } catch (error) {
+        console.error('Error canceling order:', error)
+      }
     }
   }
 
@@ -238,12 +283,29 @@ const OrderManagementScreen: React.FC<OrderManagementScreenProps> = ({ navigatio
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.actionButton, { backgroundColor: "#DC2626" }]}
-                onPress={() => handleCancelOrder(item._id)}
+                onPress={() => {
+                  setSelectedOrder(item)
+                  setShowCancelModal(true)
+                }}
               >
                 <Ionicons name="close" size={16} color="#FFFFFF" />
                 <Text style={styles.actionButtonText}>Hủy</Text>
               </TouchableOpacity>
             </>
+          )}
+          {/* Button chọn shipper khi đơn hàng ở trạng thái 'ready' */}
+          {item.status === "ready" && (
+            <TouchableOpacity
+              style={[styles.actionButton, { backgroundColor: "#06B6D4" }]}
+              onPress={() => {
+                setSelectedOrder(item)
+                dispatch(fetchAvailableShippers() as any)
+                setShowShipperModal(true)
+              }}
+            >
+              <Ionicons name="bicycle-outline" size={16} color="#FFFFFF" />
+              <Text style={styles.actionButtonText}>Chọn shipper</Text>
+            </TouchableOpacity>
           )}
 
           {item.status !== "completed" && item.status !== "cancelled" && (
@@ -258,18 +320,6 @@ const OrderManagementScreen: React.FC<OrderManagementScreenProps> = ({ navigatio
               <Text style={styles.actionButtonText}>Cập nhật</Text>
             </TouchableOpacity>
           )}
-
-          <TouchableOpacity
-            style={[styles.actionButton, { backgroundColor: "#6B7280" }]}
-            onPress={() => {
-              setSelectedOrder(item)
-              setNoteText(item.notes || "")
-              setShowNoteModal(true)
-            }}
-          >
-            <Ionicons name="create-outline" size={16} color="#FFFFFF" />
-            <Text style={styles.actionButtonText}>Ghi chú</Text>
-          </TouchableOpacity>
         </View>
       </View>
     )
@@ -351,22 +401,69 @@ const OrderManagementScreen: React.FC<OrderManagementScreenProps> = ({ navigatio
         </View>
       </Modal>
 
-      {/* Note Modal */}
-      <Modal visible={showNoteModal} transparent animationType="slide" onRequestClose={() => setShowNoteModal(false)}>
+      {/* Shipper Selection Modal */}
+      <Modal visible={showShipperModal} transparent animationType="slide" onRequestClose={() => setShowShipperModal(false)}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Thêm ghi chú</Text>
-              <TouchableOpacity onPress={() => setShowNoteModal(false)}>
+              <Text style={styles.modalTitle}>Chọn shipper</Text>
+              <TouchableOpacity onPress={() => setShowShipperModal(false)}>
+                <Ionicons name="close" size={24} color="#6B7280" />
+              </TouchableOpacity>
+            </View>
+
+            {shippersLoading ? (
+              <ActivityIndicator size="large" color="#0066CC" style={{ marginVertical: 20 }} />
+            ) : (
+              <ScrollView style={{ maxHeight: 300 }}>
+                {shippers.map((shipper) => (
+                  <TouchableOpacity
+                    key={shipper._id}
+                    style={styles.shipperItem}
+                    onPress={() => handleAssignShipper(shipper._id)}
+                  >
+                    <View style={styles.shipperInfo}>
+                      <Text style={styles.shipperName}>{shipper.fullname}</Text>
+                      <Text style={styles.shipperDetails}>ID: {shipper.staffId}</Text>
+                      <Text style={[styles.shipperStatus, 
+                        { color: shipper.status === 'available' ? '#10B981' : '#F59E0B' }]}>
+                        {shipper.status === 'available' ? 'Có sẵn' : 'Đang giao hàng'}
+                      </Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={20} color="#6B7280" />
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            )}
+
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.cancelButton]}
+                onPress={() => setShowShipperModal(false)}
+              >
+                <Text style={styles.cancelButtonText}>Hủy</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Cancel Reason Modal */}
+      <Modal visible={showCancelModal} transparent animationType="slide" onRequestClose={() => setShowCancelModal(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Lý do hủy đơn</Text>
+              <TouchableOpacity onPress={() => setShowCancelModal(false)}>
                 <Ionicons name="close" size={24} color="#6B7280" />
               </TouchableOpacity>
             </View>
 
             <TextInput
               style={styles.noteInput}
-              placeholder="Nhập ghi chú cho đơn hàng..."
-              value={noteText}
-              onChangeText={setNoteText}
+              placeholder="Nhập lý do hủy đơn hàng..."
+              value={cancelReason}
+              onChangeText={setCancelReason}
               multiline
               numberOfLines={4}
               textAlignVertical="top"
@@ -375,12 +472,20 @@ const OrderManagementScreen: React.FC<OrderManagementScreenProps> = ({ navigatio
             <View style={styles.modalActions}>
               <TouchableOpacity
                 style={[styles.modalButton, styles.cancelButton]}
-                onPress={() => setShowNoteModal(false)}
+                onPress={() => {
+                  setShowCancelModal(false)
+                  setCancelReason("")
+                }}
               >
                 <Text style={styles.cancelButtonText}>Hủy</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={[styles.modalButton, styles.saveButton]} onPress={handleAddNote}>
-                <Text style={styles.saveButtonText}>Lưu</Text>
+              <TouchableOpacity 
+                style={[styles.modalButton, styles.saveButton, 
+                  !cancelReason.trim() && { backgroundColor: '#D1D5DB' }]} 
+                onPress={handleCancelOrder}
+                disabled={!cancelReason.trim()}
+              >
+                <Text style={styles.saveButtonText}>Xác nhận hủy</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -647,6 +752,32 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "500",
     color: "#FFFFFF",
+  },
+  shipperItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E5E7EB",
+  },
+  shipperInfo: {
+    flex: 1,
+  },
+  shipperName: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#1F2937",
+    marginBottom: 4,
+  },
+  shipperDetails: {
+    fontSize: 14,
+    color: "#6B7280",
+    marginBottom: 2,
+  },
+  shipperStatus: {
+    fontSize: 12,
+    fontWeight: "500",
   },
 })
 

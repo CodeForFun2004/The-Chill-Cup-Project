@@ -62,9 +62,16 @@ interface StaffState {
   orderStats: OrderStats
   revenueStats: RevenueStats
   selectedOrder: StaffOrder | null
-  filterStatus: "All" | "Pending" | "Processing" | "Preparing" | "Ready" | "Delivering" | "Completed" | "Cancelled"
+  filterStatus: "All" | "pending" | "processing" | "preparing" | "ready" | "delivering" | "completed" | "cancelled"
   loading: boolean
   error: string | null
+  shippers: Array<{
+    _id: string
+    fullname: string
+    staffId: string
+    status: "available" | "assigned"
+  }>
+  shippersLoading: boolean
 }
 
 // Helper function để tính toán order stats
@@ -158,6 +165,48 @@ export const updateOrderStatusByStaff = createAsyncThunk(
   }
 )
 
+export const assignShipperToOrder = createAsyncThunk(
+  'staff/assignShipperToOrder',
+  async ({ orderId, assignShipperId }: { orderId: string; assignShipperId: string }, thunkAPI) => {
+    try {
+      const token = await AsyncStorage.getItem('accessToken')
+      if (!token) {
+        return thunkAPI.rejectWithValue('No access token found. Please log in.')
+      }
+      
+      const response = await api.put(`/orders/staff/${orderId}`, { assignShipperId }, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      
+      return response.data.order as StaffOrder
+    } catch (error: any) {
+      const message = error.response?.data?.error || error.response?.data?.message || 'Failed to assign shipper'
+      return thunkAPI.rejectWithValue(message)
+    }
+  }
+)
+
+export const fetchAvailableShippers = createAsyncThunk(
+  'staff/fetchAvailableShippers',
+  async (_, thunkAPI) => {
+    try {
+      const token = await AsyncStorage.getItem('accessToken')
+      if (!token) {
+        return thunkAPI.rejectWithValue('No access token found. Please log in.')
+      }
+      
+      const response = await api.get('/orders/staff/shippers', {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      
+      return response.data
+    } catch (error: any) {
+      const message = error.response?.data?.error || error.response?.data?.message || 'Failed to fetch shippers'
+      return thunkAPI.rejectWithValue(message)
+    }
+  }
+)
+
 // Initialize state
 const initialState: StaffState = {
   orders: [],
@@ -180,6 +229,8 @@ const initialState: StaffState = {
   filterStatus: "All",
   loading: false,
   error: null,
+  shippers: [],
+  shippersLoading: false,
 }
 
 const staffSlice = createSlice({
@@ -239,6 +290,37 @@ const staffSlice = createSlice({
       })
       .addCase(updateOrderStatusByStaff.rejected, (state, action) => {
         state.loading = false
+        state.error = action.payload as string
+      })
+      // --- Xử lý assignShipperToOrder ---
+      .addCase(assignShipperToOrder.pending, (state) => {
+        state.loading = true
+        state.error = null
+      })
+      .addCase(assignShipperToOrder.fulfilled, (state, action: PayloadAction<StaffOrder>) => {
+        state.loading = false
+        const updatedOrder = action.payload
+        state.orders = state.orders.map(order => order._id === updatedOrder._id ? updatedOrder : order)
+        state.orderStats = calculateOrderStats(state.orders)
+        state.revenueStats = calculateRevenueStats(state.orders)
+        state.error = null
+      })
+      .addCase(assignShipperToOrder.rejected, (state, action) => {
+        state.loading = false
+        state.error = action.payload as string
+      })
+      // --- Xử lý fetchAvailableShippers ---
+      .addCase(fetchAvailableShippers.pending, (state) => {
+        state.shippersLoading = true
+        state.error = null
+      })
+      .addCase(fetchAvailableShippers.fulfilled, (state, action) => {
+        state.shippersLoading = false
+        state.shippers = action.payload
+        state.error = null
+      })
+      .addCase(fetchAvailableShippers.rejected, (state, action) => {
+        state.shippersLoading = false
         state.error = action.payload as string
       })
   },
