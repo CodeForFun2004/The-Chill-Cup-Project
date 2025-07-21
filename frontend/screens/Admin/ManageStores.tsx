@@ -1,657 +1,564 @@
-import React, { useEffect, useState } from 'react';
+import type React from "react"
+import { useState, useEffect, useCallback } from "react"
 import {
   View,
   Text,
-  Image,
-  StyleSheet,
   FlatList,
-  TextInput,
-  Switch,
   TouchableOpacity,
+  StyleSheet,
+  ActivityIndicator,
   Alert,
-  ScrollView,
-  Modal,
-  Platform,
-  KeyboardAvoidingView,
-  DeviceEventEmitter,
-  Linking,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import * as ImagePicker from 'expo-image-picker';
-import DateTimePicker from '@react-native-community/datetimepicker';
-import { useNavigation } from '@react-navigation/native';
-import { StackNavigationProp } from '@react-navigation/stack';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { AdminStoreStackParamList } from '../../navigation/admin/AdminStoreNavigator';
-import { STORES } from '../../data/stores';
+  RefreshControl,
+  Image,
+  TextInput,
+} from "react-native"
+import { Ionicons } from "@expo/vector-icons"
+import { useNavigation, useFocusEffect } from "@react-navigation/native"
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack"
+import { SafeAreaView } from "react-native-safe-area-context"
+import apiInstance from "../../api/axios"
+import AsyncStorage from "@react-native-async-storage/async-storage"
+import type { AdminStoreStackParamList } from "../../navigation/admin/AdminStoreNavigator"
+import type { Store } from "../../types/types"
+import CreateStoreModal from "./CreateStoreModal"
 
-type ManageStoreNavigationProp = StackNavigationProp<AdminStoreStackParamList, 'ManageStores'>;
+type NavigationProp = NativeStackNavigationProp<AdminStoreStackParamList, "ManageStores">
 
-export interface Store {
-  id: string;
-  name: string;
-  address: string;
-  openHours: string;
-  phone?: string;
-  contact: string;
-  distance?: string;
-  latitude?: number;
-  longitude?: number;
-  image: any;
-  isActive: boolean;
-  staff?: string;
-  mapUrl?: string; // thêm trường mapUrl
+// Fixed API Service Functions
+const storeApiService = {
+  async getAllStores() {
+    try {
+      console.log("🔄 Fetching stores...")
+      const token = await AsyncStorage.getItem("accessToken")
+      console.log("🔑 Token:", token ? "Found" : "Not found")
+      const response = await apiInstance.get("/stores", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      })
+      console.log("✅ Stores response:", response.data)
+      return response.data
+    } catch (error: any) {
+      console.error("❌ Error fetching stores:", error)
+      console.error("❌ Error response:", error.response?.data)
+      console.error("❌ Error status:", error.response?.status)
+      throw error
+    }
+  },
+
+  async createStore(storeData: FormData) {
+    try {
+      const token = await AsyncStorage.getItem("accessToken")
+      console.log("🔄 Creating store with data:", storeData)
+      const response = await apiInstance.post("/stores", storeData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${token}`,
+        },
+      })
+      return response.data
+    } catch (error: any) {
+      console.error("❌ Error creating store:", error)
+      console.error("❌ Error response:", error.response?.data)
+      throw error
+    }
+  },
+
+  async deleteStore(id: string) {
+    try {
+      const token = await AsyncStorage.getItem("accessToken")
+      const response = await apiInstance.delete(`/stores/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      return response.data
+    } catch (error) {
+      console.error("Error deleting store:", error)
+      throw error
+    }
+  },
+
+  async toggleStoreStatus(id: string) {
+    try {
+      const token = await AsyncStorage.getItem("accessToken")
+      const response = await apiInstance.put(
+        `/stores/${id}/toggle-status`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      )
+      return response.data
+    } catch (error) {
+      console.error("Error toggling store status:", error)
+      throw error
+    }
+  },
 }
 
-const staffList = [
-  { id: 'nv001', name: 'Nguyễn Văn A', avatar: 'https://api.dicebear.com/9.x/adventurer/png?seed=Kingston' },
-  { id: 'nv002', name: 'Trần Thị B', avatar: 'https://api.dicebear.com/9.x/adventurer/png?seed=Ryker' },
-  { id: 'nv003', name: 'Lê Văn C', avatar: 'https://api.dicebear.com/9.x/adventurer/png?seed=Sawyer' },
-];
+const ManageStores: React.FC = () => {
+  const navigation = useNavigation<NavigationProp>()
+  const [stores, setStores] = useState<Store[]>([])
+  const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
+  const [searchText, setSearchText] = useState("")
+  const [filteredStores, setFilteredStores] = useState<Store[]>([])
+  const [showCreateModal, setShowCreateModal] = useState(false)
 
-const ManageStore: React.FC = () => {
-  const navigation = useNavigation<ManageStoreNavigationProp>();
+  // Load stores when screen focuses
+  useFocusEffect(
+    useCallback(() => {
+      loadStores()
+    }, []),
+  )
 
-  const [stores, setStores] = useState<Store[]>(
-    STORES.map(store => ({
-      ...store,
-      contact: store.phone ?? '',
-      openHours: store.openTime,
-      isActive: true,
-      staff: 'nv001',
-    }))
-  );
-
-  const [form, setForm] = useState<Partial<Store>>({});
-  const [modalVisible, setModalVisible] = useState(false);
-  const [openTime, setOpenTime] = useState<Date>(new Date());
-  const [closeTime, setCloseTime] = useState<Date>(new Date());
-  const [showOpenPicker, setShowOpenPicker] = useState(false);
-  const [showClosePicker, setShowClosePicker] = useState(false);
-
-  // Modal chọn nhân viên
-  const [staffModalVisible, setStaffModalVisible] = useState(false);
-
-  // Lắng nghe sự kiện cập nhật từ StoreDetail
+  // Filter stores based on search text
   useEffect(() => {
-    const subscription = DeviceEventEmitter.addListener('storeUpdated', (updated: Store) => {
-      setStores(prev => prev.map(s => (s.id === updated.id ? updated : s)));
-    });
-    return () => subscription.remove();
-  }, []);
-
-  const formatTime = (date: Date) =>
-    date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-  const pickImage = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 1,
-    });
-    if (!result.canceled && result.assets.length > 0) {
-      setForm({ ...form, image: { uri: result.assets[0].uri } });
+    if (searchText.trim() === "") {
+      setFilteredStores(stores)
+    } else {
+      const filtered = stores.filter(
+        (store) =>
+          store.name.toLowerCase().includes(searchText.toLowerCase()) ||
+          store.address.toLowerCase().includes(searchText.toLowerCase()) ||
+          (store.staff?.fullname && store.staff.fullname.toLowerCase().includes(searchText.toLowerCase())),
+      )
+      setFilteredStores(filtered)
     }
-  };
+  }, [stores, searchText])
 
-  const handleSave = () => {
-    if (!form.name || !form.address || !form.contact || !form.image || !form.staff || !form.mapUrl) {
-      Alert.alert('Validation', 'Vui lòng nhập đầy đủ thông tin');
-      return;
-    }
-
-    const openHoursFormatted = `${formatTime(openTime)} - ${formatTime(closeTime)}`;
-
-    const newStore: Store = {
-      id: Date.now().toString(),
-      name: form.name!,
-      address: form.address!,
-      contact: form.contact!,
-      openHours: openHoursFormatted,
-      isActive: form.isActive ?? true,
-      image: form.image!,
-      staff: form.staff!,
-      mapUrl: form.mapUrl!, // thêm trường mapUrl
-    };
-    setStores(prev => [...prev, newStore]);
-
-    resetForm();
-    setModalVisible(false);
-  };
-
-  const resetForm = () => {
-    setForm({});
-    setOpenTime(new Date());
-    setCloseTime(new Date());
-  };
-
-  // Lấy tên store mà staff đang phụ trách
-  const getStaffStore = (staffId: string) => {
-    const store = stores.find(s => s.staff === staffId);
-    if (store) return store.name;
-    return null;
-  };
-
-  const renderItem = ({ item }: { item: Store }) => (
-    <TouchableOpacity
-      onPress={() =>
-        navigation.navigate('StoreDetail', {
-          store: item,
-        })
+  const loadStores = async () => {
+    try {
+      console.log("🔄 Loading stores...")
+      setLoading(true)
+      // Check if user is authenticated
+      const token = await AsyncStorage.getItem("accessToken")
+      if (!token) {
+        Alert.alert("Lỗi xác thực", "Vui lòng đăng nhập lại")
+        return
       }
-      style={[styles.card, !item.isActive && { opacity: 0.4 }]}
+
+      const storesData = await storeApiService.getAllStores()
+      console.log("📊 Stores loaded:", storesData?.length || 0)
+
+      // Handle different response formats
+      if (Array.isArray(storesData)) {
+        setStores(storesData)
+      } else if (storesData?.stores && Array.isArray(storesData.stores)) {
+        setStores(storesData.stores)
+      } else if (storesData?.data && Array.isArray(storesData.data)) {
+        setStores(storesData.data)
+      } else {
+        console.warn("⚠️ Unexpected response format:", storesData)
+        setStores([])
+      }
+    } catch (error: any) {
+      console.error("❌ Error loading stores:", error)
+      if (error.response?.status === 401) {
+        Alert.alert("Lỗi xác thực", "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại")
+      } else if (error.response?.status === 403) {
+        Alert.alert("Lỗi quyền truy cập", "Bạn không có quyền xem danh sách cửa hàng")
+      } else if (error.code === "NETWORK_ERROR" || !error.response) {
+        Alert.alert("Lỗi kết nối", "Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng")
+      } else {
+        const errorMessage = error.response?.data?.error || error.message || "Không thể tải danh sách cửa hàng"
+        Alert.alert("Lỗi", errorMessage)
+      }
+      setStores([])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const onRefresh = async () => {
+    setRefreshing(true)
+    await loadStores()
+    setRefreshing(false)
+  }
+
+  const handleStorePress = (store: Store) => {
+    console.log("🔄 Navigating to StoreDetail with store:", store.name)
+    navigation.navigate("StoreDetail", { store })
+  }
+
+  const handleToggleStatus = async (store: Store) => {
+    try {
+      const response = await storeApiService.toggleStoreStatus(store._id)
+      // Update local state
+      setStores((prevStores) =>
+        prevStores.map((s) => (s._id === store._id ? { ...s, isActive: response.isActive } : s)),
+      )
+      Alert.alert("Thành công", response.message)
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.error || "Không thể cập nhật trạng thái cửa hàng"
+      Alert.alert("Lỗi", errorMessage)
+    }
+  }
+
+  const handleDeleteStore = (store: Store) => {
+    Alert.alert("Xác nhận xóa", `Bạn có chắc chắn muốn xóa cửa hàng "${store.name}"?`, [
+      { text: "Hủy", style: "cancel" },
+      {
+        text: "Xóa",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await storeApiService.deleteStore(store._id)
+            setStores((prevStores) => prevStores.filter((s) => s._id !== store._id))
+            Alert.alert("Thành công", "Đã xóa cửa hàng")
+          } catch (error: any) {
+            const errorMessage = error.response?.data?.error || "Không thể xóa cửa hàng"
+            Alert.alert("Lỗi", errorMessage)
+          }
+        },
+      },
+    ])
+  }
+
+  const handleCreateStore = () => {
+    setShowCreateModal(true)
+  }
+
+  const handleCreateSuccess = () => {
+    loadStores() // Reload stores after successful creation
+  }
+
+  const renderStoreItem = ({ item }: { item: Store }) => (
+    <TouchableOpacity
+      style={[styles.storeCard, !item.isActive && styles.inactiveStore]}
+      onPress={() => handleStorePress(item)}
+      activeOpacity={0.7}
     >
       <Image
-        source={typeof item.image === 'number' ? item.image : { uri: item.image.uri }}
-        style={styles.image}
+        source={{
+          uri: item.image || "/placeholder.svg?height=80&width=80&text=Store",
+        }}
+        style={styles.storeImage}
+        onError={() => console.log("Store image load error")}
       />
-      <View style={styles.info}>
-        <Text style={styles.name}>{item.name}</Text>
-        <Text style={styles.address}>{item.address}</Text>
-        <Text style={styles.openTime}>🕒 {item.openHours}</Text>
-        <Text style={styles.contact}>📞 {item.contact}</Text>
-        <Text style={styles.status}>Trạng thái: {item.isActive ? 'Hoạt động' : 'Ngưng hoạt động'}</Text>
-        <Text style={styles.status}>
-          Nhân viên: {staffList.find(s => s.id === item.staff)?.name ?? 'Không rõ'}
-        </Text>
-        {item.distance && <Text style={styles.status}>Khoảng cách: {item.distance}</Text>}
-      </View>
-    </TouchableOpacity>
-  );
-
-  return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
-      <View style={styles.container}>
-        <Text style={styles.header}>Quản lý cửa hàng</Text>
-        <FlatList
-          data={stores}
-          keyExtractor={(item) => item.id}
-          renderItem={renderItem}
-          contentContainerStyle={{ paddingBottom: 80 }}
-        />
-
-        {/* MODAL POPUP TẠO STORE */}
-        <Modal visible={modalVisible} animationType="slide" transparent>
-          <View style={styles.modalBackdrop}>
-            <SafeAreaView style={styles.modalContent}>
-              <KeyboardAvoidingView
-                style={{ flex: 1 }}
-                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}
-              >
-                <ScrollView
-                  style={{ flex: 1 }}
-                  contentContainerStyle={{ paddingBottom: 60 }}
-                  showsVerticalScrollIndicator={false}
-                >
-                  <Text style={styles.popupTitle}>Thêm cửa hàng mới</Text>
-                  {/* Tên cửa hàng */}
-                  <View style={styles.inputGroup}>
-                    <Ionicons name="storefront-outline" size={20} color="#4AA366" style={styles.icon} />
-                    <TextInput
-                      placeholder="Tên cửa hàng"
-                      style={styles.inputPopup}
-                      value={form.name}
-                      onChangeText={text => setForm({ ...form, name: text })}
-                      placeholderTextColor="#aaa"
-                    />
-                  </View>
-                  {/* Địa chỉ */}
-                  <View style={styles.inputGroup}>
-                    <Ionicons name="location-outline" size={20} color="#3E6EF3" style={styles.icon} />
-                    <TextInput
-                      placeholder="Địa chỉ"
-                      style={styles.inputPopup}
-                      value={form.address}
-                      onChangeText={text => setForm({ ...form, address: text })}
-                      placeholderTextColor="#aaa"
-                    />
-                  </View>
-                  {/* Số liên hệ */}
-                  <View style={styles.inputGroup}>
-                    <Ionicons name="call-outline" size={20} color="#f7b731" style={styles.icon} />
-                    <TextInput
-                      placeholder="Số liên hệ"
-                      style={styles.inputPopup}
-                      keyboardType="phone-pad"
-                      value={form.contact}
-                      onChangeText={text => setForm({ ...form, contact: text })}
-                      placeholderTextColor="#aaa"
-                    />
-                  </View>
-                  {/* Link bản đồ */}
-                  <View style={styles.inputGroup}>
-                    <Ionicons name="map-outline" size={20} color="#18a1e9" style={styles.icon} />
-                    <TextInput
-                      placeholder="Link bản đồ (Google Maps)"
-                      style={[styles.inputPopup, { paddingRight: 36 }]}
-                      value={form.mapUrl}
-                      onChangeText={text => setForm({ ...form, mapUrl: text })}
-                      placeholderTextColor="#aaa"
-                      autoCapitalize="none"
-                      autoCorrect={false}
-                    />
-                    {!!form.mapUrl && (
-                      <TouchableOpacity
-                        onPress={() => Linking.openURL(form.mapUrl!)}
-                        style={{ position: 'absolute', right: 12 }}
-                      >
-                        <Ionicons name="navigate-circle-outline" size={24} color="#18a1e9" />
-                      </TouchableOpacity>
-                    )}
-                  </View>
-                  {/* Chọn giờ mở - đóng */}
-                  <View style={styles.timeRowPopup}>
-                    <TouchableOpacity style={styles.timeBtnPopup} onPress={() => setShowOpenPicker(true)}>
-                      <Ionicons name="time-outline" size={18} color="#4AA366" />
-                      <Text style={{ marginLeft: 4 }}>Giờ mở: {formatTime(openTime)}</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.timeBtnPopup} onPress={() => setShowClosePicker(true)}>
-                      <Ionicons name="time-outline" size={18} color="#d35400" />
-                      <Text style={{ marginLeft: 4 }}>Giờ đóng: {formatTime(closeTime)}</Text>
-                    </TouchableOpacity>
-                  </View>
-                  {showOpenPicker && (
-                    <DateTimePicker
-                      value={openTime}
-                      mode="time"
-                      is24Hour
-                      display="spinner"
-                      onChange={(event, selectedDate) => {
-                        setShowOpenPicker(false);
-                        if (selectedDate) setOpenTime(selectedDate);
-                      }}
-                      style={{ backgroundColor: '#fff' }}
-                    />
-                  )}
-                  {showClosePicker && (
-                    <DateTimePicker
-                      value={closeTime}
-                      mode="time"
-                      is24Hour
-                      display="spinner"
-                      onChange={(event, selectedDate) => {
-                        setShowClosePicker(false);
-                        if (selectedDate) setCloseTime(selectedDate);
-                      }}
-                      style={{ backgroundColor: '#fff' }}
-                    />
-                  )}
-
-                  {/* Ảnh */}
-                  <TouchableOpacity style={styles.uploadBtnPopup} onPress={pickImage}>
-                    <Ionicons name="image-outline" size={20} color="#3E6EF3" />
-                    <Text style={{ color: '#3E6EF3', fontWeight: '600', marginLeft: 8 }}>
-                      {form.image ? 'Đổi ảnh' : 'Tải ảnh lên'}
-                    </Text>
-                  </TouchableOpacity>
-                  {form.image && (
-                    <Image
-                      source={typeof form.image === 'number' ? form.image : { uri: form.image.uri }}
-                      style={styles.imagePreview}
-                    />
-                  )}
-
-                  {/* Chọn nhân viên (custom) */}
-                  <View style={styles.inputGroup}>
-                    <Ionicons name="person-outline" size={20} color="#9b59b6" style={styles.icon} />
-                    <TouchableOpacity
-                      style={[styles.staffPickerBtn, { flex: 1 }]}
-                      onPress={() => setStaffModalVisible(true)}
-                      activeOpacity={0.8}
-                    >
-                      {form.staff ? (
-                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                          <Image
-                            source={{ uri: staffList.find(s => s.id === form.staff)?.avatar }}
-                            style={styles.staffAvatarMini}
-                          />
-                          <Text style={{ marginLeft: 8, color: '#222', fontSize: 15 }}>
-                            {staffList.find(s => s.id === form.staff)?.name}
-                          </Text>
-                        </View>
-                      ) : (
-                        <Text style={{ color: '#aaa', fontSize: 15 }}>Chọn nhân viên quản lý</Text>
-                      )}
-                    </TouchableOpacity>
-                  </View>
-
-                  {/* MODAL CHỌN NHÂN VIÊN */}
-                  <Modal
-                    visible={staffModalVisible}
-                    transparent
-                    animationType="slide"
-                    onRequestClose={() => setStaffModalVisible(false)}
-                  >
-                    <View style={styles.staffModalOverlay}>
-                      <View style={styles.staffModalContainer}>
-                        <Text style={styles.staffModalTitle}>Chọn nhân viên phụ trách</Text>
-                        <FlatList
-                          data={staffList}
-                          keyExtractor={item => item.id}
-                          renderItem={({ item }) => {
-                            const staffStore = getStaffStore(item.id);
-                            const isSelected = form.staff === item.id;
-                            const isDisabled = !!staffStore;
-                            return (
-                              <TouchableOpacity
-                                style={[
-                                  styles.staffCard,
-                                  isSelected && { borderColor: '#3E6EF3', backgroundColor: '#eef6ff' },
-                                  isDisabled && { opacity: 0.4 },
-                                ]}
-                                onPress={() => {
-                                  if (!isDisabled) {
-                                    setForm({ ...form, staff: item.id });
-                                    setStaffModalVisible(false);
-                                  }
-                                }}
-                                disabled={isDisabled}
-                              >
-                                <Image source={{ uri: item.avatar }} style={styles.staffAvatar} />
-                                <View style={{ flex: 1 }}>
-                                  <Text style={styles.staffName}>{item.name}</Text>
-                                  {staffStore ? (
-                                    <Text style={styles.staffStatus}>{`Đang phụ trách: ${staffStore}`}</Text>
-                                  ) : (
-                                    <Text style={[styles.staffStatus, { color: '#4AA366' }]}>Chưa phụ trách cửa hàng nào</Text>
-                                  )}
-                                </View>
-                                {isSelected && <Ionicons name="checkmark-circle" size={26} color="#3E6EF3" />}
-                              </TouchableOpacity>
-                            );
-                          }}
-                          contentContainerStyle={{ paddingBottom: 20 }}
-                        />
-                        <TouchableOpacity onPress={() => setStaffModalVisible(false)} style={styles.closeStaffModalBtn}>
-                          <Text style={{ color: '#3E6EF3', fontWeight: 'bold', fontSize: 16 }}>Đóng</Text>
-                        </TouchableOpacity>
-                      </View>
-                    </View>
-                  </Modal>
-
-                  {/* Switch Hoạt động */}
-                  <View style={styles.switchRowPopup}>
-                    <Text style={{ fontSize: 15, color: '#555', marginRight: 8 }}>Hoạt động:</Text>
-                    <Switch
-                      value={form.isActive ?? true}
-                      onValueChange={val => setForm({ ...form, isActive: val })}
-                      trackColor={{ false: "#ccc", true: "#4AA366" }}
-                      thumbColor={form.isActive ? "#fff" : "#eee"}
-                    />
-                  </View>
-
-                  {/* Nút thao tác */}
-                  <TouchableOpacity style={styles.saveButtonPopup} onPress={handleSave}>
-                    <Text style={styles.saveText}>Thêm cửa hàng</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={styles.cancelButtonPopup}
-                    onPress={() => {
-                      Alert.alert('Xác nhận', 'Bạn có chắc muốn huỷ và xoá dữ liệu đã nhập?', [
-                        { text: 'Không', style: 'cancel' },
-                        {
-                          text: 'Có',
-                          style: 'destructive',
-                          onPress: () => {
-                            resetForm();
-                            setModalVisible(false);
-                          },
-                        },
-                      ]);
-                    }}
-                  >
-                    <Text style={styles.cancelText}>Huỷ</Text>
-                  </TouchableOpacity>
-                </ScrollView>
-              </KeyboardAvoidingView>
-            </SafeAreaView>
+      <View style={styles.storeInfo}>
+        <View style={styles.storeHeader}>
+          <Text style={styles.storeName}>{item.name}</Text>
+          <View style={[styles.statusBadge, { backgroundColor: item.isActive ? "#4AA366" : "#e74c3c" }]}>
+            <Text style={styles.statusText}>{item.isActive ? "Hoạt động" : "Ngưng"}</Text>
           </View>
-        </Modal>
-
-        <TouchableOpacity style={styles.fab} onPress={() => setModalVisible(true)}>
-          <Ionicons name="add" size={28} color="#fff" />
+        </View>
+        <View style={styles.infoRow}>
+          <Ionicons name="location-outline" size={16} color="#666" />
+          <Text style={styles.infoText} numberOfLines={2}>
+            {item.address}
+          </Text>
+        </View>
+        <View style={styles.infoRow}>
+          <Ionicons name="time-outline" size={16} color="#666" />
+          <Text style={styles.infoText}>{item.openHours}</Text>
+        </View>
+        <View style={styles.infoRow}>
+          <Ionicons name="call-outline" size={16} color="#666" />
+          <Text style={styles.infoText}>{item.contact}</Text>
+        </View>
+        {item.staff && (
+          <View style={styles.infoRow}>
+            <Ionicons name="person-outline" size={16} color="#666" />
+            <Text style={styles.infoText}>
+              {item.staff.fullname} ({item.staff.staffId})
+            </Text>
+          </View>
+        )}
+        {item.createdAt && (
+          <Text style={styles.dateText}>Tạo: {new Date(item.createdAt).toLocaleDateString("vi-VN")}</Text>
+        )}
+      </View>
+      <View style={styles.actionButtons}>
+        <TouchableOpacity
+          style={[styles.actionButton, { backgroundColor: item.isActive ? "#e74c3c" : "#4AA366" }]}
+          onPress={() => handleToggleStatus(item)}
+        >
+          <Ionicons name={item.isActive ? "pause-outline" : "play-outline"} size={16} color="#fff" />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.actionButton, { backgroundColor: "#ff6b6b" }]}
+          onPress={() => handleDeleteStore(item)}
+        >
+          <Ionicons name="trash-outline" size={16} color="#fff" />
         </TouchableOpacity>
       </View>
+    </TouchableOpacity>
+  )
+
+  const renderEmptyState = () => (
+    <View style={styles.emptyState}>
+      <Ionicons name="storefront-outline" size={64} color="#ccc" />
+      <Text style={styles.emptyTitle}>Chưa có cửa hàng nào</Text>
+      <Text style={styles.emptySubtitle}>
+        {searchText ? "Không tìm thấy cửa hàng phù hợp" : "Thêm cửa hàng đầu tiên của bạn"}
+      </Text>
+      {!searchText && (
+        <TouchableOpacity style={styles.addButton} onPress={handleCreateStore}>
+          <Text style={styles.addButtonText}>Thêm cửa hàng</Text>
+        </TouchableOpacity>
+      )}
+    </View>
+  )
+
+  const renderHeader = () => (
+    <View style={styles.header}>
+      <Text style={styles.title}>Quản lý Cửa hàng</Text>
+      <Text style={styles.subtitle}>
+        {stores.length} cửa hàng • {stores.filter((s) => s.isActive).length} hoạt động
+      </Text>
+      {/* Search Bar */}
+      <View style={styles.searchContainer}>
+        <Ionicons name="search-outline" size={20} color="#666" style={styles.searchIcon} />
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Tìm kiếm cửa hàng..."
+          value={searchText}
+          onChangeText={setSearchText}
+          placeholderTextColor="#999"
+        />
+        {searchText.length > 0 && (
+          <TouchableOpacity onPress={() => setSearchText("")} style={styles.clearButton}>
+            <Ionicons name="close-circle" size={20} color="#666" />
+          </TouchableOpacity>
+        )}
+      </View>
+    </View>
+  )
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#007AFF" />
+          <Text style={styles.loadingText}>Đang tải danh sách cửa hàng...</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={loadStores}>
+            <Text style={styles.retryText}>Thử lại</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    )
+  }
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <FlatList
+        data={filteredStores}
+        keyExtractor={(item) => item._id}
+        renderItem={renderStoreItem}
+        ListHeaderComponent={renderHeader}
+        ListEmptyComponent={renderEmptyState}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        contentContainerStyle={styles.listContainer}
+        showsVerticalScrollIndicator={false}
+      />
+
+      {/* Floating Action Button */}
+      <TouchableOpacity style={styles.fab} onPress={handleCreateStore}>
+        <Ionicons name="add" size={24} color="#fff" />
+      </TouchableOpacity>
+
+      {/* Create Store Modal */}
+      <CreateStoreModal
+        visible={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onSuccess={handleCreateSuccess}
+      />
     </SafeAreaView>
-  );
-};
+  )
+}
+
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, backgroundColor: '#fff' },
-  header: { fontSize: 22, fontWeight: 'bold', marginBottom: 12, color: '#333' },
-  card: { backgroundColor: '#f9f9f9', borderRadius: 12, overflow: 'hidden', marginBottom: 30 },
-  image: { width: '100%', height: 160 },
-  info: { padding: 16 },
-  name: { fontSize: 18, fontWeight: '600', color: '#4AA366', marginBottom: 4 },
-  address: { fontSize: 14, color: '#555' },
-  openTime: { fontSize: 13, color: '#888', marginTop: 4 },
-  contact: { fontSize: 13, color: '#888', marginTop: 2 },
-  status: { fontSize: 13, color: '#888', marginTop: 2 },
+  container: {
+    flex: 1,
+    backgroundColor: "#f8f9fa",
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: "#666",
+    textAlign: "center",
+  },
+  retryButton: {
+    marginTop: 16,
+    backgroundColor: "#007AFF",
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  retryText: {
+    color: "#fff",
+    fontWeight: "600",
+  },
+  listContainer: {
+    flexGrow: 1,
+    paddingBottom: 80,
+  },
+  header: {
+    padding: 20,
+    backgroundColor: "#fff",
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: "bold",
+    color: "#333",
+    marginBottom: 4,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: "#666",
+    marginBottom: 16,
+  },
+  searchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#f5f5f5",
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    height: 44,
+  },
+  searchIcon: {
+    marginRight: 8,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
+    color: "#333",
+  },
+  clearButton: {
+    padding: 4,
+  },
+  storeCard: {
+    backgroundColor: "#fff",
+    marginHorizontal: 16,
+    marginVertical: 8,
+    borderRadius: 12,
+    padding: 16,
+    flexDirection: "row",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  inactiveStore: {
+    opacity: 0.7,
+    backgroundColor: "#f8f8f8",
+  },
+  storeImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 8,
+    backgroundColor: "#f0f0f0",
+  },
+  storeInfo: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  storeHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  storeName: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#333",
+    flex: 1,
+  },
+  statusBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  statusText: {
+    color: "#fff",
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  infoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 4,
+  },
+  infoText: {
+    marginLeft: 8,
+    fontSize: 14,
+    color: "#666",
+    flex: 1,
+  },
+  dateText: {
+    fontSize: 12,
+    color: "#999",
+    marginTop: 4,
+  },
+  actionButtons: {
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  actionButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: "center",
+    alignItems: "center",
+    marginVertical: 4,
+  },
+  emptyState: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 40,
+  },
+  emptyTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#333",
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  emptySubtitle: {
+    fontSize: 16,
+    color: "#666",
+    textAlign: "center",
+    marginBottom: 24,
+  },
+  addButton: {
+    backgroundColor: "#007AFF",
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  addButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
+  },
   fab: {
-    position: 'absolute',
+    position: "absolute",
     right: 20,
     bottom: 80,
-    backgroundColor: '#3E6EF3',
     width: 56,
     height: 56,
     borderRadius: 28,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: "#3E6EF3",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.23,
-    shadowRadius: 3,
-    elevation: 5,
-  },
-
-  // Popup styles
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.25)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 22,
-    borderTopRightRadius: 22,
-    paddingHorizontal: 18,
-    paddingTop: 24,
-    minHeight: '75%',
+    backgroundColor: "#007AFF",
+    justifyContent: "center",
+    alignItems: "center",
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: -6 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 12,
-  },
-  popupTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    marginBottom: 16,
-    color: '#3E6EF3',
-    textAlign: 'center',
-    letterSpacing: 0.3,
-  },
-  inputGroup: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#eee',
-    borderRadius: 14,
-    backgroundColor: '#f9fafd',
-    marginBottom: 14,
-    paddingHorizontal: 8,
-  },
-  icon: {
-    marginRight: 6,
-  },
-  inputPopup: {
-    flex: 1,
-    fontSize: 16,
-    color: '#222',
-    paddingVertical: 13,
-    paddingHorizontal: 2,
-    backgroundColor: 'transparent',
-  },
-  timeRowPopup: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 14,
-    gap: 8,
-  },
-  timeBtnPopup: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#e8f6ef',
-    borderRadius: 10,
-    paddingVertical: 11,
-    paddingHorizontal: 10,
-    borderWidth: 1,
-    borderColor: '#dbeaf4',
-    marginHorizontal: 2,
-  },
-  uploadBtnPopup: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#3E6EF3',
-    backgroundColor: '#f4f8ff',
-    paddingVertical: 12,
-    borderRadius: 12,
-    marginBottom: 12,
-    marginTop: 4,
-  },
-  imagePreview: {
-    width: '100%',
-    height: 170,
-    marginTop: 8,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#eee',
-  },
-  // Staff picker
-  staffPickerBtn: {
-    minHeight: 48,
-    justifyContent: 'center',
-    paddingHorizontal: 8,
-  },
-  staffAvatarMini: {
-    width: 30,
-    height: 30,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#ccc',
-  },
-  // Staff modal styles
-  staffModalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.18)',
-    justifyContent: 'flex-end',
-  },
-  staffModalContainer: {
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    maxHeight: '70%',
-    paddingHorizontal: 18,
-    paddingVertical: 24,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
     elevation: 8,
   },
-  staffModalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 12,
-    color: '#3E6EF3',
-  },
-  staffCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 6,
-    backgroundColor: '#f6faff',
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: '#eee',
-    marginBottom: 10,
-    opacity: 1,
-  },
-  staffAvatar: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    marginRight: 14,
-    backgroundColor: '#eee',
-  },
-  staffName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#222',
-  },
-  staffStatus: {
-    fontSize: 13,
-    color: '#f7b731',
-    marginTop: 3,
-  },
-  closeStaffModalBtn: {
-    paddingVertical: 10,
-    alignItems: 'center',
-    marginTop: 6,
-    borderRadius: 8,
-    backgroundColor: '#f6faff',
-    borderWidth: 1,
-    borderColor: '#e2e2e2',
-  },
-  pickerWrapper: {
-    flex: 1,
-    marginLeft: 2,
-    borderRadius: 10,
-    overflow: 'hidden',
-    backgroundColor: '#f9fafd',
-  },
-  switchRowPopup: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-    marginTop: 8,
-    paddingLeft: 2,
-  },
-  saveButtonPopup: {
-    backgroundColor: '#3E6EF3',
-    padding: 16,
-    borderRadius: 14,
-    marginBottom: 10,
-    marginTop: 10,
-    shadowColor: "#3E6EF3",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 7,
-    elevation: 3,
-  },
-  saveText: {
-    color: '#fff',
-    textAlign: 'center',
-    fontWeight: 'bold',
-    fontSize: 16,
-    letterSpacing: 0.2,
-  },
-  cancelButtonPopup: {
-    backgroundColor: '#e1e1e1',
-    padding: 15,
-    borderRadius: 14,
-    marginBottom: 12,
-  },
-  cancelText: {
-    color: '#555',
-    textAlign: 'center',
-    fontWeight: '600',
-    fontSize: 15,
-  },
-});
+})
 
-export default ManageStore;
+export default ManageStores

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -13,53 +13,197 @@ import {
   Alert,
   Image,
   Switch,
+  ActivityIndicator,
 } from 'react-native';
-import drinks1 from '../../data/drinks1';
 import * as ImagePicker from 'expo-image-picker';
-import { Chip, IconButton } from 'react-native-paper';
+import { Chip, Checkbox } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { ProductToppingStackParamList } from '../../navigation/admin/ProductToppingStack';
+import apiInstance from '../../api/axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const categoryIdToName: Record<string, string> = {
-  '686b70553670116a4330a181': 'Matcha',
-  '686b707f3670116a4330a189': 'Latte & Cafe',
-  '686b70213670116a4330a17d': 'Trà sữa',
-  '686b70933670116a4330a18d': 'Trà trái cây',
-  '686b70a33670116a4330a191': 'Đồ uống nóng',
-  '686b706c3670116a4330a185': 'Đặc biệt'
+// Interfaces
+interface Category {
+  _id: string;
+  category: string;
+  icon?: string;
+  description?: string;
+}
+
+interface Size {
+  _id: string;
+  size: string;
+  name: string;
+  multiplier: number;
+  volume: string;
+}
+
+interface Topping {
+  _id: string;
+  name: string;
+  price: number;
+  icon?: string;
+}
+
+interface Drink {
+  _id: string;
+  name: string;
+  basePrice: number;
+  description?: string;
+  image: string | null;
+  categoryId: Category[];
+  sizeOptions: Size[];
+  toppingOptions: Topping[];
+  isBanned?: boolean;
+  status?: string;
+  rating?: number;
+}
+
+// API Service Functions
+const apiService = {
+  async getAllProducts() {
+    try {
+      const token = await AsyncStorage.getItem('accessToken');
+      const response = await apiInstance.get('/products', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching products:', error);
+      throw error;
+    }
+  },
+
+  async getAllCategories() {
+    try {
+      const token = await AsyncStorage.getItem('accessToken');
+      const response = await apiInstance.get('/categories', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+      throw error;
+    }
+  },
+
+  async getAllSizes() {
+    try {
+      const token = await AsyncStorage.getItem('accessToken');
+      const response = await apiInstance.get('/sizes', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching sizes:', error);
+      throw error;
+    }
+  },
+
+  async getAllToppings() {
+    try {
+      const token = await AsyncStorage.getItem('accessToken');
+      const response = await apiInstance.get('/toppings', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching toppings:', error);
+      throw error;
+    }
+  },
+
+  async searchProducts(name: string, page: number = 1, limit: number = 20) {
+    try {
+      const token = await AsyncStorage.getItem('accessToken');
+      const response = await apiInstance.get(`/products/search/by-name?name=${encodeURIComponent(name)}&page=${page}&limit=${limit}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error searching products:', error);
+      throw error;
+    }
+  },
+
+  async createProduct(productData: FormData) {
+    try {
+      const token = await AsyncStorage.getItem('accessToken');
+      const response = await apiInstance.post('/products', productData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error creating product:', error);
+      throw error;
+    }
+  },
+
+  async updateProduct(id: string, productData: FormData) {
+    try {
+      const token = await AsyncStorage.getItem('accessToken');
+      const response = await apiInstance.put(`/products/${id}`, productData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error updating product:', error);
+      throw error;
+    }
+  },
+
+  async deleteProduct(id: string) {
+    try {
+      const token = await AsyncStorage.getItem('accessToken');
+      const response = await apiInstance.delete(`/products/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error deleting product:', error);
+      throw error;
+    }
+  },
+
+  async banProduct(id: string, isBanned: boolean) {
+    try {
+      const token = await AsyncStorage.getItem('accessToken');
+      const response = await apiInstance.put(`/products/${id}/ban`, 
+        { isBanned },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error updating ban status:', error);
+      throw error;
+    }
+  },
 };
 
-function MultiCategoryChips({
-  categories,
-  selectedCategories,
-  onChangeSelected,
-  showAddCategory,
-  setShowAddCategory,
-  newCategory,
-  setNewCategory,
-  addCategory
-}: {
-  categories: string[];
+// Multi-select components
+function MultiCategoryChips({ categories, selectedCategories, onChangeSelected }: {
+  categories: Category[];
   selectedCategories: string[];
   onChangeSelected: (arr: string[]) => void;
-  showAddCategory: boolean;
-  setShowAddCategory: (v: boolean) => void;
-  newCategory: string;
-  setNewCategory: (s: string) => void;
-  addCategory: () => void;
 }) {
   return (
     <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', marginBottom: 12 }}>
       {categories.map((cat) => {
-        const selected = selectedCategories.includes(cat);
+        const selected = selectedCategories.includes(cat._id);
         return (
           <Chip
-            key={cat}
+            key={cat._id}
             selected={selected}
             onPress={() => {
-              if (selected) onChangeSelected(selectedCategories.filter(c => c !== cat));
-              else onChangeSelected([...selectedCategories, cat]);
+              if (selected) onChangeSelected(selectedCategories.filter(c => c !== cat._id));
+              else onChangeSelected([...selectedCategories, cat._id]);
             }}
             style={{
               marginRight: 8,
@@ -71,42 +215,92 @@ function MultiCategoryChips({
             textStyle={{ color: selected ? '#fff' : '#007AFF', fontWeight: '500' }}
             icon={selected ? 'check' : undefined}
           >
-            {categoryIdToName[cat] || cat}
+            {cat.category}
           </Chip>
         );
       })}
-      {showAddCategory ? (
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
-          <TextInput
-            style={{ borderBottomWidth: 1, marginRight: 8, minWidth: 80, paddingVertical: 2 }}
-            placeholder="Loại"
-            value={newCategory}
-            onChangeText={setNewCategory}
-            onSubmitEditing={() => { addCategory(); setShowAddCategory(false); }}
-          />
-          <IconButton icon="check" onPress={() => { addCategory(); setShowAddCategory(false); }} />
-          <IconButton icon="close" onPress={() => setShowAddCategory(false)} />
-        </View>
-      ) : (
-        <Chip icon="plus" onPress={() => setShowAddCategory(true)} style={{ borderColor: '#007AFF', borderWidth: 1, backgroundColor: '#fff', marginBottom: 8 }}>Thêm</Chip>
-      )}
     </View>
   );
 }
 
-interface Drink {
-  _id: string;
-  name: string;
-  basePrice: number;
-  description?: string;
-  image: string | number | null;
-  categoryIds: string[];
-  category: string;
-  isBanned?: boolean; // trạng thái bán/ngừng bán
+function SizeSelector({ sizes, selectedSizes, onChangeSelected }: {
+  sizes: Size[];
+  selectedSizes: string[];
+  onChangeSelected: (arr: string[]) => void;
+}) {
+  return (
+    <View style={{ marginBottom: 16 }}>
+      <Text style={{ fontWeight: '600', marginBottom: 8, color: '#222' }}>Chọn size:</Text>
+      {sizes.map((size) => {
+        const selected = selectedSizes.includes(size._id);
+        return (
+          <TouchableOpacity
+            key={size._id}
+            style={styles.checkboxRow}
+            onPress={() => {
+              if (selected) onChangeSelected(selectedSizes.filter(s => s !== size._id));
+              else onChangeSelected([...selectedSizes, size._id]);
+            }}
+          >
+            <Checkbox
+              status={selected ? 'checked' : 'unchecked'}
+              onPress={() => {
+                if (selected) onChangeSelected(selectedSizes.filter(s => s !== size._id));
+                else onChangeSelected([...selectedSizes, size._id]);
+              }}
+            />
+            <Text style={styles.checkboxText}>
+              {size.name} ({size.size}) - {size.volume} (x{size.multiplier})
+            </Text>
+          </TouchableOpacity>
+        );
+      })}
+    </View>
+  );
+}
+
+function ToppingSelector({ toppings, selectedToppings, onChangeSelected }: {
+  toppings: Topping[];
+  selectedToppings: string[];
+  onChangeSelected: (arr: string[]) => void;
+}) {
+  return (
+    <View style={{ marginBottom: 16 }}>
+      <Text style={{ fontWeight: '600', marginBottom: 8, color: '#222' }}>Chọn topping:</Text>
+      <ScrollView style={{ maxHeight: 200 }}>
+        {toppings.map((topping) => {
+          const selected = selectedToppings.includes(topping._id);
+          return (
+            <TouchableOpacity
+              key={topping._id}
+              style={styles.checkboxRow}
+              onPress={() => {
+                if (selected) onChangeSelected(selectedToppings.filter(t => t !== topping._id));
+                else onChangeSelected([...selectedToppings, topping._id]);
+              }}
+            >
+              <Checkbox
+                status={selected ? 'checked' : 'unchecked'}
+                onPress={() => {
+                  if (selected) onChangeSelected(selectedToppings.filter(t => t !== topping._id));
+                  else onChangeSelected([...selectedToppings, topping._id]);
+                }}
+              />
+              <Text style={styles.checkboxText}>
+                {topping.icon} {topping.name} (+{topping.price.toLocaleString()}đ)
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </ScrollView>
+    </View>
+  );
 }
 
 export default function ManageProducts() {
   const navigation = useNavigation<NativeStackNavigationProp<ProductToppingStackParamList>>();
+  
+  // State management
   const [modalVisible, setModalVisible] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [selectedDrink, setSelectedDrink] = useState<Drink | null>(null);
@@ -114,30 +308,144 @@ export default function ManageProducts() {
   const [price, setPrice] = useState('');
   const [description, setDescription] = useState('');
   const [categoriesSelected, setCategoriesSelected] = useState<string[]>([]);
-  const [image, setImage] = useState<string | number | null>(null);
-  const [newCategory, setNewCategory] = useState('');
-  const [showAddCategory, setShowAddCategory] = useState(false);
-
+  const [sizesSelected, setSizesSelected] = useState<string[]>([]);
+  const [toppingsSelected, setToppingsSelected] = useState<string[]>([]);
+  const [image, setImage] = useState<string | null>(null);
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string[]>([]);
+  
+  // Data states
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [sizes, setSizes] = useState<Size[]>([]);
+  const [toppings, setToppings] = useState<Topping[]>([]);
+  const [drinks, setDrinks] = useState<Drink[]>([]);
+  
+  // UI states
+  const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [searchText, setSearchText] = useState('');
+  const [searchLoading, setSearchLoading] = useState(false);
 
-  const [categories, setCategories] = useState(
-    Object.keys(categoryIdToName)
+  // Load data on component mount
+  useEffect(() => {
+    loadInitialData();
+  }, []);
+
+  // Debounced search
+  const debouncedSearch = useCallback(
+    debounce((text: string) => {
+      if (text.trim().length >= 2) {
+        performSearch(text);
+      } else if (text.trim().length === 0) {
+        loadProducts();
+      }
+    }, 300),
+    []
   );
 
-  const [drinks, setDrinks] = useState<Drink[]>(
-    drinks1.map((drink) => ({
-      ...drink,
-      category: drink.categoryIds[0],
-      image: drink.image || null,
-      isBanned: drink.isBanned || false, // default false
-    }))
-  );
+  useEffect(() => {
+    debouncedSearch(searchText);
+  }, [searchText, debouncedSearch]);
+
+  // Debounce utility function
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
+  function debounce(func: Function, wait: number) {
+    // eslint-disable-next-line no-undef
+    let timeout: NodeJS.Timeout;
+    return function executedFunction(...args: any[]) {
+      const later = () => {
+        clearTimeout(timeout);
+        func(...args);
+      };
+      clearTimeout(timeout);
+      timeout = setTimeout(later, wait);
+    };
+  }
+
+  const loadInitialData = async () => {
+    try {
+      setLoading(true);
+      await Promise.all([
+        loadCategories(),
+        loadSizes(),
+        loadToppings(),
+        loadProducts()
+      ]);
+    } catch (error) {
+      console.error('Error loading initial data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadCategories = async () => {
+    try {
+      const categoriesData = await apiService.getAllCategories();
+      setCategories(categoriesData);
+    } catch (error: any) {
+      if (error.response?.status !== 401) {
+        Alert.alert('Lỗi', 'Không thể tải danh sách danh mục');
+      }
+    }
+  };
+
+  const loadSizes = async () => {
+    try {
+      const sizesData = await apiService.getAllSizes();
+      setSizes(sizesData);
+    } catch (error: any) {
+      if (error.response?.status !== 401) {
+        Alert.alert('Lỗi', 'Không thể tải danh sách size');
+      }
+    }
+  };
+
+  const loadToppings = async () => {
+    try {
+      const toppingsData = await apiService.getAllToppings();
+      setToppings(toppingsData);
+    } catch (error: any) {
+      if (error.response?.status !== 401) {
+        Alert.alert('Lỗi', 'Không thể tải danh sách topping');
+      }
+    }
+  };
+
+  const loadProducts = async () => {
+    try {
+      if (!loading) setLoading(true);
+      const products = await apiService.getAllProducts();
+      setDrinks(products);
+    } catch (error: any) {
+      if (error.response?.status === 401) {
+        Alert.alert('Lỗi xác thực', 'Vui lòng đăng nhập lại');
+      } else {
+        Alert.alert('Lỗi', 'Không thể tải danh sách sản phẩm');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const performSearch = async (text: string) => {
+    try {
+      setSearchLoading(true);
+      const result = await apiService.searchProducts(text);
+      setDrinks(result.products || []);
+    } catch (error) {
+      console.error('Search error:', error);
+      Alert.alert('Lỗi', 'Không thể tìm kiếm sản phẩm');
+    } finally {
+      setSearchLoading(false);
+    }
+  };
 
   const resetForm = () => {
     setName('');
     setPrice('');
     setDescription('');
     setCategoriesSelected([]);
+    setSizesSelected([]);
+    setToppingsSelected([]);
     setImage(null);
     setEditId(null);
   };
@@ -147,127 +455,201 @@ export default function ManageProducts() {
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [4, 3],
-      quality: 1,
+      quality: 0.8,
     });
     if (!result.canceled) {
       setImage(result.assets[0].uri);
     }
   };
 
-  const addDrink = () => {
-    if (!name || !price || categoriesSelected.length === 0) return;
-    const newDrink: Drink = {
-      _id: Date.now().toString(),
-      name,
-      basePrice: parseInt(price),
-      description,
-      image,
-      category: categoriesSelected[0],
-      categoryIds: categoriesSelected,
-      isBanned: false
-    };
-    setDrinks([...drinks, newDrink]);
-    setModalVisible(false);
-    resetForm();
+  const createFormData = () => {
+    const formData = new FormData();
+    formData.append('name', name);
+    formData.append('basePrice', price);
+    formData.append('description', description);
+    
+    // Categories
+    categoriesSelected.forEach((categoryId) => {
+      formData.append('categoryId', categoryId);
+    });
+
+    // Sizes
+    sizesSelected.forEach((sizeId) => {
+      formData.append('sizeOptions', sizeId);
+    });
+
+    // Toppings
+    toppingsSelected.forEach((toppingId) => {
+      formData.append('toppingOptions', toppingId);
+    });
+
+    if (image) {
+      const filename = image.split('/').pop() || 'image.jpg';
+      const match = /\.(\w+)$/.exec(filename);
+      const type = match ? `image/${match[1]}` : 'image/jpeg';
+
+      formData.append('image', {
+        uri: image,
+        type,
+        name: filename,
+      } as any);
+    }
+
+    return formData;
   };
 
-  const updateDrink = () => {
+  const addDrink = async () => {
+    if (!name || !price || categoriesSelected.length === 0) {
+      Alert.alert('Lỗi', 'Vui lòng điền đầy đủ thông tin bắt buộc');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const formData = createFormData();
+      const response = await apiService.createProduct(formData);
+      
+      Alert.alert('Thành công', response.message || 'Thêm sản phẩm thành công');
+      setModalVisible(false);
+      resetForm();
+      await loadProducts();
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.error || 'Không thể thêm sản phẩm';
+      Alert.alert('Lỗi', errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateDrink = async () => {
     if (!editId) return;
-    setDrinks(drinks.map((d) =>
-      d._id === editId ? {
-        ...d,
-        name,
-        basePrice: parseInt(price),
-        description,
-        image,
-        category: categoriesSelected[0],
-        categoryIds: categoriesSelected
-      } : d));
-    setModalVisible(false);
-    resetForm();
-  };
 
-  const confirmCloseForm = () => {
-    Alert.alert('Xác nhận', 'Bạn có chắc muốn huỷ và xoá dữ liệu đã nhập?', [
-      { text: 'Không', style: 'cancel' },
-      { text: 'Có', style: 'destructive', onPress: () => { resetForm(); setModalVisible(false); } }
-    ]);
-  };
-
-  const confirmSave = () => {
-    Alert.alert('Xác nhận', 'Bạn muốn lưu thay đổi?', [
-      { text: 'Không', style: 'cancel' },
-      { text: 'Có', onPress: editId ? updateDrink : addDrink }
-    ]);
-  };
-
-  const confirmDelete = (drinkId: string) => {
-    Alert.alert('Xác nhận xoá', 'Bạn có chắc muốn xoá thức uống này?', [
-      { text: 'Không', style: 'cancel' },
-      {
-        text: 'Xoá', style: 'destructive', onPress: () => {
-          setDrinks(drinks.filter(d => d._id !== drinkId));
-          setSelectedDrink(null);
-        }
-      }
-    ]);
+    try {
+      setLoading(true);
+      const formData = createFormData();
+      const response = await apiService.updateProduct(editId, formData);
+      
+      Alert.alert('Thành công', response.message || 'Cập nhật sản phẩm thành công');
+      setModalVisible(false);
+      resetForm();
+      await loadProducts();
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.error || 'Không thể cập nhật sản phẩm';
+      Alert.alert('Lỗi', errorMessage);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const startEdit = (drink: Drink) => {
     setName(drink.name);
     setPrice(drink.basePrice.toString());
     setDescription(drink.description || '');
-    setCategoriesSelected(drink.categoryIds || []);
+    setCategoriesSelected(drink.categoryId.map(cat => cat._id));
+    setSizesSelected(drink.sizeOptions.map(size => size._id));
+    setToppingsSelected(drink.toppingOptions.map(topping => topping._id));
     setImage(drink.image);
     setEditId(drink._id);
     setModalVisible(true);
   };
 
-  // Toggle bán/ngừng bán, CẬP NHẬT LUÔN UI và data
-  const toggleBan = (drinkId: string) => {
-    setDrinks((prev) =>
-      prev.map((item) =>
-        item._id === drinkId ? { ...item, isBanned: !item.isBanned } : item
-      )
-    );
-    // cập nhật luôn selectedDrink để Switch không bị lag UI
-    setSelectedDrink((cur) =>
-      cur && cur._id === drinkId ? { ...cur, isBanned: !cur.isBanned } : cur
-    );
-  };
+  const toggleBan = async (drinkId: string) => {
+    const drink = drinks.find(d => d._id === drinkId);
+    if (!drink) return;
 
-  // Filter logic
-  const filteredDrinks =
-    selectedCategoryFilter.length === 0
-      ? drinks
-      : drinks.filter((d) =>
-          d.categoryIds.some(cat => selectedCategoryFilter.includes(cat))
-        );
+    try {
+      setLoading(true);
+      const newBanStatus = !drink.isBanned;
+      await apiService.banProduct(drinkId, newBanStatus);
+      
+      setDrinks((prev) =>
+        prev.map((item) =>
+          item._id === drinkId ? { ...item, isBanned: newBanStatus } : item
+        )
+      );
+      
+      setSelectedDrink((cur) =>
+        cur && cur._id === drinkId ? { ...cur, isBanned: newBanStatus } : cur
+      );
 
-  // Thêm loại mới
-  const addCategory = () => {
-    if (newCategory && !Object.values(categoryIdToName).includes(newCategory)) {
-      const newId = Date.now().toString();
-      categoryIdToName[newId] = newCategory;
-      setCategories([...categories, newId]);
-      setNewCategory('');
+      Alert.alert('Thành công', `${newBanStatus ? 'Ngừng bán' : 'Bán lại'} sản phẩm thành công`);
+    } catch (error: any) {
+      Alert.alert('Lỗi', 'Không thể cập nhật trạng thái sản phẩm');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const renderImage = (source: string | number | null, style: any) => {
-    if (!source) return null;
-    return (
-      <Image
-        source={typeof source === 'string' ? { uri: source } : source}
-        style={style}
-      />
-    );
+  const confirmDelete = (drinkId: string) => {
+    Alert.alert('Xác nhận xoá', 'Bạn có chắc muốn xoá thức uống này?', [
+      { text: 'Không', style: 'cancel' },
+      {
+        text: 'Xoá', 
+        style: 'destructive', 
+        onPress: async () => {
+          try {
+            setLoading(true);
+            await apiService.deleteProduct(drinkId);
+            Alert.alert('Thành công', 'Xoá sản phẩm thành công');
+            setSelectedDrink(null);
+            await loadProducts();
+          } catch (error: any) {
+            Alert.alert('Lỗi', 'Không thể xoá sản phẩm');
+          } finally {
+            setLoading(false);
+          }
+        }
+      }
+    ]);
   };
+
+  // Filter logic
+  const filteredDrinks = React.useMemo(() => {
+    if (selectedCategoryFilter.length === 0) {
+      return drinks;
+    }
+    return drinks.filter((drink) =>
+      drink.categoryId.some(cat => selectedCategoryFilter.includes(cat._id))
+    );
+  }, [drinks, selectedCategoryFilter]);
+
+  const renderImage = (source: string | null, style: any) => {
+    if (!source) return null;
+    return <Image source={{ uri: source }} style={style} onError={() => console.log('Image load error')} />;
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    setSearchText('');
+    await loadInitialData();
+    setRefreshing(false);
+  };
+
+  const getCategoryNames = (categoryArray: Category[]) => {
+    return categoryArray.map(cat => cat.category).join(', ');
+  };
+
+  const getSizeNames = (sizeArray: Size[]) => {
+    return sizeArray.map(size => `${size.name} (${size.size})`).join(', ');
+  };
+
+  const getToppingNames = (toppingArray: Topping[]) => {
+    return toppingArray.map(topping => topping.name).join(', ');
+  };
+
+  if (loading && drinks.length === 0) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color="#007AFF" />
+        <Text style={{ marginTop: 10 }}>Đang tải...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Quản lý Thức Uống</Text>
-
+      
       <TouchableOpacity
         style={styles.toppingButton}
         onPress={() => navigation.navigate('ToppingManagement')}
@@ -275,7 +657,25 @@ export default function ManageProducts() {
         <Text style={styles.toppingButtonText}>Quản lý Topping</Text>
       </TouchableOpacity>
 
-      {/* FILTER */}
+      {/* ENHANCED SEARCH BAR */}
+      <View style={styles.searchContainer}>
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Tìm kiếm sản phẩm (ít nhất 2 ký tự)..."
+          value={searchText}
+          onChangeText={setSearchText}
+          clearButtonMode="while-editing"
+        />
+        {searchLoading && (
+          <ActivityIndicator 
+            size="small" 
+            color="#007AFF" 
+            style={styles.searchLoader}
+          />
+        )}
+      </View>
+
+      {/* FILTER BY CATEGORY */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginVertical: 10, paddingBottom: 20 }}>
         <Chip
           selected={selectedCategoryFilter.length === 0}
@@ -287,170 +687,258 @@ export default function ManageProducts() {
           Tất cả
         </Chip>
         {categories.map((cat) => {
-          const selected = selectedCategoryFilter.includes(cat);
+          const selected = selectedCategoryFilter.includes(cat._id);
           return (
             <Chip
-              key={cat}
+              key={cat._id}
               selected={selected}
               onPress={() => {
-                if (selected) setSelectedCategoryFilter(selectedCategoryFilter.filter(c => c !== cat));
-                else setSelectedCategoryFilter([...selectedCategoryFilter, cat]);
+                if (selected) setSelectedCategoryFilter(selectedCategoryFilter.filter(c => c !== cat._id));
+                else setSelectedCategoryFilter([...selectedCategoryFilter, cat._id]);
               }}
               style={[styles.categoryChip, selected && styles.categoryChipSelected]}
               textStyle={[styles.categoryChipText, selected && styles.categoryChipTextSelected]}
               icon={selected ? 'check' : undefined}
             >
-              {categoryIdToName[cat] || cat}
+              {cat.category}
             </Chip>
           );
         })}
       </ScrollView>
 
-      {/* DANH SÁCH */}
+      {/* PRODUCT LIST */}
       <FlatList
         data={filteredDrinks}
         keyExtractor={(item) => item._id}
+        refreshing={refreshing}
+        onRefresh={onRefresh}
         renderItem={({ item }) => (
           <TouchableOpacity
             onPress={() => setSelectedDrink(item)}
-            style={[
-              styles.card,
-              item.isBanned && { opacity: 0.5 }
-            ]}
-            disabled={false}
+            style={[styles.card, item.isBanned && { opacity: 0.5 }]}
           >
             {renderImage(item.image, styles.image)}
             <View style={{ flex: 1 }}>
-              <Text style={styles.cardTitle}>{item.name}</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+                <Text style={styles.cardTitle}>{item.name}</Text>
+                {item.rating && (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginLeft: 8 }}>
+                    <Text style={{ color: '#FFD700', fontSize: 12 }}>⭐</Text>
+                    <Text style={{ color: '#666', fontSize: 12, marginLeft: 2 }}>{item.rating}</Text>
+                  </View>
+                )}
+              </View>
               <Text style={styles.cardText}>Giá: {item.basePrice.toLocaleString()} VNĐ</Text>
-              <Text style={styles.cardText}>
-                Loại: {item.categoryIds.map(id => categoryIdToName[id] || id).join(', ')}
-              </Text>
+              <Text style={styles.cardText}>Loại: {getCategoryNames(item.categoryId)}</Text>
+              {item.sizeOptions.length > 0 && (
+                <Text style={styles.cardText}>Size: {getSizeNames(item.sizeOptions)}</Text>
+              )}
+              {item.toppingOptions.length > 0 && (
+                <Text style={styles.cardText}>Topping: {getToppingNames(item.toppingOptions)}</Text>
+              )}
+              {item.status === 'new' && (
+                <Text style={{ color: '#FF6B35', marginTop: 4, fontWeight: 'bold' }}>Món mới</Text>
+              )}
               {item.isBanned && (
-                <Text style={{ color: 'red', marginTop: 4, fontWeight: 'bold' }}>
-                  Sản phẩm ngừng bán
-                </Text>
+                <Text style={{ color: 'red', marginTop: 4, fontWeight: 'bold' }}>Sản phẩm ngừng bán</Text>
               )}
             </View>
           </TouchableOpacity>
         )}
         contentContainerStyle={{ paddingBottom: 80 }}
+        ListEmptyComponent={
+          <View style={{ alignItems: 'center', marginTop: 50 }}>
+            <Text style={{ color: '#666', fontSize: 16 }}>
+              {searchText ? 'Không tìm thấy sản phẩm nào' : 'Chưa có sản phẩm nào'}
+            </Text>
+          </View>
+        }
       />
 
-      {/* NÚT THÊM */}
+      {/* ADD BUTTON */}
       <TouchableOpacity style={styles.fab} onPress={() => setModalVisible(true)}>
         <Text style={{ color: '#fff', fontSize: 24 }}>+</Text>
       </TouchableOpacity>
 
-      {/* MODAL CHI TIẾT */}
-      <Modal visible={!!selectedDrink} animationType="slide" transparent>
+      {/* DETAIL MODAL */}
+      <Modal visible={!!selectedDrink} animationType="slide" transparent={true}>
         <View style={styles.modalOverlay}>
-          <View style={styles.detailContainer}>
-            <Text style={styles.title}>{selectedDrink?.name}</Text>
-            {renderImage(selectedDrink?.image || null, styles.previewImage)}
-            <Text>Giá: {selectedDrink?.basePrice.toLocaleString()} VNĐ</Text>
-            <Text>Loại: {selectedDrink?.categoryIds?.map((id) => categoryIdToName[id] || id).join(', ')}</Text>
-            <Text>{selectedDrink?.description}</Text>
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 12 }}>
-              <Text style={{ fontWeight: '600', marginRight: 8 }}>
-                {selectedDrink?.isBanned ? "Đang NGỪNG bán" : "Đang BÁN"}
+          <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', alignItems: 'center' }}>
+            <View style={styles.detailContainer}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+                <Text style={styles.title}>{selectedDrink?.name}</Text>
+                {selectedDrink?.rating && (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginLeft: 8 }}>
+                    <Text style={{ color: '#FFD700', fontSize: 16 }}>⭐</Text>
+                    <Text style={{ color: '#666', fontSize: 14, marginLeft: 2 }}>{selectedDrink.rating}</Text>
+                  </View>
+                )}
+              </View>
+              
+              {renderImage(selectedDrink?.image || null, styles.previewImage)}
+              <Text style={{ fontSize: 16, marginBottom: 8 }}>Giá: {selectedDrink?.basePrice.toLocaleString()} VNĐ</Text>
+              <Text style={{ fontSize: 14, marginBottom: 8 }}>
+                Loại: {selectedDrink ? getCategoryNames(selectedDrink.categoryId) : ''}
               </Text>
-              <Switch
-                value={!!selectedDrink?.isBanned}
-                onValueChange={() => {
-                  if (selectedDrink) toggleBan(selectedDrink._id);
-                }}
-                thumbColor={selectedDrink?.isBanned ? '#FF4747' : '#3E6EF3'}
-                trackColor={{ false: '#ccc', true: '#FFD6D6' }}
-              />
-            </View>
-            {selectedDrink?.isBanned && (
-              <Text style={{ color: 'red', fontWeight: 'bold', marginTop: 8, alignSelf: 'center' }}>
-                Sản phẩm ngừng bán
-              </Text>
-            )}
-            <View style={{ flexDirection: 'row', marginTop: 20, justifyContent: 'space-between' }}>
-              <TouchableOpacity
-                style={[styles.saveButton, { flex: 1, marginRight: 8 }]}
-                onPress={() => {
-                  if (selectedDrink) startEdit(selectedDrink);
-                  setSelectedDrink(null);
-                }}
-              >
-                <Text style={styles.buttonText}>Sửa</Text>
+              
+              {selectedDrink && selectedDrink.sizeOptions.length > 0 && (
+                <Text style={{ fontSize: 14, marginBottom: 8 }}>
+                  Size: {getSizeNames(selectedDrink.sizeOptions)}
+                </Text>
+              )}
+              
+              {selectedDrink && selectedDrink.toppingOptions.length > 0 && (
+                <Text style={{ fontSize: 14, marginBottom: 8 }}>
+                  Topping: {getToppingNames(selectedDrink.toppingOptions)}
+                </Text>
+              )}
+              
+              <Text style={{ fontSize: 14, marginBottom: 12, color: '#666' }}>{selectedDrink?.description}</Text>
+              
+              {selectedDrink?.status === 'new' && (
+                <Text style={{ color: '#FF6B35', fontWeight: 'bold', marginBottom: 8 }}>Món mới phải thử</Text>
+              )}
+              
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 12 }}>
+                <Text style={{ fontWeight: '600', marginRight: 8 }}>
+                  {selectedDrink?.isBanned ? "Đang NGỪNG bán" : "Đang BÁN"}
+                </Text>
+                <Switch
+                  value={!!selectedDrink?.isBanned}
+                  onValueChange={() => {
+                    if (selectedDrink) toggleBan(selectedDrink._id);
+                  }}
+                  thumbColor={selectedDrink?.isBanned ? '#FF4747' : '#3E6EF3'}
+                  trackColor={{ false: '#ccc', true: '#FFD6D6' }}
+                  disabled={loading}
+                />
+              </View>
+              
+              <View style={{ flexDirection: 'row', marginTop: 20, justifyContent: 'space-between' }}>
+                <TouchableOpacity
+                  style={[styles.saveButton, { flex: 1, marginRight: 8 }]}
+                  onPress={() => {
+                    if (selectedDrink) startEdit(selectedDrink);
+                    setSelectedDrink(null);
+                  }}
+                  disabled={loading}
+                >
+                  <Text style={styles.buttonText}>Sửa</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.cancelButton, { flex: 1 }]}
+                  onPress={() => confirmDelete(selectedDrink!._id)}
+                  disabled={loading}
+                >
+                  <Text style={styles.buttonText}>Xoá</Text>
+                </TouchableOpacity>
+              </View>
+              
+              <TouchableOpacity onPress={() => setSelectedDrink(null)} style={{ marginTop: 10 }}>
+                <Text style={{ color: '#007AFF', textAlign: 'center' }}>Đóng</Text>
               </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.cancelButton, { flex: 1 }]}
-                onPress={() => confirmDelete(selectedDrink!._id)}
-              >
-                <Text style={styles.buttonText}>Xoá</Text>
-              </TouchableOpacity>
             </View>
-            <TouchableOpacity onPress={() => setSelectedDrink(null)} style={{ marginTop: 10 }}>
-              <Text style={{ color: '#007AFF', textAlign: 'center' }}>Đóng</Text>
-            </TouchableOpacity>
-          </View>
+          </ScrollView>
         </View>
       </Modal>
 
-      {/* MODAL FORM */}
+      {/* FORM MODAL */}
       <Modal visible={modalVisible} animationType="slide">
         <KeyboardAvoidingView style={{ flex: 1, backgroundColor: '#F7F8FC' }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
           <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', alignItems: 'center' }}>
-            <View style={{
-              width: '92%',
-              backgroundColor: '#fff',
-              borderRadius: 18,
-              padding: 24,
-              marginTop: 32,
-              shadowColor: '#000',
-              shadowOpacity: 0.08,
-              shadowOffset: { width: 0, height: 8 },
-              shadowRadius: 16,
-              elevation: 6,
-            }}>
-              <Text style={[styles.title, { alignSelf: 'center', marginBottom: 16 }]}>{editId ? 'Cập nhật' : 'Thêm'} Thức Uống</Text>
+            <View style={styles.formContainer}>
+              <Text style={[styles.title, { alignSelf: 'center', marginBottom: 16 }]}>
+                {editId ? 'Cập nhật' : 'Thêm'} Thức Uống
+              </Text>
+              
               <TextInput
-                placeholder="Tên"
+                placeholder="Tên *"
                 style={[styles.input, { marginBottom: 14 }]}
                 value={name}
                 onChangeText={setName}
+                editable={!loading}
               />
+              
               <TextInput
-                placeholder="Giá"
+                placeholder="Giá *"
                 style={[styles.input, { marginBottom: 14 }]}
                 value={price}
                 onChangeText={setPrice}
                 keyboardType="numeric"
+                editable={!loading}
               />
+              
               <TextInput
                 placeholder="Mô tả"
                 style={[styles.input, { marginBottom: 18, height: 80, textAlignVertical: 'top' }]}
                 value={description}
                 onChangeText={setDescription}
                 multiline
+                editable={!loading}
               />
-              <Text style={{ fontWeight: '600', marginBottom: 6, color: '#222' }}>Chọn loại thức uống:</Text>
+              
+              <Text style={{ fontWeight: '600', marginBottom: 6, color: '#222' }}>Chọn loại thức uống: *</Text>
               <MultiCategoryChips
                 categories={categories}
                 selectedCategories={categoriesSelected}
                 onChangeSelected={setCategoriesSelected}
-                showAddCategory={showAddCategory}
-                setShowAddCategory={setShowAddCategory}
-                newCategory={newCategory}
-                setNewCategory={setNewCategory}
-                addCategory={addCategory}
               />
-              <TouchableOpacity style={[styles.uploadBtn, { marginTop: 10, marginBottom: 12 }]} onPress={pickImage}>
+              
+              <SizeSelector
+                sizes={sizes}
+                selectedSizes={sizesSelected}
+                onChangeSelected={setSizesSelected}
+              />
+              
+              <ToppingSelector
+                toppings={toppings}
+                selectedToppings={toppingsSelected}
+                onChangeSelected={setToppingsSelected}
+              />
+              
+              <TouchableOpacity 
+                style={[styles.uploadBtn, { marginTop: 10, marginBottom: 12 }]} 
+                onPress={pickImage}
+                disabled={loading}
+              >
                 <Text style={{ color: '#fff' }}>{image ? 'Chọn lại ảnh' : 'Tải ảnh lên'}</Text>
               </TouchableOpacity>
-              {image &&
-                <Image source={typeof image === 'string' ? { uri: image } : image} style={{ width: '100%', height: 180, borderRadius: 14, marginBottom: 10, alignSelf: 'center' }} resizeMode="cover" />
-              }
-              <TouchableOpacity style={[styles.saveButton, { marginTop: 8 }]} onPress={confirmSave}>
-                <Text style={styles.buttonText}>{editId ? 'Lưu' : 'Thêm'}</Text>
+              
+              {image && (
+                <Image 
+                  source={{ uri: image }} 
+                  style={{ width: '100%', height: 180, borderRadius: 14, marginBottom: 10, alignSelf: 'center' }} 
+                  resizeMode="cover" 
+                />
+              )}
+              
+              <TouchableOpacity 
+                style={[styles.saveButton, { marginTop: 8 }]} 
+                onPress={() => {
+                  Alert.alert('Xác nhận', 'Bạn muốn lưu thay đổi?', [
+                    { text: 'Không', style: 'cancel' },
+                    { text: 'Có', onPress: editId ? updateDrink : addDrink }
+                  ]);
+                }}
+                disabled={loading}
+              >
+                {loading ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.buttonText}>{editId ? 'Lưu' : 'Thêm'}</Text>
+                )}
               </TouchableOpacity>
-              <TouchableOpacity style={styles.cancelButton} onPress={confirmCloseForm}>
+              
+              <TouchableOpacity 
+                style={styles.cancelButton} 
+                onPress={() => {
+                  Alert.alert('Xác nhận', 'Bạn có chắc muốn huỷ và xoá dữ liệu đã nhập?', [
+                    { text: 'Không', style: 'cancel' },
+                    { text: 'Có', style: 'destructive', onPress: () => { resetForm(); setModalVisible(false); } }
+                  ]);
+                }}
+                disabled={loading}
+              >
                 <Text style={styles.buttonText}>Huỷ</Text>
               </TouchableOpacity>
             </View>
@@ -463,11 +951,49 @@ export default function ManageProducts() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16, backgroundColor: '#fff' },
-  modalContainer: { flex: 1, padding: 20 },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
-  detailContainer: { width: '90%', backgroundColor: '#fff', borderRadius: 12, padding: 20 },
+  detailContainer: { width: '90%', backgroundColor: '#fff', borderRadius: 12, padding: 20, maxHeight: '80%' },
+  formContainer: {
+    width: '92%',
+    backgroundColor: '#fff',
+    borderRadius: 18,
+    padding: 24,
+    marginTop: 32,
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowOffset: { width: 0, height: 8 },
+    shadowRadius: 16,
+    elevation: 6,
+  },
   title: { fontSize: 22, fontWeight: 'bold', marginBottom: 12, color: '#007AFF' },
   input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 10, marginBottom: 10 },
+  searchContainer: { 
+    position: 'relative',
+    marginBottom: 10,
+  },
+  searchInput: { 
+    borderWidth: 1, 
+    borderColor: '#ddd', 
+    borderRadius: 8, 
+    padding: 12, 
+    backgroundColor: '#f9f9f9',
+    paddingRight: 40,
+  },
+  searchLoader: {
+    position: 'absolute',
+    right: 12,
+    top: 12,
+  },
+  checkboxRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  checkboxText: {
+    marginLeft: 8,
+    flex: 1,
+    fontSize: 14,
+  },
   uploadBtn: { backgroundColor: '#4AA366', padding: 10, borderRadius: 8, alignItems: 'center', marginBottom: 10 },
   previewImage: { width: '100%', height: 160, marginBottom: 10, borderRadius: 8 },
   saveButton: { backgroundColor: '#007AFF', padding: 12, borderRadius: 8, alignItems: 'center', marginBottom: 10 },

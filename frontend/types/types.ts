@@ -1,3 +1,5 @@
+import { ReactNode } from "react";
+
 export interface Category {
     _id: string;
     category: string;
@@ -5,6 +7,8 @@ export interface Category {
   }
 
   export interface Store {
+    longitude: any;
+    latitude: any;
     _id: string;
     name: string;
     address: string;
@@ -14,6 +18,9 @@ export interface Category {
     mapUrl?: string;
     image?: string;
     staff: {
+      phone: any;
+      avatar: string;
+      staffId: ReactNode;
       _id: string;
       username: string;
       fullname: string;
