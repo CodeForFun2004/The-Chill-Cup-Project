@@ -23,7 +23,7 @@ export interface StaffOrder {
     price: number
   }>
   total: number
-  status: "Pending" | "Confirmed" | "Preparing" | "Ready" | "Delivering" | "Completed" | "Cancelled"
+  status: "Pending" | "Processing" | "Preparing" | "Ready" | "Delivering" | "Completed" | "Cancelled"
   orderTime: string
   estimatedTime?: string
   notes?: string

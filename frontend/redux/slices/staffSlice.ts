@@ -1,13 +1,43 @@
-import { createSlice, type PayloadAction } from "@reduxjs/toolkit"
-import { type Order, orders } from "../../data/orders"
+import { createSlice, createAsyncThunk, type PayloadAction } from "@reduxjs/toolkit"
+import AsyncStorage from '@react-native-async-storage/async-storage'
+import api from '../../api/axios'
 
-// Extend Order interface để thêm thông tin staff cần
-export interface StaffOrder extends Order {
+// Interfaces phù hợp với backend API
+export interface StaffOrder {
+  _id: string
+  userId: string
+  storeId: string
+  orderNumber: string
+  items: Array<{
+    productId: string
+    name: string
+    size?: string
+    toppings?: { id: string; name: string }[]
+    quantity: number
+    price: number
+  }>
+  subtotal: number
+  discount?: number
+  tax: number
+  total: number
+  deliveryFee: number
+  deliveryAddress: string
+  phone: string
+  paymentMethod: string
+  deliveryTime: string
+  status: "pending" | "processing" | "preparing" | "ready" | "delivering" | "completed" | "cancelled"
+  cancelReason?: string
+  shipperAssigned?: string
+  appliedPromoCode?: string
+  createdAt: string
+  updatedAt?: string
+  
+  // Thông tin bổ sung cho staff UI (có thể được compute từ backend hoặc enhance ở frontend)
   customerName?: string
   customerPhone?: string
   notes?: string
-  paymentMethod?: string
   orderType?: "Dine-in" | "Takeaway" | "Delivery"
+  orderTime?: string
 }
 
 export interface OrderStats {
@@ -33,55 +63,20 @@ interface StaffState {
   revenueStats: RevenueStats
   selectedOrder: StaffOrder | null
   filterStatus: "All" | "Pending" | "Processing" | "Preparing" | "Ready" | "Delivering" | "Completed" | "Cancelled"
-}
-
-// Helper function để enhance orders với thông tin staff
-const enhanceOrdersWithStaffInfo = (baseOrders: Order[]): StaffOrder[] => {
-  const customerNames = [
-    "Nguyễn Văn An",
-    "Trần Thị Bình",
-    "Lê Minh Cường",
-    "Phạm Thị Dung",
-    "Hoàng Văn Em",
-    "Vũ Thị Phương",
-    "Đặng Minh Quang",
-    "Bùi Thị Hoa",
-  ]
-
-  const phoneNumbers = [
-    "0901234567",
-    "0912345678",
-    "0923456789",
-    "0934567890",
-    "0945678901",
-    "0956789012",
-    "0967890123",
-    "0978901234",
-  ]
-
-  const paymentMethods = ["Tiền mặt", "Chuyển khoản", "Thẻ tín dụng", "Ví điện tử"]
-  const orderTypes: ("Dine-in" | "Takeaway" | "Delivery")[] = ["Dine-in", "Takeaway", "Delivery"]
-
-  return baseOrders.map((order, index) => ({
-    ...order,
-    customerName: customerNames[index % customerNames.length],
-    customerPhone: phoneNumbers[index % phoneNumbers.length],
-    paymentMethod: paymentMethods[index % paymentMethods.length],
-    orderType: orderTypes[index % orderTypes.length],
-    notes: index % 3 === 0 ? "Ít đường, không kem" : undefined,
-  }))
+  loading: boolean
+  error: string | null
 }
 
 // Helper function để tính toán order stats
 const calculateOrderStats = (orders: StaffOrder[]): OrderStats => {
   return {
     totalOrders: orders.length,
-    pendingOrders: orders.filter((o) => o.status === "Pending").length,
-    completedOrders: orders.filter((o) => o.status === "Completed").length,
-    cancelledOrders: orders.filter((o) => o.status === "Cancelled").length,
-    preparingOrders: orders.filter((o) => ["Processing", "Preparing"].includes(o.status)).length,
-    readyOrders: orders.filter((o) => o.status === "Ready").length,
-    deliveringOrders: orders.filter((o) => o.status === "Delivering").length,
+    pendingOrders: orders.filter((o) => o.status === "pending").length,
+    completedOrders: orders.filter((o) => o.status === "completed").length,
+    cancelledOrders: orders.filter((o) => o.status === "cancelled").length,
+    preparingOrders: orders.filter((o) => ["processing", "preparing"].includes(o.status)).length,
+    readyOrders: orders.filter((o) => o.status === "ready").length,
+    deliveringOrders: orders.filter((o) => o.status === "delivering").length,
   }
 }
 
@@ -93,16 +88,18 @@ const calculateRevenueStats = (orders: StaffOrder[]): RevenueStats => {
   const thisMonthStart = new Date()
   thisMonthStart.setDate(thisMonthStart.getDate() - 30)
 
-  const completedOrders = orders.filter((o) => o.status === "Completed")
+  const completedOrders = orders.filter((o) => o.status === "completed")
 
-  const dailyRevenue = completedOrders.filter((o) => o.date === today).reduce((sum, o) => sum + o.total, 0)
+  const dailyRevenue = completedOrders.filter((o) => 
+    o.createdAt && o.createdAt.split("T")[0] === today
+  ).reduce((sum, o) => sum + o.total, 0)
 
   const weeklyRevenue = completedOrders
-    .filter((o) => new Date(o.date) >= thisWeekStart)
+    .filter((o) => o.createdAt && new Date(o.createdAt) >= thisWeekStart)
     .reduce((sum, o) => sum + o.total, 0)
 
   const monthlyRevenue = completedOrders
-    .filter((o) => new Date(o.date) >= thisMonthStart)
+    .filter((o) => o.createdAt && new Date(o.createdAt) >= thisMonthStart)
     .reduce((sum, o) => sum + o.total, 0)
 
   const averageOrderValue =
@@ -116,61 +113,79 @@ const calculateRevenueStats = (orders: StaffOrder[]): RevenueStats => {
   }
 }
 
-// Initialize state với data từ orders.tsx
-const enhancedOrders = enhanceOrdersWithStaffInfo(orders)
+// Async Thunks
+export const fetchStaffOrders = createAsyncThunk(
+  'staff/fetchStaffOrders',
+  async (params: { status?: string } = {}, thunkAPI) => {
+    try {
+      const token = await AsyncStorage.getItem('accessToken')
+      if (!token) {
+        return thunkAPI.rejectWithValue('No access token found. Please log in.')
+      }
+      
+      const queryParams = params.status ? { status: params.status } : {}
+      const response = await api.get('/orders/staff', {
+        headers: { Authorization: `Bearer ${token}` },
+        params: queryParams,
+      })
+      
+      return response.data as StaffOrder[]
+    } catch (error: any) {
+      const message = error.response?.data?.error || error.response?.data?.message || 'Failed to fetch staff orders'
+      return thunkAPI.rejectWithValue(message)
+    }
+  }
+)
+
+export const updateOrderStatusByStaff = createAsyncThunk(
+  'staff/updateOrderStatusByStaff',
+  async ({ orderId, status, cancelReason }: { orderId: string; status: string; cancelReason?: string }, thunkAPI) => {
+    try {
+      const token = await AsyncStorage.getItem('accessToken')
+      if (!token) {
+        return thunkAPI.rejectWithValue('No access token found. Please log in.')
+      }
+      
+      const response = await api.put(`/orders/staff/${orderId}`, { status, cancelReason }, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      
+      return response.data.order as StaffOrder
+    } catch (error: any) {
+      const message = error.response?.data?.error || error.response?.data?.message || 'Failed to update order status'
+      return thunkAPI.rejectWithValue(message)
+    }
+  }
+)
+
+// Initialize state
 const initialState: StaffState = {
-  orders: enhancedOrders,
-  orderStats: calculateOrderStats(enhancedOrders),
-  revenueStats: calculateRevenueStats(enhancedOrders),
+  orders: [],
+  orderStats: {
+    totalOrders: 0,
+    pendingOrders: 0,
+    completedOrders: 0,
+    cancelledOrders: 0,
+    preparingOrders: 0,
+    readyOrders: 0,
+    deliveringOrders: 0,
+  },
+  revenueStats: {
+    dailyRevenue: 0,
+    weeklyRevenue: 0,
+    monthlyRevenue: 0,
+    averageOrderValue: 0,
+  },
   selectedOrder: null,
   filterStatus: "All",
+  loading: false,
+  error: null,
 }
 
 const staffSlice = createSlice({
   name: "staff",
   initialState,
   reducers: {
-    // Cập nhật trạng thái đơn hàng
-    updateOrderStatus: (state, action: PayloadAction<{ orderId: string; status: Order["status"] }>) => {
-      const { orderId, status } = action.payload
-      const order = state.orders.find((o) => o.id === orderId)
-      if (order) {
-        order.status = status
-        // Cập nhật stats
-        state.orderStats = calculateOrderStats(state.orders)
-        state.revenueStats = calculateRevenueStats(state.orders)
-      }
-    },
-
-    // Xác nhận đơn hàng mới
-    confirmOrder: (state, action: PayloadAction<string>) => {
-      const order = state.orders.find((o) => o.id === action.payload)
-      if (order && order.status === "Pending") {
-        order.status = "Processing"
-        state.orderStats = calculateOrderStats(state.orders)
-      }
-    },
-
-    // Hủy đơn hàng
-    cancelOrder: (state, action: PayloadAction<{ orderId: string; reason?: string }>) => {
-      const { orderId } = action.payload
-      const order = state.orders.find((o) => o.id === orderId)
-      if (order) {
-        order.status = "Cancelled"
-        state.orderStats = calculateOrderStats(state.orders)
-        state.revenueStats = calculateRevenueStats(state.orders)
-      }
-    },
-
-    // Thêm ghi chú cho đơn hàng
-    addOrderNote: (state, action: PayloadAction<{ orderId: string; note: string }>) => {
-      const { orderId, note } = action.payload
-      const order = state.orders.find((o) => o.id === orderId)
-      if (order) {
-        order.notes = note
-      }
-    },
-
     // Đặt filter status
     setFilterStatus: (state, action: PayloadAction<StaffState["filterStatus"]>) => {
       state.filterStatus = action.payload
@@ -181,36 +196,58 @@ const staffSlice = createSlice({
       state.selectedOrder = action.payload
     },
 
-    // Thêm đơn hàng mới
-    addNewOrder: (state, action: PayloadAction<Order>) => {
-      const enhancedOrder = enhanceOrdersWithStaffInfo([action.payload])[0]
-      state.orders.unshift(enhancedOrder)
-      state.orderStats = calculateOrderStats(state.orders)
-      state.revenueStats = calculateRevenueStats(state.orders)
-    },
-
-    // Sync với orders từ data/orders.tsx
-    syncOrdersFromData: (state) => {
-      const enhancedOrders = enhanceOrdersWithStaffInfo(orders)
-      state.orders = enhancedOrders
-      state.orderStats = calculateOrderStats(enhancedOrders)
-      state.revenueStats = calculateRevenueStats(enhancedOrders)
+    // Reset lỗi
+    clearError: (state) => {
+      state.error = null
     },
 
     // Reset về trạng thái ban đầu
     resetStaffData: () => initialState,
   },
+  extraReducers: (builder) => {
+    builder
+      // --- Xử lý fetchStaffOrders ---
+      .addCase(fetchStaffOrders.pending, (state) => {
+        state.loading = true
+        state.error = null
+      })
+      .addCase(fetchStaffOrders.fulfilled, (state, action: PayloadAction<StaffOrder[]>) => {
+        state.loading = false
+        state.orders = action.payload
+        state.orderStats = calculateOrderStats(action.payload)
+        state.revenueStats = calculateRevenueStats(action.payload)
+        state.error = null
+      })
+      .addCase(fetchStaffOrders.rejected, (state, action) => {
+        state.loading = false
+        state.error = action.payload as string
+      })
+      // --- Xử lý updateOrderStatusByStaff ---
+      .addCase(updateOrderStatusByStaff.pending, (state) => {
+        state.loading = true
+        state.error = null
+      })
+      .addCase(updateOrderStatusByStaff.fulfilled, (state, action: PayloadAction<StaffOrder>) => {
+        state.loading = false
+        // Cập nhật order vừa thay đổi
+        const updatedOrder = action.payload
+        state.orders = state.orders.map(order => order._id === updatedOrder._id ? updatedOrder : order)
+        // Tính lại stats
+        state.orderStats = calculateOrderStats(state.orders)
+        state.revenueStats = calculateRevenueStats(state.orders)
+        state.error = null
+      })
+      .addCase(updateOrderStatusByStaff.rejected, (state, action) => {
+        state.loading = false
+        state.error = action.payload as string
+      })
+  },
 })
 
 export const {
-  updateOrderStatus,
-  confirmOrder,
-  cancelOrder,
-  addOrderNote,
   setFilterStatus,
   setSelectedOrder,
-  addNewOrder,
-  syncOrdersFromData,
+  clearError,
   resetStaffData,
 } = staffSlice.actions
 

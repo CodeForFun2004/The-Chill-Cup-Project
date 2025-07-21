@@ -6,9 +6,8 @@ import OrderManagement from '../../screens/Staff/StaffOrders';
 
 export type StaffStackParamList = {
   StaffDashboard: undefined;
-  OrderManagement: {
-    orderId: string;
-  };
+  OrderManagement: undefined;
+  Auth: undefined;
 };
 
 const Stack = createNativeStackNavigator<StaffStackParamList>();

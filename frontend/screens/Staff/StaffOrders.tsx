@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { useState, useCallback } from "react"
 import {
   View,
   Text,
@@ -17,15 +17,14 @@ import {
 } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import { useSelector, useDispatch } from "react-redux"
+import { useFocusEffect } from "@react-navigation/native"
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack"
+import type { StaffOrder } from "../../redux/slices/staffSlice"
 import {
-  updateOrderStatus,
-  confirmOrder,
-  cancelOrder,
-  addOrderNote,
+  fetchStaffOrders,
+  updateOrderStatusByStaff,
   setFilterStatus,
 } from "../../redux/slices/staffSlice"
-import type { StaffOrder } from "../../data/staffData"
 
 // Types
 type StaffStackParamList = {
@@ -42,38 +41,47 @@ interface OrderManagementScreenProps {
 interface RootState {
   staff: {
     orders: StaffOrder[]
-    filterStatus: "All" | "Pending" | "Confirmed" | "Preparing" | "Ready" | "Delivering" | "Completed" | "Cancelled"
+    filterStatus: "All" | "pending" | "processing" | "preparing" | "ready" | "delivering" | "completed" | "cancelled"
+    loading: boolean
+    error: string | null
   }
 }
 
 const OrderManagementScreen: React.FC<OrderManagementScreenProps> = ({ navigation }) => {
   const dispatch = useDispatch()
-  const { orders, filterStatus } = useSelector((state: RootState) => state.staff)
+  const { orders, filterStatus, loading, error } = useSelector((state: RootState) => state.staff)
 
   const [selectedOrder, setSelectedOrder] = useState<StaffOrder | null>(null)
   const [showStatusModal, setShowStatusModal] = useState(false)
   const [showNoteModal, setShowNoteModal] = useState(false)
   const [noteText, setNoteText] = useState("")
 
-  // Filter options
+  // Focus effect để fetch orders
+  useFocusEffect(
+    useCallback(() => {
+      dispatch(fetchStaffOrders({}) as any)
+    }, [dispatch])
+  )
+
+  // Filter options (sử dụng status viết thường như backend)
   const filterOptions = [
     { key: "All", title: "Tất cả", color: "#6B7280" },
-    { key: "Pending", title: "Chờ xử lý", color: "#F59E0B" },
-    { key: "Confirmed", title: "Đã xác nhận", color: "#3B82F6" },
-    { key: "Preparing", title: "Đang pha chế", color: "#8B5CF6" },
-    { key: "Ready", title: "Sẵn sàng", color: "#06B6D4" },
-    { key: "Delivering", title: "Đang giao", color: "#F97316" },
-    { key: "Completed", title: "Hoàn thành", color: "#10B981" },
-    { key: "Cancelled", title: "Đã hủy", color: "#DC2626" },
+    { key: "pending", title: "Chờ xử lý", color: "#F59E0B" },
+    { key: "processing", title: "Đã xác nhận", color: "#3B82F6" },
+    { key: "preparing", title: "Đang pha chế", color: "#8B5CF6" },
+    { key: "ready", title: "Sẵn sàng", color: "#06B6D4" },
+    { key: "delivering", title: "Đang giao", color: "#F97316" },
+    { key: "completed", title: "Hoàn thành", color: "#10B981" },
+    { key: "cancelled", title: "Đã hủy", color: "#DC2626" },
   ]
 
-  // Status options for updating
+  // Status options for updating (sử dụng status viết thường)
   const statusOptions = [
-    { key: "Confirmed", title: "Xác nhận đơn hàng", icon: "checkmark-outline" },
-    { key: "Preparing", title: "Bắt đầu pha chế", icon: "restaurant-outline" },
-    { key: "Ready", title: "Sẵn sàng lấy", icon: "bag-check-outline" },
-    { key: "Delivering", title: "Đang giao hàng", icon: "bicycle-outline" },
-    { key: "Completed", title: "Hoàn thành", icon: "checkmark-circle-outline" },
+    { key: "processing", title: "Xác nhận đơn hàng", icon: "checkmark-outline" },
+    { key: "preparing", title: "Bắt đầu pha chế", icon: "restaurant-outline" },
+    { key: "ready", title: "Sẵn sàng lấy", icon: "bag-check-outline" },
+    { key: "delivering", title: "Đang giao hàng", icon: "bicycle-outline" },
+    { key: "completed", title: "Hoàn thành", icon: "checkmark-circle-outline" },
   ]
 
   // Get filtered orders
@@ -87,13 +95,13 @@ const OrderManagementScreen: React.FC<OrderManagementScreenProps> = ({ navigatio
   // Get status color
   const getStatusColor = (status: StaffOrder["status"]): string => {
     const statusMap: Record<StaffOrder["status"], string> = {
-      Pending: "#F59E0B",
-      Confirmed: "#3B82F6",
-      Preparing: "#8B5CF6",
-      Ready: "#06B6D4",
-      Delivering: "#F97316",
-      Completed: "#10B981",
-      Cancelled: "#DC2626",
+      pending: "#F59E0B",
+      processing: "#3B82F6",
+      preparing: "#8B5CF6",
+      ready: "#06B6D4",
+      delivering: "#F97316",
+      completed: "#10B981",
+      cancelled: "#DC2626",
     }
     return statusMap[status] || "#6B7280"
   }
@@ -101,21 +109,21 @@ const OrderManagementScreen: React.FC<OrderManagementScreenProps> = ({ navigatio
   // Get status title in Vietnamese
   const getStatusTitle = (status: StaffOrder["status"]): string => {
     const statusMap: Record<StaffOrder["status"], string> = {
-      Pending: "Chờ xử lý",
-      Confirmed: "Đã xác nhận",
-      Preparing: "Đang pha chế",
-      Ready: "Sẵn sàng",
-      Delivering: "Đang giao",
-      Completed: "Hoàn thành",
-      Cancelled: "Đã hủy",
+      pending: "Chờ xử lý",
+      processing: "Đang xử lý",
+      preparing: "Đang pha chế",
+      ready: "Sẵn sàng",
+      delivering: "Đang giao",
+      completed: "Hoàn thành",
+      cancelled: "Đã hủy",
     }
     return statusMap[status] || status
   }
 
-  // Handle status update
+  // Handle status update using API
   const handleStatusUpdate = (status: StaffOrder["status"]) => {
     if (selectedOrder) {
-      dispatch(updateOrderStatus({ orderId: selectedOrder.id, status }))
+      dispatch(updateOrderStatusByStaff({ orderId: selectedOrder._id, status }) as any)
       setShowStatusModal(false)
       setSelectedOrder(null)
     }
@@ -123,7 +131,7 @@ const OrderManagementScreen: React.FC<OrderManagementScreenProps> = ({ navigatio
 
   // Handle confirm order
   const handleConfirmOrder = (orderId: string) => {
-    dispatch(confirmOrder(orderId))
+    dispatch(updateOrderStatusByStaff({ orderId, status: 'processing' }) as any)
   }
 
   // Handle cancel order
@@ -133,15 +141,16 @@ const OrderManagementScreen: React.FC<OrderManagementScreenProps> = ({ navigatio
       {
         text: "Hủy đơn",
         style: "destructive",
-        onPress: () => dispatch(cancelOrder({ orderId })),
+        onPress: () => dispatch(updateOrderStatusByStaff({ orderId, status: 'cancelled' }) as any),
       },
     ])
   }
 
-  // Handle add note
+  // Handle add note (này cần API riêng hoặc gửi qua status update)
   const handleAddNote = () => {
     if (selectedOrder && noteText.trim()) {
-      dispatch(addOrderNote({ orderId: selectedOrder.id, note: noteText.trim() }))
+      // TODO: Implement note API or include in status update
+      console.log('Add note:', noteText.trim(), 'for order:', selectedOrder._id)
       setShowNoteModal(false)
       setNoteText("")
       setSelectedOrder(null)
@@ -218,18 +227,18 @@ const OrderManagementScreen: React.FC<OrderManagementScreenProps> = ({ navigatio
 
         {/* Action Buttons */}
         <View style={styles.actionButtons}>
-          {item.status === "Pending" && (
+          {item.status === "pending" && (
             <>
               <TouchableOpacity
                 style={[styles.actionButton, { backgroundColor: "#10B981" }]}
-                onPress={() => handleConfirmOrder(item.id)}
+                onPress={() => handleConfirmOrder(item._id)}
               >
                 <Ionicons name="checkmark" size={16} color="#FFFFFF" />
                 <Text style={styles.actionButtonText}>Xác nhận</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.actionButton, { backgroundColor: "#DC2626" }]}
-                onPress={() => handleCancelOrder(item.id)}
+                onPress={() => handleCancelOrder(item._id)}
               >
                 <Ionicons name="close" size={16} color="#FFFFFF" />
                 <Text style={styles.actionButtonText}>Hủy</Text>
@@ -237,7 +246,7 @@ const OrderManagementScreen: React.FC<OrderManagementScreenProps> = ({ navigatio
             </>
           )}
 
-          {item.status !== "Completed" && item.status !== "Cancelled" && (
+          {item.status !== "completed" && item.status !== "cancelled" && (
             <TouchableOpacity
               style={[styles.actionButton, { backgroundColor: "#3B82F6" }]}
               onPress={() => {
@@ -299,7 +308,7 @@ const OrderManagementScreen: React.FC<OrderManagementScreenProps> = ({ navigatio
       <FlatList
         data={filteredOrders}
         renderItem={renderOrderItem}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item._id}
         contentContainerStyle={styles.ordersList}
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
