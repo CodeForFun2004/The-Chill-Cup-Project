@@ -69,6 +69,7 @@ export const loadUserFromStorage = createAsyncThunk('auth/loadUserFromStorage', 
       throw new Error('No user data found');
     }
   } catch (error) {
+    console.error('Error loading user from storage:', error);
     return thunkAPI.rejectWithValue('Failed to load user from storage');
   }
 });

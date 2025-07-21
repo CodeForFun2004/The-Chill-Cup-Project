@@ -5,7 +5,7 @@ import VouchersScreen from '../../screens/Customer/VouchersScreen';
 import LoyaltyScreen from '../../screens/Customer/LoyaltyScreen';
 import DrinkDetailScreen from '../../screens/Customer/DrinkDetailScreen';
 import StoreScreen from '../../screens/Customer/StoreScreen';
-import PickupStoreBlock from '../../components/delivery-pickup/PickupStoreBlock';
+
 
 export interface Drink {
   id: string;

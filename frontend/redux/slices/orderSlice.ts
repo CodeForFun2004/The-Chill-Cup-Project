@@ -32,7 +32,7 @@ interface OrderItem {
 }
 
 // Định nghĩa kiểu dữ liệu đầy đủ cho một đơn hàng (như trả về từ API getOrderById)
-interface Order {
+export interface Order {
   _id: string;
   userId: string;
   storeId: string;
@@ -166,7 +166,7 @@ const orderSlice = createSlice({
         state.orderCreatedSuccessfully = false; // Reset cờ thành công
         state.currentOrder = null; // Xóa dữ liệu order cũ
       })
-      .addCase(createOrder.fulfilled, (state, action: PayloadAction<string>) => {
+      .addCase(createOrder.fulfilled, (state) => { // <-- Đã bỏ tham số action ở đây
         state.loading = false; // Kết thúc loading
         state.orderCreatedSuccessfully = true; // Đặt cờ thành công
         // currentOrder vẫn là null, nó sẽ được fetchOrderById cập nhật sau
