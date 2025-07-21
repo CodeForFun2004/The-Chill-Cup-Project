@@ -1,5 +1,5 @@
 // screens/Customer/OrderDetailScreen.tsx
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -10,40 +10,21 @@ import {
   StatusBar,
   Alert,
   Image,
-  ImageSourcePropType
+  TextInput,
+  Modal,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
 import { CustomerStackParamList } from '../../navigation/customer/CustomerStackNavigator';
 import { formatCurrency } from '../../utils/formatCurrency';
-
-// Import types
-interface OrderItem {
-  name: string;
-  quantity: number;
-  price: number;
-  image?: ImageSourcePropType;
-}
-
-interface Order {
-  id: string;
-  orderNumber: string;
-  date: string;
-  time: string;
-  status: 'Completed' | 'Cancelled' | 'Pending' | 'Processing' | 'Preparing' | 'Ready' | 'Delivering';
-  total: number;
-  items: OrderItem[];
-  estimatedDelivery?: string;
-  deliveryAddress?: string;
-  phoneNumber?: string;
-}
+import * as ImagePicker from 'expo-image-picker';
+import type { Order, OrderItem } from '../../data/orders';
 
 type OrderDetailScreenNavigationProp = NativeStackNavigationProp<
   CustomerStackParamList,
   'OrderDetail'
 >;
-
 type OrderDetailScreenRouteProp = RouteProp<CustomerStackParamList, 'OrderDetail'>;
 
 interface OrderDetailScreenProps {
@@ -51,8 +32,22 @@ interface OrderDetailScreenProps {
   route: OrderDetailScreenRouteProp;
 }
 
+const refundReasons = [
+  'Đồ uống bị lỗi',
+  'Không nhận được đơn',
+  'Nhận nhầm sản phẩm',
+  'Khác (ghi rõ ở phần lời nhắn)',
+];
+
 const OrderDetailScreen: React.FC<OrderDetailScreenProps> = ({ route, navigation }) => {
   const { order } = route.params;
+  const [showRefundPopup, setShowRefundPopup] = useState(false);
+
+  // Refund form state
+  const [reason, setReason] = useState('');
+  const [note, setNote] = useState('');
+  const [image, setImage] = useState<string | null>(null);
+  const [video, setVideo] = useState<string | null>(null);
 
   const getStatusColor = (status: Order['status']): string => {
     switch (status.toLowerCase()) {
@@ -79,7 +74,6 @@ const OrderDetailScreen: React.FC<OrderDetailScreenProps> = ({ route, navigation
       [
         { text: 'Cancel', style: 'cancel' },
         { text: 'Add to Cart', onPress: () => {
-          // Navigate to cart or add items logic
           Alert.alert('Success', 'Items added to cart!');
         }},
       ]
@@ -99,10 +93,64 @@ const OrderDetailScreen: React.FC<OrderDetailScreenProps> = ({ route, navigation
     return trackableStatuses.includes(order.status.toLowerCase());
   };
 
+  const showRequestRefund =
+    order.status.toLowerCase() === 'completed' || order.status.toLowerCase() === 'cancelled';
+
+  // Mở popup refund form
+  const handleRequestRefund = () => setShowRefundPopup(true);
+
+  // Pick Image
+  const pickImage = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      quality: 0.7,
+    });
+    if (!result.canceled && result.assets && result.assets.length > 0) {
+      setImage(result.assets[0].uri);
+    }
+  };
+
+  // Pick Video
+  const pickVideo = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Videos,
+      allowsEditing: false,
+    });
+    if (!result.canceled && result.assets && result.assets.length > 0) {
+      setVideo(result.assets[0].uri);
+    }
+  };
+
+  // Xác nhận trước khi gửi
+  const handleSubmitConfirm = () => {
+    if (!reason || !note.trim() || !image || !video) {
+      Alert.alert('Lỗi', 'Bạn cần nhập đầy đủ lý do, lời nhắn, hình ảnh và video!');
+      return;
+    }
+    Alert.alert(
+      "Xác nhận gửi yêu cầu?",
+      "Bạn chắc chắn muốn gửi yêu cầu hoàn tiền này?",
+      [
+        { text: "Huỷ", style: "cancel" },
+        { text: "Đồng ý", style: "destructive", onPress: doSubmitRefund }
+      ]
+    );
+  };
+
+  // Gửi refund
+  const doSubmitRefund = () => {
+    Alert.alert('Thành công', 'Yêu cầu hoàn tiền đã được gửi!');
+    setShowRefundPopup(false);
+    setReason('');
+    setNote('');
+    setImage(null);
+    setVideo(null);
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-      
       <View style={styles.header}>
         <TouchableOpacity
           onPress={() => navigation.goBack()}
@@ -117,7 +165,6 @@ const OrderDetailScreen: React.FC<OrderDetailScreenProps> = ({ route, navigation
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 70 }}>
-        {/* Order Status Card */}
         <View style={styles.statusCard}>
           <View style={styles.statusHeader}>
             <Text style={styles.orderNumber}>{order.orderNumber}</Text>
@@ -128,7 +175,6 @@ const OrderDetailScreen: React.FC<OrderDetailScreenProps> = ({ route, navigation
           <Text style={styles.orderDateTime}>{order.date} at {order.time}</Text>
         </View>
 
-        {/* Order Items */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Order Items</Text>
           {order.items.map((item: OrderItem, index: number) => (
@@ -143,7 +189,6 @@ const OrderDetailScreen: React.FC<OrderDetailScreenProps> = ({ route, navigation
           ))}
         </View>
 
-        {/* Order Summary */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Order Summary</Text>
           <View style={styles.summaryRow}>
@@ -164,7 +209,6 @@ const OrderDetailScreen: React.FC<OrderDetailScreenProps> = ({ route, navigation
           </View>
         </View>
 
-        {/* Payment Method */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Payment Method</Text>
           <View style={styles.paymentRow}>
@@ -176,13 +220,12 @@ const OrderDetailScreen: React.FC<OrderDetailScreenProps> = ({ route, navigation
           </View>
         </View>
 
-        {/* Delivery Information */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Delivery Information</Text>
           <View style={styles.deliveryInfo}>
             <View style={styles.deliveryRow}>
               <Ionicons name="location-outline" size={20} color="#8E8E93" />
-              <Text style={styles.deliveryText}>123 Coffee Street, Brew City, BC 12345</Text>
+              <Text style={styles.deliveryText}>{order.deliveryAddress || '123 Coffee Street, Brew City, BC 12345'}</Text>
             </View>
             <View style={styles.deliveryRow}>
               <Ionicons name="time-outline" size={20} color="#8E8E93" />
@@ -191,32 +234,100 @@ const OrderDetailScreen: React.FC<OrderDetailScreenProps> = ({ route, navigation
           </View>
         </View>
 
-              {/* Action Buttons */}
-      <View style={styles.actionButtons}>
-        {/* Track Order Button - for orders in progress */}
-        {canTrackOrder() && (
-          <TouchableOpacity style={styles.trackButton} onPress={handleTrackOrder}>
-            <Ionicons name="location-outline" size={20} color="#FFFFFF" />
-            <Text style={styles.trackButtonText}>Track Order</Text>
-          </TouchableOpacity>
-        )}
-        
-        {/* Reorder Button - for completed orders */}
-        {order.status.toLowerCase() === 'completed' && (
-          <TouchableOpacity style={styles.reorderButton} onPress={handleReorder}>
-            <Ionicons name="refresh-outline" size={20} color="#FFFFFF" />
-            <Text style={styles.reorderButtonText}>Reorder</Text>
-          </TouchableOpacity>
-        )}
-      </View>
+        <View style={styles.actionButtons}>
+          {canTrackOrder() && (
+            <TouchableOpacity style={styles.trackButton} onPress={handleTrackOrder}>
+              <Ionicons name="location-outline" size={20} color="#FFFFFF" />
+              <Text style={styles.trackButtonText}>Track Order</Text>
+            </TouchableOpacity>
+          )}
+          {order.status.toLowerCase() === 'completed' && (
+            <TouchableOpacity style={styles.reorderButton} onPress={handleReorder}>
+              <Ionicons name="refresh-outline" size={20} color="#FFFFFF" />
+              <Text style={styles.reorderButtonText}>Reorder</Text>
+            </TouchableOpacity>
+          )}
+          {showRequestRefund && (
+            <TouchableOpacity style={styles.refundButton} onPress={handleRequestRefund}>
+              <Ionicons name="cash-outline" size={20} color="#FFFFFF" />
+              <Text style={styles.refundButtonText}>Request Refund</Text>
+            </TouchableOpacity>
+          )}
+        </View>
       </ScrollView>
 
+      {/* ===== POPUP REFUND FORM ===== */}
+      <Modal
+        visible={showRefundPopup}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setShowRefundPopup(false)}
+      >
+        <View style={popupStyles.overlay}>
+          <View style={popupStyles.modalContent}>
+            <View style={popupStyles.header}>
+              <Text style={popupStyles.title}>Yêu cầu hoàn tiền</Text>
+              <TouchableOpacity onPress={() => setShowRefundPopup(false)}>
+                <Ionicons name="close" size={24} color="#222" />
+              </TouchableOpacity>
+            </View>
+            <ScrollView
+              style={{ maxHeight: 420 }}
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{ paddingBottom: 30 }}
+            >
+              <Text style={popupStyles.label}>Chọn lý do hoàn tiền *</Text>
+              {refundReasons.map(r => (
+                <TouchableOpacity
+                  key={r}
+                  style={[popupStyles.reasonItem, reason === r && popupStyles.reasonItemActive]}
+                  onPress={() => setReason(r)}
+                >
+                  <Text style={{ color: reason === r ? '#fff' : '#333' }}>{r}</Text>
+                  {reason === r && <Ionicons name="checkmark-circle" size={18} color="#fff" style={{ marginLeft: 4 }} />}
+                </TouchableOpacity>
+              ))}
 
+              <Text style={[popupStyles.label, { marginTop: 20 }]}>Lời nhắn *</Text>
+              <TextInput
+                style={popupStyles.input}
+                placeholder="Nhập lý do cụ thể..."
+                value={note}
+                onChangeText={setNote}
+                multiline
+              />
+
+              <Text style={[popupStyles.label, { marginTop: 20 }]}>Hình ảnh minh họa *</Text>
+              <TouchableOpacity style={popupStyles.uploadBtn} onPress={pickImage}>
+                <Ionicons name="image-outline" size={24} color="#007AFF" />
+                <Text style={{ marginLeft: 8, color: '#007AFF' }}>Chọn ảnh</Text>
+              </TouchableOpacity>
+              {image && <Image source={{ uri: image }} style={popupStyles.previewImage} />}
+
+              <Text style={[popupStyles.label, { marginTop: 20 }]}>Video minh họa *</Text>
+              <TouchableOpacity style={popupStyles.uploadBtn} onPress={pickVideo}>
+                <Ionicons name="videocam-outline" size={24} color="#007AFF" />
+                <Text style={{ marginLeft: 8, color: '#007AFF' }}>Chọn video</Text>
+              </TouchableOpacity>
+              {video && (
+                <View style={popupStyles.videoPreview}>
+                  <Ionicons name="videocam" size={20} color="#007AFF" />
+                  <Text style={{ marginLeft: 6, color: '#333' }}>Đã chọn video</Text>
+                </View>
+              )}
+
+              <TouchableOpacity style={popupStyles.submitBtn} onPress={handleSubmitConfirm}>
+                <Text style={{ color: '#fff', fontWeight: '600', fontSize: 16 }}>Gửi yêu cầu hoàn tiền</Text>
+              </TouchableOpacity>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+      {/* ===== END POPUP ===== */}
     </SafeAreaView>
   );
 };
 
-// Styles (keeping existing styles and adding new ones)
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -421,12 +532,81 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#FFFFFF',
   },
+  refundButton: {
+    backgroundColor: '#F44336',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    borderRadius: 12,
+    gap: 8,
+    marginTop: 8,
+  },
+  refundButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
   image: {
     width: 120,
     height: 120,
     borderRadius: 8,
     marginTop: 8,
   },
+});
+
+const popupStyles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(10,10,10,0.24)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20
+  },
+  modalContent: {
+    width: '100%',
+    backgroundColor: '#fff',
+    borderRadius: 14,
+    padding: 18,
+    elevation: 10,
+    maxHeight: '90%'
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10
+  },
+  title: {
+    fontSize: 18, fontWeight: '700', color: '#222'
+  },
+  body: {},
+  label: {
+    fontWeight: '500', marginBottom: 8, color: '#333'
+  },
+  reasonItem: {
+    flexDirection: 'row', alignItems: 'center',
+    borderWidth: 1, borderColor: '#ddd', borderRadius: 8,
+    paddingVertical: 12, paddingHorizontal: 14, marginBottom: 8, backgroundColor: '#fff'
+  },
+  reasonItemActive: { backgroundColor: '#007AFF', borderColor: '#007AFF' },
+  input: {
+    minHeight: 60, borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 12,
+    backgroundColor: '#fff', textAlignVertical: 'top'
+  },
+  uploadBtn: {
+    flexDirection: 'row', alignItems: 'center', padding: 12,
+    backgroundColor: '#F0F2F8', borderRadius: 8, marginBottom: 6,
+  },
+  previewImage: {
+    width: 120, height: 120, borderRadius: 10, marginTop: 8,
+  },
+  videoPreview: {
+    flexDirection: 'row', alignItems: 'center', marginTop: 8, padding: 8, backgroundColor: '#eee', borderRadius: 8,
+  },
+  submitBtn: {
+    marginTop: 28, backgroundColor: '#F44336', padding: 16, borderRadius: 12, alignItems: 'center'
+  }
 });
 
 export default OrderDetailScreen;

@@ -14,12 +14,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { CustomerStackParamList } from '../../navigation/customer/CustomerStackNavigator';
 
-import { orders } from '../../data/orders'; // ✅ Dùng biến runtime
+import { orders } from '../../data/orders';
 import type { Order } from '../../data/orders';
 import { formatCurrency } from '../../utils/formatCurrency';
 
 const { width: screenWidth } = Dimensions.get('window');
-const TAB_WIDTH = (screenWidth - 32) / 4;
+const TAB_WIDTH = (screenWidth - 32) / 5; // 5 tabs
 
 type OrderHistoryScreenNavigationProp = NativeStackNavigationProp<
   CustomerStackParamList,
@@ -30,7 +30,7 @@ interface OrderHistoryScreenProps {
   navigation: OrderHistoryScreenNavigationProp;
 }
 
-type TabType = 'Preparing' | 'Delivering' | 'Completed' | 'Cancelled';
+type TabType = 'Preparing' | 'Delivering' | 'Completed' | 'Cancelled' | 'Refunded';
 
 const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({ navigation }) => {
   const [activeTab, setActiveTab] = useState<TabType>('Preparing');
@@ -40,25 +40,10 @@ const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({ navigation }) =
     { key: 'Delivering', title: 'Delivering', icon: 'bicycle-outline' },
     { key: 'Completed', title: 'Completed', icon: 'checkmark-circle-outline' },
     { key: 'Cancelled', title: 'Cancelled', icon: 'close-circle-outline' },
+    { key: 'Refunded', title: 'Refunded', icon: 'cash-outline' }, // Tab Refund!
   ];
 
-  const getFilteredOrders = (): Order[] => {
-    switch (activeTab) {
-      case 'Preparing':
-        return orders.filter(order =>
-          ['Processing', 'Preparing', 'Ready', 'Pending'].includes(order.status)
-        );
-      case 'Delivering':
-        return orders.filter(order => order.status === 'Delivering');
-      case 'Completed':
-        return orders.filter(order => order.status === 'Completed');
-      case 'Cancelled':
-        return orders.filter(order => order.status === 'Cancelled');
-      default:
-        return orders;
-    }
-  };
-
+  // Đếm số đơn ứng với từng tab
   const getTabCount = (tabKey: TabType): number => {
     switch (tabKey) {
       case 'Preparing':
@@ -71,8 +56,31 @@ const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({ navigation }) =
         return orders.filter(order => order.status === 'Completed').length;
       case 'Cancelled':
         return orders.filter(order => order.status === 'Cancelled').length;
+      case 'Refunded':
+        return orders.filter(order => order.refundRequests && order.refundRequests.length > 0).length;
       default:
         return 0;
+    }
+  };
+
+  // Filter list theo từng tab
+  const getFilteredOrders = (): Order[] => {
+    switch (activeTab) {
+      case 'Preparing':
+        return orders.filter(order =>
+          ['Processing', 'Preparing', 'Ready', 'Pending'].includes(order.status)
+        );
+      case 'Delivering':
+        return orders.filter(order => order.status === 'Delivering');
+      case 'Completed':
+        return orders.filter(order => order.status === 'Completed');
+      case 'Cancelled':
+        return orders.filter(order => order.status === 'Cancelled');
+      case 'Refunded':
+        // Lấy tất cả đơn có ít nhất 1 refundRequests (dù trạng thái nào)
+        return orders.filter(order => order.refundRequests && order.refundRequests.length > 0);
+      default:
+        return orders;
     }
   };
 
@@ -107,6 +115,8 @@ const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({ navigation }) =
         return '#4CAF50';
       case 'Cancelled':
         return '#F44336';
+      case 'Refunded':
+        return '#009688';
       default:
         return '#007AFF';
     }
@@ -158,6 +168,7 @@ const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({ navigation }) =
     );
   };
 
+  // Hiển thị nhãn refund theo status mới nhất (nếu có)
   const renderOrderItem: ListRenderItem<Order> = ({ item }) => (
     <TouchableOpacity
       style={styles.orderCard}
@@ -202,6 +213,17 @@ const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({ navigation }) =
           color="#8E8E93"
         />
       </View>
+      {/* Đánh dấu nếu là đơn hoàn tiền */}
+      {item.refundRequests && item.refundRequests.length > 0 && (
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
+          <Ionicons name="cash-outline" size={16} color="#009688" style={{ marginRight: 4 }} />
+          <Text style={{ fontSize: 12, color: '#009688', fontWeight: '500' }}>
+            {item.refundRequests[0].status === 'Pending' && 'Đang yêu cầu hoàn tiền'}
+            {item.refundRequests[0].status === 'Approved' && 'Đã hoàn tiền'}
+            {item.refundRequests[0].status === 'Rejected' && 'Đã từ chối hoàn tiền'}
+          </Text>
+        </View>
+      )}
     </TouchableOpacity>
   );
 
@@ -241,17 +263,24 @@ const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({ navigation }) =
                   ? 'bicycle-outline'
                   : activeTab === 'Completed'
                   ? 'checkmark-circle-outline'
-                  : 'close-circle-outline'
+                  : activeTab === 'Cancelled'
+                  ? 'close-circle-outline'
+                  : 'cash-outline'
               }
               size={64}
               color="#C7C7CC"
             />
-            <Text style={styles.emptyTitle}>Chưa có {activeTab} đơn hàng nào</Text>
+            <Text style={styles.emptyTitle}>
+              {activeTab === 'Refunded'
+                ? 'Chưa có đơn hoàn tiền nào'
+                : `Chưa có ${activeTab} đơn hàng nào`}
+            </Text>
             <Text style={styles.emptySubtitle}>
               {activeTab === 'Preparing' && 'Hiện không có đơn hàng nào đang được chuẩn bị.'}
-              {activeTab === 'Delivering' && 'Hiện không có đơn hàng nào đang được chuẩn bị.'}
+              {activeTab === 'Delivering' && 'Hiện không có đơn hàng nào đang được giao.'}
               {activeTab === 'Completed' && 'Không tìm thấy đơn hàng đã hoàn tất.'}
               {activeTab === 'Cancelled' && 'Không có đơn hàng bị hủy.'}
+              {activeTab === 'Refunded' && 'Hiện bạn chưa có đơn hàng nào đã gửi yêu cầu hoàn tiền.'}
             </Text>
           </View>
         }
@@ -286,7 +315,6 @@ const styles = StyleSheet.create({
   placeholder: {
     width: 40,
   },
-  // Fixed Tab Styles
   tabsContainer: {
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
@@ -333,7 +361,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#FFFFFF',
   },
-  // Order List Styles
   listContainer: {
     padding: 16,
     flexGrow: 1,
@@ -447,4 +474,3 @@ const styles = StyleSheet.create({
 });
 
 export default OrderHistoryScreen;
-

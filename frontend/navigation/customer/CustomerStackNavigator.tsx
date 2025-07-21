@@ -1,4 +1,3 @@
-// navigation/CustomerStackNavigator.tsx
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
@@ -12,45 +11,20 @@ import OrderDetailScreen from '../../screens/Customer/OrderDetailScreen';
 import OrderTrackingScreen from '../../screens/Customer/OrderTrackingScreen';
 import NotificationScreen from '../../screens/Customer/NotificationScreen';
 
-// Types for Order data
-interface OrderItem {
-  name: string;
-  quantity: number;
-  price: number;
-  image?: any; // ImageSourcePropType
-}
-
-interface Order {
-  id: string;
-  orderNumber: string;
-  date: string;
-  time: string;
-  status: 'Completed' | 'Cancelled' | 'Pending' | 'Processing' | 'Preparing' | 'Ready' | 'Delivering';
-  total: number;
-  items: OrderItem[];
-  estimatedDelivery?: string;
-  deliveryAddress?: string;
-  phoneNumber?: string;
-}
-
-import VNPayGatewayScreen from '../../screens/Customer/VNPayGatewayScreen';
+// ✅ Chỉ import type Order đúng chuẩn
+import type { Order } from '../../data/orders';
 
 export type CustomerStackParamList = {
   Cart: undefined;
   Checkout: undefined;
   Vouchers: undefined;
   LoyaltyScreen: undefined;
-  VNPayGateway: undefined;
   OrderSuccess: undefined;
   OrderHistory: undefined;
   Notifications: undefined;
-  OrderDetail: {
-    order: Order;
-  };
-  OrderTracking: {
-    order: Order;
-  };
-  
+  OrderDetail: { order: Order };
+  OrderTracking: { order: Order };
+  RequestRefund: { order: Order };
 };
 
 const Stack = createNativeStackNavigator<CustomerStackParamList>();
@@ -62,7 +36,6 @@ const CustomerStackNavigator = () => {
       <Stack.Screen name="Checkout" component={CheckoutScreen} />
       <Stack.Screen name="Vouchers" component={VouchersScreen} />
       <Stack.Screen name="LoyaltyScreen" component={LoyaltyScreen} />
-      <Stack.Screen name="VNPayGateway" component={VNPayGatewayScreen} />
       <Stack.Screen name="OrderSuccess" component={OrderSuccessScreen} />
       <Stack.Screen name="OrderHistory" component={OrderHistoryScreen} />
       <Stack.Screen name="OrderDetail" component={OrderDetailScreen} />

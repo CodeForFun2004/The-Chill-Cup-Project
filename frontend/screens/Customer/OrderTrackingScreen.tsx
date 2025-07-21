@@ -13,12 +13,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { formatCurrency } from '../../utils/formatCurrency';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { CustomerStackParamList } from '../../navigation/customer/CustomerStackNavigator';
+import type { Order } from '../../data/orders'; // <--- BẮT BUỘC
 
 const { width } = Dimensions.get('window');
 
-// ✅ Kiểu chính xác từ Ionicons
 type IoniconsName = keyof typeof Ionicons.glyphMap;
-
 interface TrackingStep {
   id: string;
   title: string;
@@ -32,6 +31,34 @@ type Props = NativeStackScreenProps<CustomerStackParamList, 'OrderTracking'>;
 
 const OrderTrackingScreen: React.FC<Props> = ({ route, navigation }) => {
   const { order } = route.params;
+
+  // Lấy trạng thái refund mới nhất (nếu có)
+  const getRefundStatus = () => {
+    if (!order.refundRequests || order.refundRequests.length === 0) return null;
+    const latest = order.refundRequests[0];
+    switch (latest.status) {
+      case 'Pending':
+        return {
+          label: 'Đang yêu cầu hoàn tiền',
+          color: '#FF9800',
+          icon: 'sync-circle' as IoniconsName,
+        };
+      case 'Approved':
+        return {
+          label: 'Đã hoàn tiền',
+          color: '#4CAF50',
+          icon: 'cash-outline' as IoniconsName,
+        };
+      case 'Rejected':
+        return {
+          label: 'Đã từ chối hoàn tiền',
+          color: '#F44336',
+          icon: 'close-circle' as IoniconsName,
+        };
+      default:
+        return null;
+    }
+  };
 
   const getTrackingSteps = (orderStatus: typeof order.status): TrackingStep[] => {
     const baseSteps: TrackingStep[] = [
@@ -75,33 +102,33 @@ const OrderTrackingScreen: React.FC<Props> = ({ route, navigation }) => {
 
     switch (orderStatus.toLowerCase()) {
       case 'cancelled':
-        return baseSteps.map((step, index) => ({
+        return baseSteps.map((step, idx) => ({
           ...step,
-          status: index === 0 ? 'completed' : 'cancelled',
+          status: idx === 0 ? 'completed' : 'cancelled',
         }));
       case 'preparing':
-        return baseSteps.map((step, index) => ({
+        return baseSteps.map((step, idx) => ({
           ...step,
-          status: index === 0 ? 'completed' : index === 1 ? 'current' : 'pending',
-          time: index === 1 ? 'In progress...' : step.time,
+          status: idx === 0 ? 'completed' : idx === 1 ? 'current' : 'pending',
+          time: idx === 1 ? 'In progress...' : step.time,
         }));
       case 'ready':
-        return baseSteps.map((step, index) => ({
+        return baseSteps.map((step, idx) => ({
           ...step,
-          status: index <= 1 ? 'completed' : index === 2 ? 'current' : 'pending',
-          time: index === 2 ? 'Ready now!' : step.time,
+          status: idx <= 1 ? 'completed' : idx === 2 ? 'current' : 'pending',
+          time: idx === 2 ? 'Ready now!' : step.time,
         }));
       case 'delivering':
-        return baseSteps.map((step, index) => ({
+        return baseSteps.map((step, idx) => ({
           ...step,
-          status: index <= 2 ? 'completed' : index === 3 ? 'current' : 'pending',
-          time: index === 3 ? 'On the way...' : step.time,
+          status: idx <= 2 ? 'completed' : idx === 3 ? 'current' : 'pending',
+          time: idx === 3 ? 'On the way...' : step.time,
         }));
       case 'completed':
-        return baseSteps.map((step, index) => ({
+        return baseSteps.map((step, idx) => ({
           ...step,
           status: 'completed',
-          time: index === 4 ? 'Delivered!' : step.time,
+          time: idx === 4 ? 'Delivered!' : step.time,
         }));
       default:
         return baseSteps;
@@ -140,8 +167,10 @@ const OrderTrackingScreen: React.FC<Props> = ({ route, navigation }) => {
 
   const trackingSteps = getTrackingSteps(order.status);
   const statusInfo = getStatusMessage(order.status);
+  const refundStatus = getRefundStatus();
 
   const handleCallSupport = () => {
+    // Thực tế gọi số support hoặc show modal hỗ trợ
     console.log('Calling support...');
   };
 
@@ -176,6 +205,19 @@ const OrderTrackingScreen: React.FC<Props> = ({ route, navigation }) => {
               {statusInfo.message}
             </Text>
           </View>
+
+          {/* Trạng thái refund (nếu có) */}
+          {refundStatus && (
+            <View style={[
+              styles.statusMessageContainer,
+              { backgroundColor: refundStatus.color + '20', marginTop: 0 }
+            ]}>
+              <Ionicons name={refundStatus.icon} size={20} color={refundStatus.color} />
+              <Text style={[styles.statusMessage, { color: refundStatus.color }]}>
+                {refundStatus.label}
+              </Text>
+            </View>
+          )}
 
           {order.estimatedDelivery && order.status !== 'Completed' && order.status !== 'Cancelled' && (
             <View style={styles.estimatedTimeContainer}>
@@ -249,7 +291,6 @@ const OrderTrackingScreen: React.FC<Props> = ({ route, navigation }) => {
     </SafeAreaView>
   );
 };
-
 
 const styles = StyleSheet.create({
   container: {
