@@ -170,9 +170,17 @@ const DrinkCategoryScreen = ({ navigation }: { navigation: DrinkCategoryNavigati
                 columnWrapperStyle={{ justifyContent: 'space-between' }}
                 renderItem={({ item: drink }) => (
                   <ProductCard
-                    image={{ uri: drink.image }}
-                    name={drink.name}
-                    price={formatCurrency(drink.basePrice)}
+                    product={{
+                      id: drink._id,
+                      name: drink.name,
+                      category: drink.categoryId,
+                      image: drink.image,
+                      description: drink.description,
+                      basePrice: drink.basePrice,
+                      sizeOptions: drink.sizeOptions,
+                      toppingOptions: drink.toppingOptions,
+                      price: formatCurrency(drink.basePrice),
+                    }}
                     onPress={() =>
                       navigation.navigate('DrinkDetailScreen', {
                         drink: {
@@ -182,11 +190,10 @@ const DrinkCategoryScreen = ({ navigation }: { navigation: DrinkCategoryNavigati
                           image: drink.image,
                           description: drink.description,
                           basePrice: drink.basePrice,
-                          sizeOptions: drink.sizeOptions, // [{ size: 'S', name: 'Small', multiplier: 1, volume: '250ml' }]
-                          toppingOptions: drink.toppingOptions, // [{ _id, name, price, icon }]
+                          sizeOptions: drink.sizeOptions,
+                          toppingOptions: drink.toppingOptions,
                         },
                       })
-
                     }
                   />
                 )}
