@@ -12,6 +12,7 @@ import {
   ScrollView,
   TextInput,
 } from "react-native"
+import { API_BASE_URL } from "../../services/api"
 
 // Định nghĩa interface cho dữ liệu
 interface OrderItem {
@@ -27,63 +28,152 @@ interface Order {
   createdAt: string
   total: number
   items: OrderItem[]
+  userId?: string
+}
+
+interface FilterOptions {
+  status: string[]
+  startDate: string
+  endDate: string
+  userId: string
 }
 
 const ManageOrders: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([])
+  const [filteredOrders, setFilteredOrders] = useState<Order[]>([])
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
   const [loading, setLoading] = useState<boolean>(true)
   const [modalVisible, setModalVisible] = useState<boolean>(false)
+  const [filterModalVisible, setFilterModalVisible] = useState<boolean>(false)
   const [error, setError] = useState<string | null>(null)
   const [cancelReason, setCancelReason] = useState<string>("")
   const [cancelModalVisible, setCancelModalVisible] = useState<boolean>(false)
   const [pendingCancelOrderId, setPendingCancelOrderId] = useState<number | null>(null)
 
-  // Fetch orders với TypeScript
-  useEffect(() => {
-    const fetchOrders = async () => {
-      try {
-        const response = await fetch("http://192.168.11.108:8080/api/orders/admin", {
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-          },
-        })
+  // Filter states
+  const [filters, setFilters] = useState<FilterOptions>({
+    status: [],
+    startDate: "",
+    endDate: "",
+    userId: "",
+  })
 
-        if (!response.ok) {
-          throw new Error(`Lỗi HTTP! Trạng thái: ${response.status}`)
+  const [tempFilters, setTempFilters] = useState<FilterOptions>({
+    status: [],
+    startDate: "",
+    endDate: "",
+    userId: "",
+  })
+
+  const statusOptions = [
+    { key: "pending", label: "Chờ xử lý", color: "#FF8C00" },
+    { key: "processing", label: "Đang xử lý", color: "#1E90FF" },
+    { key: "preparing", label: "Đang chuẩn bị", color: "#9C27B0" },
+    { key: "ready", label: "Sẵn sàng", color: "#4CAF50" },
+    { key: "delivering", label: "Đang giao", color: "#FF9800" },
+    { key: "completed", label: "Hoàn thành", color: "#32CD32" },
+    { key: "cancelled", label: "Đã hủy", color: "#FF6B6B" },
+  ]
+
+  // Fetch orders với filter
+  const fetchOrders = useCallback(async (filterParams?: FilterOptions) => {
+    try {
+      setLoading(true)
+      const queryParams = new URLSearchParams()
+
+      if (filterParams) {
+        if (filterParams.status.length > 0) {
+          queryParams.append("status", filterParams.status.join(","))
         }
-
-        const data = await response.json()
-        // Map API data to match Order interface
-        const mappedOrders: Order[] = (data ?? []).map((order: any) => ({
-          id: order._id, // Map _id to id
-          status: order.status,
-          createdAt: order.createdAt,
-          total: order.total,
-          items: order.items.map((item: any) => ({
-            id: item._id, // Map item _id to id
-            name: item.name,
-            quantity: item.quantity,
-            price: item.price || 0, // Add price if available, or default to 0
-          })),
-        }))
-
-        // Filter valid orders (optional, as mapping ensures correct structure)
-        const validOrders = mappedOrders.filter(
-          (order): order is Order => typeof order.id === "string" && order.id !== null,
-        )
-        setOrders(validOrders)
-        setLoading(false)
-      } catch (error) {
-        console.error("Lỗi khi lấy danh sách đơn hàng:", error)
-        setError("Không thể tải danh sách đơn hàng. Vui lòng thử lại.")
-        setLoading(false)
+        if (filterParams.startDate) {
+          queryParams.append("startDate", filterParams.startDate)
+        }
+        if (filterParams.endDate) {
+          queryParams.append("endDate", filterParams.endDate)
+        }
+        if (filterParams.userId) {
+          queryParams.append("userId", filterParams.userId)
+        }
       }
-    }
 
-    fetchOrders()
+      const url = `${API_BASE_URL}/orders/admin/orders${
+        queryParams.toString() ? `?${queryParams.toString()}` : ""
+      }`
+
+      const response = await fetch(url, {
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error(`Lỗi HTTP! Trạng thái: ${response.status}`)
+      }
+
+      const data = await response.json()
+      // Map API data to match Order interface
+      const mappedOrders: Order[] = (data ?? []).map((order: any) => ({
+        id: order._id, // Map _id to id
+        status: order.status,
+        createdAt: order.createdAt,
+        total: order.total,
+        userId: order.userId,
+        items: order.items.map((item: any) => ({
+          id: item._id, // Map item _id to id
+          name: item.name,
+          quantity: item.quantity,
+          price: item.price || 0, // Add price if available, or default to 0
+        })),
+      }))
+
+      // Filter valid orders (optional, as mapping ensures correct structure)
+      const validOrders = mappedOrders.filter(
+        (order): order is Order => typeof order.id === "string" && order.id !== null,
+      )
+      setOrders(validOrders)
+      setFilteredOrders(validOrders)
+      setLoading(false)
+    } catch (error) {
+      console.error("Lỗi khi lấy danh sách đơn hàng:", error)
+      setError("Không thể tải danh sách đơn hàng. Vui lòng thử lại.")
+      setLoading(false)
+    }
   }, [])
+
+  // Initial fetch
+  useEffect(() => {
+    fetchOrders()
+  }, [fetchOrders])
+
+  // Apply filters
+  const applyFilters = () => {
+    setFilters(tempFilters)
+    fetchOrders(tempFilters)
+    setFilterModalVisible(false)
+  }
+
+  // Clear filters
+  const clearFilters = () => {
+    const emptyFilters = {
+      status: [],
+      startDate: "",
+      endDate: "",
+      userId: "",
+    }
+    setTempFilters(emptyFilters)
+    setFilters(emptyFilters)
+    fetchOrders()
+    setFilterModalVisible(false)
+  }
+
+  // Toggle status filter
+  const toggleStatusFilter = (status: string) => {
+    setTempFilters((prev) => ({
+      ...prev,
+      status: prev.status.includes(status) ? prev.status.filter((s) => s !== status) : [...prev.status, status],
+    }))
+  }
 
   // Cập nhật trạng thái đơn hàng
   const updateOrderStatus = async (orderId: number, newStatus: string) => {
@@ -100,7 +190,7 @@ const ManageOrders: React.FC = () => {
         requestBody.cancelReason = cancelReason.trim()
       }
 
-      const response = await fetch(`http://192.168.11.108:8080/api/orders/admin/${orderId}`, {
+      const response = await fetch(`${API_BASE_URL}/orders/admin/${orderId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -118,6 +208,9 @@ const ManageOrders: React.FC = () => {
 
       if (result.success) {
         setOrders((prevOrders) =>
+          prevOrders.map((order) => (order.id === orderId ? { ...order, status: newStatus } : order)),
+        )
+        setFilteredOrders((prevOrders) =>
           prevOrders.map((order) => (order.id === orderId ? { ...order, status: newStatus } : order)),
         )
 
@@ -153,7 +246,7 @@ const ManageOrders: React.FC = () => {
     }
 
     try {
-      const response = await fetch(`http://192.168.11.108:8080/api/orders/admin/${pendingCancelOrderId}`, {
+      const response = await fetch(`${API_BASE_URL}/orders/admin/${pendingCancelOrderId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -174,6 +267,9 @@ const ManageOrders: React.FC = () => {
 
       if (result.success) {
         setOrders((prevOrders) =>
+          prevOrders.map((order) => (order.id === pendingCancelOrderId ? { ...order, status: "cancelled" } : order)),
+        )
+        setFilteredOrders((prevOrders) =>
           prevOrders.map((order) => (order.id === pendingCancelOrderId ? { ...order, status: "cancelled" } : order)),
         )
 
@@ -241,6 +337,16 @@ const ManageOrders: React.FC = () => {
     }
   }
 
+  // Get active filter count
+  const getActiveFilterCount = () => {
+    let count = 0
+    if (filters.status.length > 0) count++
+    if (filters.startDate) count++
+    if (filters.endDate) count++
+    if (filters.userId) count++
+    return count
+  }
+
   // Render item đơn hàng với useCallback để tối ưu
   const renderOrderItem = useCallback(({ item }: { item: Order }) => {
     const statusStyle = getStatusStyle(item.status)
@@ -291,6 +397,13 @@ const ManageOrders: React.FC = () => {
               <Text style={styles.infoIcon}>📦</Text>
               <Text style={styles.itemCount}>{item.items?.length || 0} sản phẩm</Text>
             </View>
+
+            {item.userId && (
+              <View style={styles.infoRow}>
+                <Text style={styles.infoIcon}>👤</Text>
+                <Text style={styles.userId}>User: {item.userId}</Text>
+              </View>
+            )}
           </View>
 
           <View style={styles.viewDetailsContainer}>
@@ -300,6 +413,106 @@ const ManageOrders: React.FC = () => {
       </TouchableOpacity>
     )
   }, [])
+
+  // Render Filter Modal
+  const renderFilterModal = () => (
+    <Modal
+      animationType="slide"
+      transparent={true}
+      visible={filterModalVisible}
+      onRequestClose={() => setFilterModalVisible(false)}
+    >
+      <View style={styles.filterModalContainer}>
+        <View style={styles.filterModalContent}>
+          <ScrollView showsVerticalScrollIndicator={false}>
+            <View style={styles.filterModalHeader}>
+              <Text style={styles.filterModalTitle}>Bộ lọc đơn hàng</Text>
+              <TouchableOpacity onPress={() => setFilterModalVisible(false)}>
+                <Text style={styles.filterModalClose}>✕</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Status Filter */}
+            <View style={styles.filterSection}>
+              <Text style={styles.filterSectionTitle}>Trạng thái</Text>
+              <View style={styles.statusFilterContainer}>
+                {statusOptions.map((status) => (
+                  <TouchableOpacity
+                    key={status.key}
+                    style={[
+                      styles.statusFilterItem,
+                      {
+                        backgroundColor: tempFilters.status.includes(status.key) ? status.color : "transparent",
+                        borderColor: status.color,
+                      },
+                    ]}
+                    onPress={() => toggleStatusFilter(status.key)}
+                    activeOpacity={0.7}
+                  >
+                    <Text
+                      style={[
+                        styles.statusFilterText,
+                        {
+                          color: tempFilters.status.includes(status.key) ? "#fff" : status.color,
+                        },
+                      ]}
+                    >
+                      {status.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+
+            {/* Date Filter */}
+            <View style={styles.filterSection}>
+              <Text style={styles.filterSectionTitle}>Ngày tạo</Text>
+              <View style={styles.dateFilterContainer}>
+                <View style={styles.dateInputContainer}>
+                  <Text style={styles.dateLabel}>Từ ngày:</Text>
+                  <TextInput
+                    style={styles.dateInput}
+                    placeholder="YYYY-MM-DD"
+                    value={tempFilters.startDate}
+                    onChangeText={(text) => setTempFilters((prev) => ({ ...prev, startDate: text }))}
+                  />
+                </View>
+                <View style={styles.dateInputContainer}>
+                  <Text style={styles.dateLabel}>Đến ngày:</Text>
+                  <TextInput
+                    style={styles.dateInput}
+                    placeholder="YYYY-MM-DD"
+                    value={tempFilters.endDate}
+                    onChangeText={(text) => setTempFilters((prev) => ({ ...prev, endDate: text }))}
+                  />
+                </View>
+              </View>
+            </View>
+
+            {/* User ID Filter */}
+            <View style={styles.filterSection}>
+              <Text style={styles.filterSectionTitle}>User ID</Text>
+              <TextInput
+                style={styles.userIdInput}
+                placeholder="Nhập User ID"
+                value={tempFilters.userId}
+                onChangeText={(text) => setTempFilters((prev) => ({ ...prev, userId: text }))}
+              />
+            </View>
+          </ScrollView>
+
+          <View style={styles.filterModalButtons}>
+            <TouchableOpacity style={styles.clearFilterButton} onPress={clearFilters} activeOpacity={0.7}>
+              <Text style={styles.clearFilterButtonText}>Xóa bộ lọc</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.applyFilterButton} onPress={applyFilters} activeOpacity={0.7}>
+              <Text style={styles.applyFilterButtonText}>Áp dụng</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  )
 
   // Render chi tiết đơn hàng trong modal
   const renderOrderDetails = () => (
@@ -401,6 +614,12 @@ const ManageOrders: React.FC = () => {
                         {(selectedOrder.total ?? 0).toLocaleString("vi-VN")} VNĐ
                       </Text>
                     </View>
+                    {selectedOrder.userId && (
+                      <View style={styles.infoItem}>
+                        <Text style={styles.infoLabel}>👤 User ID:</Text>
+                        <Text style={styles.infoValue}>{selectedOrder.userId}</Text>
+                      </View>
+                    )}
                   </View>
                 </View>
 
@@ -414,9 +633,9 @@ const ManageOrders: React.FC = () => {
                             <Text style={styles.productName}>{item.name || "Không xác định"}</Text>
                             <View style={styles.productDetails}>
                               <Text style={styles.productQuantity}>SL: {item.quantity ?? 0}</Text>
-                              {/* <Text style={styles.productPrice}>
+                              <Text style={styles.productPrice}>
                                 {typeof item.price === "number" ? item.price.toLocaleString("vi-VN") : "0"} VNĐ
-                              </Text> */}
+                              </Text>
                             </View>
                           </View>
                           <View style={styles.productTotal}>
@@ -503,6 +722,24 @@ const ManageOrders: React.FC = () => {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Quản lý đơn hàng</Text>
+
+        {/* Filter Button */}
+        <TouchableOpacity
+          style={styles.filterButton}
+          onPress={() => {
+            setTempFilters(filters)
+            setFilterModalVisible(true)
+          }}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.filterButtonIcon}>🔍</Text>
+          <Text style={styles.filterButtonText}>Bộ lọc</Text>
+          {getActiveFilterCount() > 0 && (
+            <View style={styles.filterBadge}>
+              <Text style={styles.filterBadgeText}>{getActiveFilterCount()}</Text>
+            </View>
+          )}
+        </TouchableOpacity>
       </View>
 
       {error && (
@@ -519,14 +756,14 @@ const ManageOrders: React.FC = () => {
         </View>
       ) : (
         <FlatList
-          data={orders}
+          data={filteredOrders}
           renderItem={renderOrderItem}
           keyExtractor={(item) => item.id?.toString() ?? `fallback-${Math.random().toString()}`}
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <Text style={styles.emptyIcon}>📋</Text>
               <Text style={styles.emptyText}>Không tìm thấy đơn hàng</Text>
-              <Text style={styles.emptySubtext}>Các đơn hàng sẽ xuất hiện ở đây</Text>
+              <Text style={styles.emptySubtext}>Thử điều chỉnh bộ lọc hoặc tạo đơn hàng mới</Text>
             </View>
           }
           contentContainerStyle={styles.listContainer}
@@ -540,6 +777,7 @@ const ManageOrders: React.FC = () => {
 
       {modalVisible && renderOrderDetails()}
       {cancelModalVisible && renderCancelModal()}
+      {filterModalVisible && renderFilterModal()}
     </SafeAreaView>
   )
 }
@@ -557,15 +795,48 @@ const styles = StyleSheet.create({
     borderBottomColor: "#E9ECEF",
   },
   title: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: "700",
     color: "#007AFF",
-    marginBottom: 4,
+    marginBottom: 12,
   },
   subtitle: {
     fontSize: 16,
     color: "#6C757D",
     fontWeight: "400",
+    marginBottom: 16,
+  },
+  filterButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#007AFF",
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 8,
+    alignSelf: "flex-start",
+  },
+  filterButtonIcon: {
+    fontSize: 16,
+    marginRight: 8,
+  },
+  filterButtonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  filterBadge: {
+    backgroundColor: "#FF3B30",
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    justifyContent: "center",
+    alignItems: "center",
+    marginLeft: 8,
+  },
+  filterBadgeText: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "600",
   },
   listContainer: {
     padding: 16,
@@ -651,6 +922,11 @@ const styles = StyleSheet.create({
     color: "#495057",
     flex: 1,
   },
+  userId: {
+    fontSize: 14,
+    color: "#6C757D",
+    flex: 1,
+  },
   viewDetailsContainer: {
     alignItems: "center",
     paddingTop: 12,
@@ -666,6 +942,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.5)",
     padding: 20,
   },
   modalContent: {
@@ -954,6 +1231,123 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   cancelModalButtonPrimaryText: {
+    fontSize: 16,
+    color: "#FFFFFF",
+    fontWeight: "600",
+  },
+  // Filter Modal Styles
+  filterModalContainer: {
+    flex: 1,
+    justifyContent: "flex-end",
+    backgroundColor: "rgba(0,0,0,0.5)",
+  },
+  filterModalContent: {
+    backgroundColor: "#FFFFFF",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: "80%",
+    paddingBottom: 20,
+  },
+  filterModalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F1F3F4",
+  },
+  filterModalTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#212529",
+  },
+  filterModalClose: {
+    fontSize: 24,
+    color: "#6C757D",
+    fontWeight: "300",
+  },
+  filterSection: {
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F8F9FA",
+  },
+  filterSectionTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#212529",
+    marginBottom: 12,
+  },
+  statusFilterContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  statusFilterItem: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  statusFilterText: {
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  dateFilterContainer: {
+    gap: 12,
+  },
+  dateInputContainer: {
+    gap: 8,
+  },
+  dateLabel: {
+    fontSize: 14,
+    color: "#495057",
+    fontWeight: "500",
+  },
+  dateInput: {
+    borderWidth: 1,
+    borderColor: "#CED4DA",
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    color: "#495057",
+    backgroundColor: "#F8F9FA",
+  },
+  userIdInput: {
+    borderWidth: 1,
+    borderColor: "#CED4DA",
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    color: "#495057",
+    backgroundColor: "#F8F9FA",
+  },
+  filterModalButtons: {
+    flexDirection: "row",
+    gap: 12,
+    paddingHorizontal: 20,
+    paddingTop: 20,
+  },
+  clearFilterButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#CED4DA",
+    alignItems: "center",
+  },
+  clearFilterButtonText: {
+    fontSize: 16,
+    color: "#6C757D",
+    fontWeight: "500",
+  },
+  applyFilterButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    backgroundColor: "#007AFF",
+    alignItems: "center",
+  },
+  applyFilterButtonText: {
     fontSize: 16,
     color: "#FFFFFF",
     fontWeight: "600",

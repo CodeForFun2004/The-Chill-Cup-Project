@@ -13,7 +13,7 @@ import ManageOrders from "../../screens/Admin/ManageOrders";
 import ManageStores from "../../screens/Admin/ManageStores";
 import ManagePromotions from "../../screens/Admin/ManagePromotions";
 import ManageDelivery from "../../screens/Admin/ManageDelivery";
-import ToppingManagementScreen from '../../screens/Admin/ToppingManagementScreen';
+import ManageUsers from "../../screens/Admin/ManageUsers";
 
 export type AdminTabParamList = {
   Dashboard: undefined;
@@ -22,7 +22,7 @@ export type AdminTabParamList = {
   Stores: undefined;
   Promotions: undefined;
   Delivery: undefined;
-  ToppingManagement: undefined;
+  Users: undefined;
 };
 
 const Tab = createBottomTabNavigator<AdminTabParamList>();
@@ -59,8 +59,8 @@ const AdminNavigator = () => {
             case "Delivery":
               icon = <MaterialCommunityIcons name="truck-delivery" size={size} color={color} />;
               break;
-            case "ToppingManagement":
-              icon = <MaterialCommunityIcons name="food-variant" size={size} color={color} />;
+            case "Users":
+              icon = <MaterialCommunityIcons name="account" size={size} color={color} />;
               break;
           }
 
@@ -74,7 +74,7 @@ const AdminNavigator = () => {
       <Tab.Screen name="Stores" component={ManageStores} />
       <Tab.Screen name="Promotions" component={ManagePromotions} />
       <Tab.Screen name="Delivery" component={ManageDelivery} />
-      <Tab.Screen name="ToppingManagement" component={ToppingManagementScreen} options={{ title: 'Quản lý Topping' }} />
+      <Tab.Screen name="Users" component={ManageUsers} options={{ title: 'Users' }} />
     </Tab.Navigator>
   );
 };
