@@ -57,8 +57,8 @@ const CustomerStackNavigator = () => {
       <Stack.Screen name="VNPayGateway" component={VNPayGatewayScreen} />
       <Stack.Screen name="OrderSuccess" component={OrderSuccessScreen} options={{ headerShown: false }} />
       <Stack.Screen name="OrderHistory" component={OrderHistoryScreen} />
-      <Stack.Screen name="OrderDetail" component={OrderDetailScreen} />
-      <Stack.Screen name="OrderTracking" component={OrderTrackingScreen} />
+      <Stack.Screen name="OrderDetail" component={OrderDetailScreen} options={{ headerShown: false }}/>
+      <Stack.Screen name="OrderTracking" component={OrderTrackingScreen} options={{ headerShown: false }}/>
       <Stack.Screen name="Notifications" component={NotificationScreen} />
     </Stack.Navigator>
   );

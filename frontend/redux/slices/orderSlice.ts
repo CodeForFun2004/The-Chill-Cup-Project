@@ -21,7 +21,7 @@ interface OrderProduct {
 }
 
 // Định nghĩa kiểu dữ liệu cho một mục sản phẩm trong đơn hàng
-interface OrderItem {
+export interface OrderItem {
   productId: OrderProduct; // Đối tượng sản phẩm đã được populate từ backend
   name: string; // Tên sản phẩm, có thể dùng productId.name
   size?: string; // Kích cỡ sản phẩm (ví dụ: "L", "M", "S")
@@ -47,7 +47,7 @@ export interface Order {
   phone: string;
   paymentMethod: 'vnpay' | 'cod';
   deliveryTime: string; // Thời gian giao hàng ước tính (ví dụ: "25-35 phút")
-  status: 'pending' | 'confirmed' | 'shipping' | 'delivered' | 'cancelled'; // Trạng thái đơn hàng
+  status: 'pending'| 'processing'| 'preparing'| 'ready'| 'delivering'| 'completed'| 'cancelled'; // Trạng thái đơn hàng
   cancelReason: string | null;
   shipperAssigned: string | null; // ID của shipper nếu có
   appliedPromoCode?: string | null; // Mã khuyến mãi đã áp dụng
