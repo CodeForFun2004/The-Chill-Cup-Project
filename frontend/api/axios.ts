@@ -1,10 +1,9 @@
-// api/axios.ts (hoặc một tên khác như api/configuredAxios.ts)
+// api/axios.ts
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const API_URL = 'http://192.168.1.122:8080/api';
 
-// Tạo một biến để giữ instance của axios
 let apiInstance = axios.create({
   baseURL: API_URL,
   timeout: 10000,
@@ -13,8 +12,14 @@ let apiInstance = axios.create({
   },
 });
 
-// Một hàm để khởi tạo và cấu hình interceptors, nhận `store` như một tham số
-export const setupAxiosInterceptors = (store: any) => { // Sử dụng 'any' để tránh phụ thuộc trực tiếp vào kiểu Store
+// Định nghĩa interface cho các actions cần thiết
+interface AuthActions {
+  setAccessToken: (token: string) => { type: string; payload: string };
+  logout: () => { type: string };
+}
+
+// Một hàm để khởi tạo và cấu hình interceptors, nhận `dispatch` và các actions cụ thể
+export const setupAxiosInterceptors = (dispatch: any, authActions: AuthActions) => {
   apiInstance.interceptors.response.use(
     (response) => response,
     async (error) => {
@@ -28,21 +33,17 @@ export const setupAxiosInterceptors = (store: any) => { // Sử dụng 'any' đ�
 
           const newAccessToken = res.data.accessToken;
 
-          // Lưu vào storage
           await AsyncStorage.setItem('accessToken', newAccessToken);
 
-          // Dispatch action thông qua store được truyền vào
-          // Thay vì import trực tiếp setAccessToken, chúng ta sẽ dùng hàm từ store
-          // Đảm bảo authSlice đã export setAccessToken
-          store.dispatch(require('../redux/slices/authSlice').setAccessToken(newAccessToken)); // Tránh import trực tiếp tại đây
+          // Sử dụng actions đã được truyền vào
+          dispatch(authActions.setAccessToken(newAccessToken));
 
-          // Thử lại request gốc
           originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
           return apiInstance(originalRequest);
         } catch (err) {
-          // Xóa dữ liệu xác thực và dispatch logout
           await AsyncStorage.multiRemove(['accessToken', 'refreshToken', 'user']);
-          store.dispatch(require('../redux/slices/authSlice').logout()); // Tránh import trực tiếp tại đây
+          // Sử dụng actions đã được truyền vào
+          dispatch(authActions.logout());
           return Promise.reject(err);
         }
       }

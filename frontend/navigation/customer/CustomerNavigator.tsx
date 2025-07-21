@@ -10,18 +10,13 @@ import {
 
 
 
-import { View, Text, StyleSheet, Platform } from "react-native";
-import { NavigatorScreenParams } from "@react-navigation/native";
+import { View, StyleSheet} from "react-native";
+import { NavigatorScreenParams, getFocusedRouteNameFromRoute } from "@react-navigation/native";
 import CustomerHomeStack from "./CustomerHomeStack";
-import DrinkCategoryScreen from '../../screens/Customer/DrinkCategoryScreen';
 import StoreScreen from "../../screens/Customer/StoreScreen";
-import PromotionScreen from "../../screens/Customer/PromotionScreen";
-import CartScreen from "../../screens/Customer/CartScreen";
-import CheckoutScreen from "../../screens/Customer/CheckoutScreen";
 import CustomerStackNavigator from "./CustomerStackNavigator";
 import ProfileNavigator from "../../navigation/ProfileNavigator";
 import { ProfileStackParamList } from "../../navigation/ProfileNavigator";
-import TestOrderNavigator from "../../navigation/TestOrderNavigator";
 import DrinkStackNavigator from '../CustomerDrinkStackNavigator';
 
 export type CustomerTabParamList = {
@@ -91,14 +86,22 @@ const CustomerNavigator = () => {
     <Tab.Screen
       name="CartStack"
       component={CustomerStackNavigator}
-      listeners={({ navigation, route }) => ({
+      options={({ route }) => {
+        const routeName = getFocusedRouteNameFromRoute(route) ?? '';
+        return {
+          tabBarStyle: [
+            styles.tabBar,
+            routeName === 'OrderSuccess' ? { display: 'none' } : {},
+          ],
+        };
+      }}
+      listeners={({ navigation }) => ({
         tabPress: e => {
           e.preventDefault();
           (navigation as any).navigate('CartStack', { screen: 'Cart' });
         },
       })}
     />
-
     {/* <Tab.Screen name="OrderStack" component={TestOrderNavigator} /> */}
   </Tab.Navigator>
 )};
