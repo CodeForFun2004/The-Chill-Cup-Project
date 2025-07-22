@@ -1,4 +1,3 @@
-// navigation/customer/CustomerStackNavigator.tsx
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
@@ -23,12 +22,16 @@ import { Order } from '../../redux/slices/orderSlice';
 
 import VNPayGatewayScreen from '../../screens/Customer/VNPayGatewayScreen';
 
+
 export type CustomerStackParamList = {
   Home: undefined;
   Cart: undefined;
   Checkout: undefined;
   Vouchers: undefined;
   LoyaltyScreen: undefined;
+
+  RequestRefund: { order: Order };
+
   VNPayGateway: undefined;
   OrderSuccess: { orderId: string };
   OrderHistory: undefined;
@@ -57,13 +60,12 @@ const CustomerStackNavigator = () => {
       <Stack.Screen name="VNPayGateway" component={VNPayGatewayScreen} />
       <Stack.Screen name="OrderSuccess" component={OrderSuccessScreen} options={{ headerShown: false }} />
       <Stack.Screen name="OrderHistory" component={OrderHistoryScreen} />
-      <Stack.Screen name="OrderDetail" component={OrderDetailScreen} />
-      <Stack.Screen name="OrderTracking" component={OrderTrackingScreen} />
+      <Stack.Screen name="OrderDetail" component={OrderDetailScreen} options={{ headerShown: false }}/>
+      <Stack.Screen name="OrderTracking" component={OrderTrackingScreen} options={{ headerShown: false }}/>
       <Stack.Screen name="Notifications" component={NotificationScreen} />
     </Stack.Navigator>
   );
 };
 
 export default CustomerStackNavigator;
-
 

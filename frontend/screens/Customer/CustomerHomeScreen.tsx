@@ -15,6 +15,7 @@ import { formatCurrency } from '../../utils/formatCurrency';
 import { loadProducts, setGroupedProducts } from '../../redux/slices/productSlice';
 import { loadCategories } from '../../redux/slices/categorySlice';
 import { groupProductsByCategory } from '../../utils/groupProducts';
+import ChatModal from '../../components/chat-box/ChatModal';
 
 export default function CustomerHomeScreen({ navigation }: any) {
   const { method } = useOrder();
@@ -59,6 +60,7 @@ export default function CustomerHomeScreen({ navigation }: any) {
     <View style={styles.container}>
       <Header />
       <ScrollView contentContainerStyle={styles.scrollContent}>
+  
         <AfterLoginBanner />
         <OrderMethodBlock />
         {method === 'delivery' && <DeliveryAddressBlock />}
@@ -117,6 +119,7 @@ export default function CustomerHomeScreen({ navigation }: any) {
 
         <View style={{ height: 30 }} />
       </ScrollView>
+       <ChatModal/>
     </View>
   );
 }
