@@ -3,8 +3,7 @@ import React from 'react';
 import ManageStores from '../../screens/Admin/ManageStores';
 import ManageDelivery from '../../screens/Admin/ManageDelivery';
 import StoreDetail from '../../screens/Admin/StoreDetail';
-import type { Store } from '../../screens/Admin/ManageStores'; // chính xác đường dẫn
-import ManageProducts from '../../screens/Admin/ManageProducts';
+import { Store } from '../../types/types';
 
 export type AdminStoreStackParamList = {
   ManageStores: undefined;

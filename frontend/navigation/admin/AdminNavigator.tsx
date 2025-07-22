@@ -10,6 +10,7 @@ import OrderDelivery from "../../screens/Admin/ManageDelivery";
 import ManageStores from "../../screens/Admin/ManageStores";
 import ManagePromotions from "../../screens/Admin/ManagePromotions";
 import ManageUsers from "../../screens/Admin/ManageUsers";
+import ManageOrders from "../../screens/Admin/ManageOrders";
 
 export type AdminTabParamList = {
   AdminDashboard: undefined;
@@ -18,6 +19,7 @@ export type AdminTabParamList = {
   Stores: undefined;
   Promotions: undefined;
   Users: undefined;
+  Orders: undefined;
 };
 
 const Tab = createBottomTabNavigator<AdminTabParamList>();
@@ -54,6 +56,9 @@ const AdminNavigator = () => {
             case "Users":
               icon = <Ionicons name="people" size={size} color={color} />;
               break;
+            case "Orders":
+              icon = <Ionicons name="people" size={size} color={color} />;
+              break;
             default:
               icon = <Ionicons name="alert-circle-outline" size={size} color="#ccc" />;
           }
@@ -68,6 +73,7 @@ const AdminNavigator = () => {
       <Tab.Screen name="Stores" component={ManageStores} options={{ title: "Cửa hàng" }} />
       <Tab.Screen name="Promotions" component={ManagePromotions} options={{ title: "Khuyến mãi" }} />
       <Tab.Screen name="Users" component={ManageUsers} options={{ title: "Người dùng" }} />
+      <Tab.Screen name="Orders" component={ManageOrders} options={{ title: "Order" }} />
     </Tab.Navigator>
   );
 };

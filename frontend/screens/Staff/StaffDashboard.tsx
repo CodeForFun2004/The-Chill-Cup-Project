@@ -28,7 +28,9 @@ const StaffDashboard: React.FC<StaffDashboardScreenProps> = ({ navigation }) => 
   const dispatch = useDispatch<any>()
 
   const [timeFilter, setTimeFilter] = useState<"week" | "month">("week")
+
   // const [selectedDate, setSelectedDate] = useState(new Date())
+
 
   // Safe selector with fallback values
   const staffState = useSelector((state: RootState) => state.staff)
