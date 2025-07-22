@@ -14,7 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { formatCurrency } from '../../utils/formatCurrency'; // Assuming this path is correct
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { CustomerStackParamList } from '../../navigation/customer/CustomerStackNavigator';
-import type { Order } from '../../data/orders'; // <--- BẮT BUỘC
+
 
 // ✅ Import the Order type directly from your Redux slice
 // import { Order } from '../../redux/slices/orderSlice';
@@ -52,7 +52,7 @@ const OrderTrackingScreen: React.FC<Props> = ({ route, navigation }) => {
   const { order } = route.params;
 
 
-<!--    Larefundrefund      -->
+// <!--    Larefundrefund      -->
   // Lấy trạng thái refund mới nhất (nếu có)
   const getRefundStatus = () => {
     if (!order.refundRequests || order.refundRequests.length === 0) return null;
@@ -82,7 +82,7 @@ const OrderTrackingScreen: React.FC<Props> = ({ route, navigation }) => {
   };
 
 
-<!--  Main hiện tại  -->
+// <!--  Main hiện tại  -->
   // Ensure order.status is treated as lowercase for comparisons
   const currentOrderStatus = order.status.toLowerCase();
 

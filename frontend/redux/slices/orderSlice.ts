@@ -31,6 +31,18 @@ export interface OrderItem {
   _id: string;
 }
 
+// Định nghĩa kiểu dữ liệu cho yêu cầu hoàn tiền
+export interface RefundRequest {
+  _id: string; // ID của yêu cầu hoàn tiền
+  status: 'Pending' | 'Approved' | 'Rejected'; // Trạng thái của yêu cầu hoàn tiền
+  reason?: string; // Lý do yêu cầu hoàn tiền (tùy chọn)
+  requestedAt: string; // Thời gian yêu cầu hoàn tiền
+  processedAt?: string; // Thời gian xử lý yêu cầu (nếu có)
+  // Bạn có thể thêm các trường khác nếu cần, ví dụ:
+  // amount?: number; // Số tiền hoàn lại
+  // processedBy?: string; // ID của người xử lý yêu cầu (admin/shipper)
+}
+
 // Định nghĩa kiểu dữ liệu đầy đủ cho một đơn hàng (như trả về từ API getOrderById)
 export interface Order {
   _id: string;
@@ -54,6 +66,8 @@ export interface Order {
   createdAt: string;
   updatedAt?: string;
   __v: number;
+  // Thêm thuộc tính refundRequests vào đây
+  refundRequests?: RefundRequest[]; // Mảng các yêu cầu hoàn tiền
 }
 
 // Payload cho action createOrder

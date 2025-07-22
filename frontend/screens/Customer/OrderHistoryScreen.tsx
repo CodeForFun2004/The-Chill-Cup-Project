@@ -449,7 +449,7 @@ const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({
                 size={64}
                 color="#C7C7CC"
               />
-<!--               <Text style={styles.emptyTitle}>Chưa có đơn hàng nào</Text> -->
+               {/* <Text style={styles.emptyTitle}>Chưa có đơn hàng nào</Text>  */}
                 <Text style={styles.emptyTitle}>
               {activeTab === 'Refunded'
                 ? 'Chưa có đơn hoàn tiền nào'

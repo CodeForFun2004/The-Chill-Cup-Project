@@ -42,14 +42,14 @@ interface OrderDetailScreenProps {
   route: OrderDetailScreenRouteProp;
 }
 
-<!-- // NhiNTL -->
+// <!-- // NhiNTL -->
 const refundReasons = [
   'Đồ uống bị lỗi',
   'Không nhận được đơn',
   'Nhận nhầm sản phẩm',
   'Khác (ghi rõ ở phần lời nhắn)',
 ];
-<!-- Main -->
+// <!-- Main -->
 // Helper to format date and time from an ISO string
 const formatDateTime = (isoString: string | undefined): string => {
   if (!isoString) return 'N/A';
@@ -343,7 +343,7 @@ const OrderDetailScreen: React.FC<OrderDetailScreenProps> = ({ route, navigation
             </TouchableOpacity>
           )}
         
-<!--         Refund order -->
+{/* <!--         Refund order --> */}
           {showRequestRefund && (
             <TouchableOpacity style={styles.refundButton} onPress={handleRequestRefund}>
               <Ionicons name="cash-outline" size={20} color="#FFFFFF" />
@@ -656,12 +656,12 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#FFFFFF',
   },
-  image: {
-    width: 120,
-    height: 120,
-    borderRadius: 8,
-    marginTop: 8,
-  },
+  // image: {
+  //   width: 120,
+  //   height: 120,
+  //   borderRadius: 8,
+  //   marginTop: 8,
+  // },
 
 });
 
