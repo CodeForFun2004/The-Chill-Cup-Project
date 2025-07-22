@@ -11,7 +11,7 @@ import { useCallback, useState } from "react"
 import type { RootState } from "../../redux/rootReducer"
 import { PieChart } from "react-native-chart-kit"
 import type { StaffStackParamList } from "../../navigation/staff/StaffNavigator"
-import { useAppDispatch } from "../../redux/hooks"
+// import { useAppDispatch } from "../../redux/hooks"
 
 
 
@@ -28,7 +28,7 @@ const StaffDashboard: React.FC<StaffDashboardScreenProps> = ({ navigation }) => 
   const dispatch = useDispatch<any>()
 
   const [timeFilter, setTimeFilter] = useState<"week" | "month">("week")
-  const [selectedDate, setSelectedDate] = useState(new Date())
+  //const [selectedDate, setSelectedDate] = useState(new Date())
 
   // Safe selector with fallback values
   const staffState = useSelector((state: RootState) => state.staff)
