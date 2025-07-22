@@ -60,7 +60,7 @@ interface RootState {
 
 const OrderManagementScreen: React.FC<OrderManagementScreenProps> = ({ navigation }) => {
   const dispatch = useDispatch()
-  const { orders, filterStatus, loading, error, shippers, shippersLoading } = useSelector((state: RootState) => state.staff)
+  const { orders, filterStatus, shippers, shippersLoading } = useSelector((state: RootState) => state.staff)
 
   const [selectedOrder, setSelectedOrder] = useState<StaffOrder | null>(null)
   const [showStatusModal, setShowStatusModal] = useState(false)
@@ -172,7 +172,7 @@ const OrderManagementScreen: React.FC<OrderManagementScreenProps> = ({ navigatio
       if (shipper && shipper.status === 'available') {
         try {
           // Gán shipper và cập nhật trạng thái đơn hàng thành 'delivering'
-          await dispatch(assignShipperToOrder({ orderId: selectedOrder._id, assignShipperId: shipperId }) as any)
+          await dispatch(assignShipperToOrder({ orderId: selectedOrder._id, assignShipperId: shipper.staffId }) as any)
           await dispatch(updateOrderStatusByStaff({ orderId: selectedOrder._id, status: 'delivering' }) as any)
           dispatch(fetchStaffOrders({}) as any)
           setShowShipperModal(false)
