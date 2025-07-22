@@ -23,12 +23,14 @@ import { RouteProp } from '@react-navigation/native';
 import { CustomerStackParamList } from '../../navigation/customer/CustomerStackNavigator';
 
 
+
 import * as ImagePicker from 'expo-image-picker';
 
 import { formatCurrency } from '../../utils/formatCurrency'; // Assuming this path is correct
 
 // ✅ Import the Order and OrderItem types directly from your Redux slice
 import { Order, OrderItem } from '../../redux/slices/orderSlice';
+
 
 
 type OrderDetailScreenNavigationProp = NativeStackNavigationProp<
@@ -49,7 +51,7 @@ const refundReasons = [
   'Nhận nhầm sản phẩm',
   'Khác (ghi rõ ở phần lời nhắn)',
 ];
-// <!-- Main -->
+
 // Helper to format date and time from an ISO string
 const formatDateTime = (isoString: string | undefined): string => {
   if (!isoString) return 'N/A';
@@ -67,6 +69,7 @@ const formatDateTime = (isoString: string | undefined): string => {
 
 
 const OrderDetailScreen: React.FC<OrderDetailScreenProps> = ({ route, navigation }) => {
+
   const { order } = route.params;
   const [showRefundPopup, setShowRefundPopup] = useState(false);
 
