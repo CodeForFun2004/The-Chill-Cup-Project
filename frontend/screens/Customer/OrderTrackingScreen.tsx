@@ -14,15 +14,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { formatCurrency } from '../../utils/formatCurrency'; // Assuming this path is correct
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { CustomerStackParamList } from '../../navigation/customer/CustomerStackNavigator';
+import type { Order } from '../../data/orders'; // <--- BẮT BUỘC
 
 // ✅ Import the Order type directly from your Redux slice
 // import { Order } from '../../redux/slices/orderSlice';
 
 // const { width } = Dimensions.get('window');
 
-// ✅ Kiểu chính xác từ Ionicons
 type IoniconsName = keyof typeof Ionicons.glyphMap;
-
 interface TrackingStep {
   id: string;
   title: string;
@@ -52,11 +51,44 @@ const formatDateTime = (isoString: string | undefined): string => {
 const OrderTrackingScreen: React.FC<Props> = ({ route, navigation }) => {
   const { order } = route.params;
 
+
+<!--    Larefundrefund      -->
+  // Lấy trạng thái refund mới nhất (nếu có)
+  const getRefundStatus = () => {
+    if (!order.refundRequests || order.refundRequests.length === 0) return null;
+    const latest = order.refundRequests[0];
+    switch (latest.status) {
+      case 'Pending':
+        return {
+          label: 'Đang yêu cầu hoàn tiền',
+          color: '#FF9800',
+          icon: 'sync-circle' as IoniconsName,
+        };
+      case 'Approved':
+        return {
+          label: 'Đã hoàn tiền',
+          color: '#4CAF50',
+          icon: 'cash-outline' as IoniconsName,
+        };
+      case 'Rejected':
+        return {
+          label: 'Đã từ chối hoàn tiền',
+          color: '#F44336',
+          icon: 'close-circle' as IoniconsName,
+        };
+      default:
+        return null;
+    }
+  };
+
+
+<!--  Main hiện tại  -->
   // Ensure order.status is treated as lowercase for comparisons
   const currentOrderStatus = order.status.toLowerCase();
 
   const getTrackingSteps = (orderStatus: string): TrackingStep[] => {
     // Define all possible steps with default pending status
+
     const baseSteps: TrackingStep[] = [
       {
         id: '1',
@@ -94,6 +126,7 @@ const OrderTrackingScreen: React.FC<Props> = ({ route, navigation }) => {
         icon: 'home',
       },
     ];
+
 
     // Map through steps and update their status based on the current order status
     return baseSteps.map((step, index) => {
@@ -156,6 +189,7 @@ const OrderTrackingScreen: React.FC<Props> = ({ route, navigation }) => {
         time: stepTime || step.time, // Prioritize dynamically set time
       };
     });
+
   };
 
   const getStepColor = (status: TrackingStep['status']) => {
@@ -192,8 +226,12 @@ const OrderTrackingScreen: React.FC<Props> = ({ route, navigation }) => {
     }
   };
 
+
   const trackingSteps = getTrackingSteps(currentOrderStatus);
   const statusInfo = getStatusMessage(currentOrderStatus);
+        
+//           Refund LanNhi
+           const refundStatus = getRefundStatus();
 
   const handleCallSupport = () => {
     if (order.phone) {
@@ -202,6 +240,7 @@ const OrderTrackingScreen: React.FC<Props> = ({ route, navigation }) => {
       console.log('No phone number available for support.');
       // You might want to show an alert or a default support number
     }
+
   };
 
   const handleViewDetails = () => {
@@ -238,8 +277,25 @@ const OrderTrackingScreen: React.FC<Props> = ({ route, navigation }) => {
             </Text>
           </View>
 
+
+          {/* Trạng thái refund (nếu có) */}
+          {refundStatus && (
+            <View style={[
+              styles.statusMessageContainer,
+              { backgroundColor: refundStatus.color + '20', marginTop: 0 }
+            ]}>
+              <Ionicons name={refundStatus.icon} size={20} color={refundStatus.color} />
+              <Text style={[styles.statusMessage, { color: refundStatus.color }]}>
+                {refundStatus.label}
+              </Text>
+            </View>
+          )}
+
+          
+
           {/* ✅ Fixed: Use order.deliveryTime and check for "completed" or "cancelled" status */}
           {order.deliveryTime && currentOrderStatus !== 'completed' && currentOrderStatus !== 'cancelled' && (
+
             <View style={styles.estimatedTimeContainer}>
               <Ionicons name="time-outline" size={16} color="#8E8E93" />
               <Text style={styles.estimatedTime}>Estimated delivery: {order.deliveryTime}</Text>

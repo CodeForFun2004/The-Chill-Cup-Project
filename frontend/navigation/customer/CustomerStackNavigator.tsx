@@ -1,4 +1,3 @@
-// navigation/customer/CustomerStackNavigator.tsx
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
@@ -23,12 +22,16 @@ import { Order } from '../../redux/slices/orderSlice';
 
 import VNPayGatewayScreen from '../../screens/Customer/VNPayGatewayScreen';
 
+
 export type CustomerStackParamList = {
   Home: undefined;
   Cart: undefined;
   Checkout: undefined;
   Vouchers: undefined;
   LoyaltyScreen: undefined;
+
+  RequestRefund: { order: Order };
+
   VNPayGateway: undefined;
   OrderSuccess: { orderId: string };
   OrderHistory: undefined;
@@ -65,5 +68,4 @@ const CustomerStackNavigator = () => {
 };
 
 export default CustomerStackNavigator;
-
 

@@ -17,8 +17,10 @@ import { CustomerStackParamList } from "../../navigation/customer/CustomerStackN
 import axios from "axios";
 import { formatCurrency } from "../../utils/formatCurrency";
 
+
 const { width: screenWidth } = Dimensions.get("window");
 const TAB_WIDTH = (screenWidth - 32) / 4;
+
 
 import { Order } from "../../redux/slices/orderSlice"; // <--- ADD THIS LINE
 
@@ -31,7 +33,9 @@ interface OrderHistoryScreenProps {
   navigation: OrderHistoryScreenNavigationProp;
 }
 
-type TabType = "Preparing" | "Delivering" | "Completed" | "Cancelled";
+
+type TabType = 'Preparing' | 'Delivering' | 'Completed' | 'Cancelled' | 'Refunded';
+
 
 // interface Order {
 //   id: string;
@@ -46,6 +50,7 @@ type TabType = "Preparing" | "Delivering" | "Completed" | "Cancelled";
 //   phoneNumber?: string;
 // }
 
+
 const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({
   navigation,
 }) => {
@@ -54,6 +59,7 @@ const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+
 
   const tabs: {
     key: TabType;
@@ -64,6 +70,7 @@ const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({
     { key: "Delivering", title: "Đang giao", icon: "bicycle-outline" },
     { key: "Completed", title: "Hoàn tất", icon: "checkmark-circle-outline" },
     { key: "Cancelled", title: "Đã hủy", icon: "close-circle-outline" },
+    { key: 'Refunded', title: 'Refunded', icon: 'cash-outline' }, // Tab Refund!
   ];
 
   // Hardcoded Bearer token (expired; replace with a new valid token)
@@ -179,6 +186,9 @@ const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({
           return order.status === "completed";
         case "Cancelled":
           return order.status === "cancelled";
+           case 'Refunded':
+        // Lấy tất cả đơn có ít nhất 1 refundRequests (dù trạng thái nào)
+        return orders.filter(order => order.refundRequests && order.refundRequests.length > 0);
         default:
           return true;
       }
@@ -204,8 +214,11 @@ const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({
       case "Cancelled":
         count = orders.filter((order) => order.status === "cancelled").length;
         break;
+        case 'Refunded':
+        return orders.filter(order => order.refundRequests && order.refundRequests.length > 0).length;
       default:
         count = 0;
+
     }
     // console.log(`Tab Count for ${tabKey}:`, count);
     return count;
@@ -234,14 +247,18 @@ const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({
 
   const getTabColor = (tabKey: TabType): string => {
     switch (tabKey) {
-      case "Preparing":
-        return "#9C27B0";
-      case "Delivering":
-        return "#FF5722";
-      case "Completed":
-        return "#4CAF50";
-      case "Cancelled":
-        return "#F44336";
+
+      case 'Preparing':
+        return '#9C27B0';
+      case 'Delivering':
+        return '#FF5722';
+      case 'Completed':
+        return '#4CAF50';
+      case 'Cancelled':
+        return '#F44336';
+      case 'Refunded':
+        return '#009688';
+
       default:
         return "#007AFF";
     }
@@ -304,6 +321,7 @@ const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({
     );
   };
 
+  // Hiển thị nhãn refund theo status mới nhất (nếu có)
   const renderOrderItem: ListRenderItem<Order> = ({ item }) => (
     <TouchableOpacity
       style={styles.orderCard}
@@ -363,6 +381,17 @@ const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({
           color="#8E8E93"
         />
       </View>
+      {/* Đánh dấu nếu là đơn hoàn tiền */}
+      {item.refundRequests && item.refundRequests.length > 0 && (
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
+          <Ionicons name="cash-outline" size={16} color="#009688" style={{ marginRight: 4 }} />
+          <Text style={{ fontSize: 12, color: '#009688', fontWeight: '500' }}>
+            {item.refundRequests[0].status === 'Pending' && 'Đang yêu cầu hoàn tiền'}
+            {item.refundRequests[0].status === 'Approved' && 'Đã hoàn tiền'}
+            {item.refundRequests[0].status === 'Rejected' && 'Đã từ chối hoàn tiền'}
+          </Text>
+        </View>
+      )}
     </TouchableOpacity>
   );
 
@@ -385,6 +414,7 @@ const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({
       <View style={styles.tabsContainer}>
         <View style={styles.tabsRow}>{tabs.map(renderTabItem)}</View>
       </View>
+
 
       {loading ? (
         <View style={styles.loadingContainer}>
@@ -419,7 +449,12 @@ const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({
                 size={64}
                 color="#C7C7CC"
               />
-              <Text style={styles.emptyTitle}>Chưa có đơn hàng nào</Text>
+<!--               <Text style={styles.emptyTitle}>Chưa có đơn hàng nào</Text> -->
+                <Text style={styles.emptyTitle}>
+              {activeTab === 'Refunded'
+                ? 'Chưa có đơn hoàn tiền nào'
+                : `Chưa có ${activeTab} đơn hàng nào`}
+            </Text>
               <Text style={styles.emptySubtitle}>
                 {activeTab === "Preparing" &&
                   "Hiện không có đơn hàng nào đang được chuẩn bị."}
@@ -428,11 +463,13 @@ const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({
                 {activeTab === "Completed" &&
                   "Không tìm thấy đơn hàng đã hoàn tất."}
                 {activeTab === "Cancelled" && "Không có đơn hàng bị hủy."}
+                {activeTab === 'Refunded' && 'Hiện bạn chưa có đơn hàng nào đã gửi yêu cầu hoàn tiền.'}
               </Text>
             </View>
           }
         />
       )}
+
     </SafeAreaView>
   );
 };
@@ -507,8 +544,12 @@ const styles = StyleSheet.create({
   },
   tabBadgeText: {
     fontSize: 9,
-    fontWeight: "600",
-    color: "#FFFFFF",
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  listContainer: {
+    padding: 16,
+    flexGrow: 1,
   },
   orderCard: {
     backgroundColor: "#FFFFFF",
