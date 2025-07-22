@@ -14,8 +14,9 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { CustomerStackParamList } from '../../navigation/customer/CustomerStackNavigator';
-import axios from 'axios';
 import { formatCurrency } from '../../utils/formatCurrency';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchUserOrders } from '../../redux/slices/userSlice';
 
 const { width: screenWidth } = Dimensions.get('window');
 const TAB_WIDTH = (screenWidth - 32) / 4;
@@ -46,10 +47,12 @@ interface Order {
 
 const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({ navigation }) => {
   const [activeTab, setActiveTab] = useState<TabType>('Preparing');
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+
+  const dispatch = useDispatch<any>();
+  const orders: Order[] = useSelector((state: any) => state.user.orders);
+  const loading: boolean = useSelector((state: any) => state.user.ordersLoading);
+  const error: string | null = useSelector((state: any) => state.user.ordersError);
 
   const tabs: { key: TabType; title: string; icon: keyof typeof Ionicons.glyphMap }[] = [
     { key: 'Preparing', title: 'Đang chuẩn bị', icon: 'restaurant-outline' },
@@ -58,98 +61,33 @@ const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({ navigation }) =
     { key: 'Cancelled', title: 'Đã hủy', icon: 'close-circle-outline' },
   ];
 
-  // Hardcoded Bearer token (expired; replace with a new valid token)
-  const HARDCODED_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4NzBjM2FlY2ZiMmJjNWE0MDEzMzZiYyIsImlhdCI6MTc1MjM2MDU5NiwiZXhwIjoxNzUyMzYxNDk2fQ.qs7UtXpAL3NboQO5qizDROBqufvZP6KFTqPurDnMvAk';
-
-  // Fetch all orders from backend
-  const fetchOrders = async () => {
-    try {
-      setLoading(true);
-      console.log('Fetching orders with token:', HARDCODED_TOKEN);
-      let attempts = 3;
-      let response: { data: any } | undefined;
-
-      while (attempts > 0) {
-        try {
-          response = await axios.get('http://192.168.1.122:8080/api/orders/user', {
-            headers: {
-              Authorization: `Bearer ${HARDCODED_TOKEN}`,
-            },
-            timeout: 15000,
-          });
-          // console.log('API Response:', response.data);
-          break;
-        } catch (err) {
-          attempts--;
-          if (attempts === 0) {
-            throw err;
-          }
-          console.log(`Retrying... ${attempts} attempts left`);
-          await new Promise(resolve => setTimeout(resolve, 1000));
-        }
-      }
-
-      if (!response || !response.data) {
-        setError('No data received from the server.');
-        setOrders([]);
-        return;
-      }
-
-      // Map backend response to frontend Order interface
-      const mappedOrders: Order[] = response.data.map((order: any) => ({
-        id: order._id,
-        orderNumber: order.orderNumber,
-        date: new Date(order.createdAt).toLocaleDateString('en-GB'),
-        time: new Date(order.createdAt).toLocaleTimeString('en-US', {
-          hour: '2-digit',
-          minute: '2-digit',
-        }),
-        status: order.status, // Use lowercase status directly
-        total: order.total,
-        items: order.items.map((item: any) => ({
-          name: item.name,
-          quantity: item.quantity,
-          price: item.price,
-        })),
-        estimatedDelivery: order.deliveryTime,
-        deliveryAddress: order.deliveryAddress,
-        phoneNumber: order.phone,
-      }));
-
-      setOrders(mappedOrders);
-      console.log('Mapped Orders:', mappedOrders);
-      setError(null);
-    } catch (err) {
-      console.error('[Fetch Orders Error]', err);
-      if (axios.isAxiosError(err)) {
-        if (err.code === 'ECONNABORTED') {
-          setError('Request timed out. Please check the server connection.');
-        } else if (err.response) {
-          setError(`Error: ${err.response.status} - ${err.response.data.error || 'Failed to load orders'}`);
-        } else {
-          setError('Network error. Please check your connection or server status.');
-        }
-      } else {
-        setError('An unexpected error occurred.');
-      }
-      setOrders([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  // Fetch orders on mount and set up periodic refresh
   useEffect(() => {
-    fetchOrders();
-  }, []); // Run only once on mount
+    dispatch(fetchUserOrders());
+    
+    // Set up periodic refresh every 30 seconds
+    const interval = setInterval(() => {
+      dispatch(fetchUserOrders());
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, [dispatch]);
+
+  // Log errors to console
+  useEffect(() => {
+    if (error) {
+      console.error('Order History Error:', error);
+    }
+  }, [error]);
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await fetchOrders();
+    await dispatch(fetchUserOrders());
     setRefreshing(false);
   };
 
   const getFilteredOrders = (): Order[] => {
-    const filtered = orders.filter(order => {
+    const filtered = orders.filter((order: Order) => {
       switch (activeTab) {
         case 'Preparing':
           return ['processing', 'preparing', 'ready', 'pending'].includes(order.status);
@@ -163,7 +101,6 @@ const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({ navigation }) =
           return true;
       }
     });
-    // console.log(`Filtered Orders for ${activeTab}:`, filtered);
     return filtered;
   };
 
@@ -171,23 +108,22 @@ const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({ navigation }) =
     let count: number;
     switch (tabKey) {
       case 'Preparing':
-        count = orders.filter(order =>
+        count = orders.filter((order: Order) =>
           ['processing', 'preparing', 'ready', 'pending'].includes(order.status)
         ).length;
         break;
       case 'Delivering':
-        count = orders.filter(order => order.status === 'delivering').length;
+        count = orders.filter((order: Order) => order.status === 'delivering').length;
         break;
       case 'Completed':
-        count = orders.filter(order => order.status === 'completed').length;
+        count = orders.filter((order: Order) => order.status === 'completed').length;
         break;
       case 'Cancelled':
-        count = orders.filter(order => order.status === 'cancelled').length;
+        count = orders.filter((order: Order) => order.status === 'cancelled').length;
         break;
       default:
         count = 0;
     }
-    // console.log(`Tab Count for ${tabKey}:`, count);
     return count;
   };
 
@@ -276,7 +212,7 @@ const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({ navigation }) =
   const renderOrderItem: ListRenderItem<Order> = ({ item }) => (
     <TouchableOpacity
       style={styles.orderCard}
-      onPress={() => navigation.navigate('OrderTracking', { order: item })}
+      onPress={() => navigation.navigate('OrderTracking', { order: item as any })}
       activeOpacity={0.7}
     >
       <View style={styles.orderHeader}>

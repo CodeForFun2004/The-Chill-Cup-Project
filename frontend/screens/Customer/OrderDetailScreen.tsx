@@ -17,6 +17,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
 import { CustomerStackParamList } from '../../navigation/customer/CustomerStackNavigator';
 import { formatCurrency } from '../../utils/formatCurrency';
+import { useSelector } from 'react-redux';
 
 // Import types
 interface OrderItem {
@@ -31,7 +32,7 @@ interface Order {
   orderNumber: string;
   date: string;
   time: string;
-  status: 'Completed' | 'Cancelled' | 'Pending' | 'Processing' | 'Preparing' | 'Ready' | 'Delivering';
+  status: string;
   total: number;
   items: OrderItem[];
   estimatedDelivery?: string;
@@ -52,9 +53,15 @@ interface OrderDetailScreenProps {
 }
 
 const OrderDetailScreen: React.FC<OrderDetailScreenProps> = ({ route, navigation }) => {
-  const { order } = route.params;
+  const { order: passedOrder } = route.params;
+  
+  // Try to get the latest order data from Redux store
+  const orders = useSelector((state: any) => state.user.orders);
+  
+  // Find the current order in Redux store or use the passed order
+  const order = orders.find((o: any) => o.id === (passedOrder as any).id) || passedOrder;
 
-  const getStatusColor = (status: Order['status']): string => {
+  const getStatusColor = (status: string): string => {
     switch (status.toLowerCase()) {
       case 'completed':
         return '#4CAF50';

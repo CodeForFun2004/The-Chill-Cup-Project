@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { formatCurrency } from '../../utils/formatCurrency';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { CustomerStackParamList } from '../../navigation/customer/CustomerStackNavigator';
+import { useSelector } from 'react-redux';
 
 const { width } = Dimensions.get('window');
 
@@ -31,7 +32,13 @@ interface TrackingStep {
 type Props = NativeStackScreenProps<CustomerStackParamList, 'OrderTracking'>;
 
 const OrderTrackingScreen: React.FC<Props> = ({ route, navigation }) => {
-  const { order } = route.params;
+  const { order: passedOrder } = route.params;
+  
+  // Try to get the latest order data from Redux store
+  const orders = useSelector((state: any) => state.user.orders);
+  
+  // Find the current order in Redux store or use the passed order
+  const order = orders.find((o: any) => o.id === (passedOrder as any).id) || passedOrder;
 
   const getTrackingSteps = (orderStatus: typeof order.status): TrackingStep[] => {
     const baseSteps: TrackingStep[] = [
@@ -39,7 +46,7 @@ const OrderTrackingScreen: React.FC<Props> = ({ route, navigation }) => {
         id: '1',
         title: 'Order Confirmed',
         description: 'Your order has been confirmed',
-        time: order.time,
+        time: order.time || new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
         status: 'completed',
         icon: 'checkmark-circle',
       },
@@ -177,7 +184,7 @@ const OrderTrackingScreen: React.FC<Props> = ({ route, navigation }) => {
             </Text>
           </View>
 
-          {order.estimatedDelivery && order.status !== 'Completed' && order.status !== 'Cancelled' && (
+          {order.estimatedDelivery && order.status !== 'completed' && order.status !== 'cancelled' && (
             <View style={styles.estimatedTimeContainer}>
               <Ionicons name="time-outline" size={16} color="#8E8E93" />
               <Text style={styles.estimatedTime}>Estimated delivery: {order.estimatedDelivery}</Text>
@@ -238,7 +245,7 @@ const OrderTrackingScreen: React.FC<Props> = ({ route, navigation }) => {
             <Text style={styles.detailsButtonText}>View Order Details</Text>
           </TouchableOpacity>
 
-          {(order.status === 'Preparing' || order.status === 'Ready' || order.status === 'Delivering') && (
+          {(order.status === 'preparing' || order.status === 'ready' || order.status === 'delivering') && (
             <TouchableOpacity style={styles.supportButton2} onPress={handleCallSupport}>
               <Ionicons name="headset-outline" size={20} color="#007AFF" />
               <Text style={styles.supportButtonText}>Contact Support</Text>

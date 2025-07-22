@@ -23,17 +23,139 @@ interface UserProfile {
   [key: string]: any;
 }
 
+
+interface Order {
+  id: string;
+  orderNumber: string;
+  date: string;
+  time: string;
+  status: string;
+  total: number;
+  items: any[];
+  estimatedDelivery?: string;
+  deliveryAddress?: string;
+  phoneNumber?: string;
+}
+
+// Backend order interface
+interface BackendOrder {
+  _id: string;
+  orderNumber: string;
+  createdAt: string;
+  status: string;
+  total: number;
+  items: any[];
+  deliveryTime?: string;
+  deliveryAddress?: string;
+  phone?: string;
+}
+
+// Mapping function to transform backend data to frontend format
+const mapBackendOrderToFrontend = (backendOrder: BackendOrder): Order => {
+  return {
+    id: backendOrder._id,
+    orderNumber: backendOrder.orderNumber,
+    date: new Date(backendOrder.createdAt).toLocaleDateString('en-GB'),
+    time: new Date(backendOrder.createdAt).toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+    }),
+    status: backendOrder.status,
+    total: backendOrder.total,
+    items: backendOrder.items.map((item: any) => ({
+      name: item.name,
+      quantity: item.quantity,
+      price: item.price,
+    })),
+    estimatedDelivery: backendOrder.deliveryTime,
+    deliveryAddress: backendOrder.deliveryAddress,
+    phoneNumber: backendOrder.phone,
+  };
+};
+
 interface UserState {
   profile: UserProfile | null;
   loading: boolean;
   error: string | null;
+  orders: Order[];
+  ordersLoading: boolean;
+  ordersError: string | null;
+  currentOrder: Order | null;
+  currentOrderLoading: boolean;
+  currentOrderError: string | null;
 }
 
 const initialState: UserState = {
   profile: null,
   loading: false,
   error: null,
+  orders: [],
+  ordersLoading: false,
+  ordersError: null,
+  currentOrder: null,
+  currentOrderLoading: false,
+  currentOrderError: null,
 };
+// Lấy chi tiết đơn hàng theo ID
+export const fetchOrderById = createAsyncThunk(
+  'user/fetchOrderById',
+  async (orderId: string, thunkAPI) => {
+    try {
+      const token = await AsyncStorage.getItem('accessToken');
+      if (!token) {
+        return thunkAPI.rejectWithValue('No access token found. Please log in.');
+      }
+      console.log('Fetching order details for ID:', orderId);
+      
+      const response = await api.get(`/orders/${orderId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      
+      console.log('Raw backend order detail:', response.data);
+      
+      // Map backend data to frontend format
+      const mappedOrder = mapBackendOrderToFrontend(response.data);
+      console.log('Mapped order detail for frontend:', mappedOrder);
+      
+      return mappedOrder;
+    } catch (error: any) {
+      const message = error.response?.data?.message || 'Failed to fetch order details';
+      console.error('Error fetching order details:', error.response?.data || error.message || error);
+      return thunkAPI.rejectWithValue(message);
+    }
+  }
+);
+
+// Lấy lịch sử đơn hàng của user
+export const fetchUserOrders = createAsyncThunk(
+  'user/fetchUserOrders',
+  async (_, thunkAPI) => {
+    try {
+      const token = await AsyncStorage.getItem('accessToken');
+      if (!token) {
+        return thunkAPI.rejectWithValue('No access token found. Please log in.');
+      }
+      console.log('Fetching user orders with token from AsyncStorage');
+      
+      // Đường dẫn API lấy lịch sử đơn hàng của user
+      const response = await api.get('/orders/user', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      
+      console.log('Raw backend orders:', response.data);
+      
+      // Map backend data to frontend format
+      const mappedOrders = response.data.map(mapBackendOrderToFrontend);
+      console.log('Mapped orders for frontend:', mappedOrders);
+      
+      return mappedOrders;
+    } catch (error: any) {
+      const message = error.response?.data?.message || 'Failed to fetch orders';
+      console.error('Error fetching user orders:', error.response?.data || error.message || error);
+      return thunkAPI.rejectWithValue(message);
+    }
+  }
+);
 
 export const fetchUserProfile = createAsyncThunk(
   'user/fetchUserProfile',
@@ -60,6 +182,7 @@ export const fetchUserProfile = createAsyncThunk(
     }
   }
 );
+
 
 const userSlice = createSlice({
   name: 'user',
@@ -88,6 +211,32 @@ const userSlice = createSlice({
       .addCase(fetchUserProfile.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
+      })
+      // Thêm xử lý cho fetchUserOrders
+      .addCase(fetchUserOrders.pending, (state) => {
+        state.ordersLoading = true;
+        state.ordersError = null;
+      })
+      .addCase(fetchUserOrders.fulfilled, (state, action) => {
+        state.ordersLoading = false;
+        state.orders = action.payload;
+      })
+      .addCase(fetchUserOrders.rejected, (state, action) => {
+        state.ordersLoading = false;
+        state.ordersError = action.payload as string;
+      })
+      // Thêm xử lý cho fetchOrderById
+      .addCase(fetchOrderById.pending, (state) => {
+        state.currentOrderLoading = true;
+        state.currentOrderError = null;
+      })
+      .addCase(fetchOrderById.fulfilled, (state, action) => {
+        state.currentOrderLoading = false;
+        state.currentOrder = action.payload;
+      })
+      .addCase(fetchOrderById.rejected, (state, action) => {
+        state.currentOrderLoading = false;
+        state.currentOrderError = action.payload as string;
       });
   },
 });
