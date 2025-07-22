@@ -7,29 +7,47 @@ import {
   StyleSheet,
   SafeAreaView,
   StatusBar,
-  Dimensions,
+  Platform, // Import Platform for StatusBar handling
+  Linking, // Import Linking for call functionality
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { formatCurrency } from '../../utils/formatCurrency';
+import { formatCurrency } from '../../utils/formatCurrency'; // Assuming this path is correct
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { CustomerStackParamList } from '../../navigation/customer/CustomerStackNavigator';
 import { useSelector } from 'react-redux';
 
-const { width } = Dimensions.get('window');
 
-// ✅ Kiểu chính xác từ Ionicons
+// ✅ Import the Order type directly from your Redux slice
+// import { Order } from '../../redux/slices/orderSlice';
+
+// const { width } = Dimensions.get('window');
+
 type IoniconsName = keyof typeof Ionicons.glyphMap;
-
 interface TrackingStep {
   id: string;
   title: string;
   description: string;
-  time?: string;
+  time?: string; // Optional time specific to a step (e.g., "In progress...", "Ready now!")
   status: 'completed' | 'current' | 'pending' | 'cancelled';
   icon: IoniconsName;
 }
 
 type Props = NativeStackScreenProps<CustomerStackParamList, 'OrderTracking'>;
+
+// Helper to format date and time from an ISO string
+const formatDateTime = (isoString: string | undefined): string => {
+  if (!isoString) return 'N/A';
+  try {
+    const date = new Date(isoString);
+    // Use 'en-US' locale for consistent 2-digit month/day, or your desired locale
+    const formattedDate = date.toLocaleDateString('en-US', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    const formattedTime = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }); // 24-hour format
+    return `${formattedDate} • ${formattedTime}`;
+  } catch (error) {
+    console.error("Error formatting date:", error);
+    return 'Invalid Date';
+  }
+};
 
 const OrderTrackingScreen: React.FC<Props> = ({ route, navigation }) => {
   const { order: passedOrder } = route.params;
@@ -40,14 +58,52 @@ const OrderTrackingScreen: React.FC<Props> = ({ route, navigation }) => {
   // Find the current order in Redux store or use the passed order
   const order = orders.find((o: any) => o.id === (passedOrder as any).id) || passedOrder;
 
-  const getTrackingSteps = (orderStatus: typeof order.status): TrackingStep[] => {
+
+// <!--    Larefundrefund      -->
+  // Lấy trạng thái refund mới nhất (nếu có)
+  const getRefundStatus = () => {
+    if (!order.refundRequests || order.refundRequests.length === 0) return null;
+    const latest = order.refundRequests[0];
+    switch (latest.status) {
+      case 'Pending':
+        return {
+          label: 'Đang yêu cầu hoàn tiền',
+          color: '#FF9800',
+          icon: 'sync-circle' as IoniconsName,
+        };
+      case 'Approved':
+        return {
+          label: 'Đã hoàn tiền',
+          color: '#4CAF50',
+          icon: 'cash-outline' as IoniconsName,
+        };
+      case 'Rejected':
+        return {
+          label: 'Đã từ chối hoàn tiền',
+          color: '#F44336',
+          icon: 'close-circle' as IoniconsName,
+        };
+      default:
+        return null;
+    }
+  };
+
+
+// <!--  Main hiện tại  -->
+  // Ensure order.status is treated as lowercase for comparisons
+  const currentOrderStatus = order.status.toLowerCase();
+
+  const getTrackingSteps = (orderStatus: string): TrackingStep[] => {
+    // Define all possible steps with default pending status
+
     const baseSteps: TrackingStep[] = [
       {
         id: '1',
         title: 'Order Confirmed',
         description: 'Your order has been confirmed',
-        time: order.time || new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
-        status: 'completed',
+
+        status: 'pending',
+
         icon: 'checkmark-circle',
       },
       {
@@ -80,76 +136,120 @@ const OrderTrackingScreen: React.FC<Props> = ({ route, navigation }) => {
       },
     ];
 
-    switch (orderStatus.toLowerCase()) {
-      case 'cancelled':
-        return baseSteps.map((step, index) => ({
-          ...step,
-          status: index === 0 ? 'completed' : 'cancelled',
-        }));
-      case 'preparing':
-        return baseSteps.map((step, index) => ({
-          ...step,
-          status: index === 0 ? 'completed' : index === 1 ? 'current' : 'pending',
-          time: index === 1 ? 'In progress...' : step.time,
-        }));
-      case 'ready':
-        return baseSteps.map((step, index) => ({
-          ...step,
-          status: index <= 1 ? 'completed' : index === 2 ? 'current' : 'pending',
-          time: index === 2 ? 'Ready now!' : step.time,
-        }));
-      case 'delivering':
-        return baseSteps.map((step, index) => ({
-          ...step,
-          status: index <= 2 ? 'completed' : index === 3 ? 'current' : 'pending',
-          time: index === 3 ? 'On the way...' : step.time,
-        }));
-      case 'completed':
-        return baseSteps.map((step, index) => ({
-          ...step,
-          status: 'completed',
-          time: index === 4 ? 'Delivered!' : step.time,
-        }));
-      default:
-        return baseSteps;
-    }
+
+    // Map through steps and update their status based on the current order status
+    return baseSteps.map((step, index) => {
+      let stepStatus: TrackingStep['status'] = 'pending';
+      let stepTime: string | undefined = undefined;
+
+      switch (orderStatus) {
+        case 'cancelled':
+          // If order is cancelled, only the first step (confirmed) is completed, others are cancelled.
+          stepStatus = index === 0 ? 'completed' : 'cancelled';
+          if (index === 0 && order.createdAt) {
+            stepTime = formatDateTime(order.createdAt).split(' • ')[1]; // Get only time part
+          }
+          break;
+        case 'pending':
+        case 'processing': // Assuming 'processing' is an initial state before 'preparing'
+          if (index === 0) {
+            stepStatus = 'current';
+            if (order.createdAt) stepTime = formatDateTime(order.createdAt).split(' • ')[1];
+          }
+          break;
+        case 'preparing':
+          if (index === 0) stepStatus = 'completed';
+          if (index === 1) {
+            stepStatus = 'current';
+            stepTime = 'In progress...';
+          }
+          break;
+        case 'ready':
+          if (index <= 1) stepStatus = 'completed';
+          if (index === 2) {
+            stepStatus = 'current';
+            stepTime = 'Ready now!';
+          }
+          break;
+        case 'delivering':
+          if (index <= 2) stepStatus = 'completed';
+          if (index === 3) {
+            stepStatus = 'current';
+            stepTime = 'On the way...';
+          }
+          break;
+        case 'completed':
+          stepStatus = 'completed';
+          if (index === 0 && order.createdAt) {
+            stepTime = formatDateTime(order.createdAt).split(' • ')[1];
+          } else if (index === 4) {
+            // You might want to store a 'deliveredAt' timestamp on your order for accuracy
+            stepTime = 'Delivered!';
+          }
+          break;
+        default:
+          // Fallback for unknown statuses, keep as pending
+          break;
+      }
+
+      return {
+        ...step,
+        status: stepStatus,
+        time: stepTime || step.time, // Prioritize dynamically set time
+      };
+    });
+
   };
 
   const getStepColor = (status: TrackingStep['status']) => {
     switch (status) {
       case 'completed':
-        return '#4CAF50';
+        return '#4CAF50'; // Green
       case 'current':
-        return '#2196F3';
+        return '#2196F3'; // Blue
       case 'cancelled':
-        return '#F44336';
+        return '#F44336'; // Red
       default:
-        return '#E0E0E0';
+        return '#E0E0E0'; // Gray
     }
   };
 
-  const getStatusMessage = (status: typeof order.status) => {
-    switch (status.toLowerCase()) {
+  const getStatusMessage = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return { message: 'Your order is awaiting confirmation', color: '#FFC107' }; // Amber
+      case 'processing':
+        return { message: 'Your order is being processed', color: '#FF9800' }; // Orange
       case 'preparing':
-        return { message: 'Your order is being prepared with care', color: '#FF9800' };
+        return { message: 'Your order is being prepared with care', color: '#FF9800' }; // Orange
       case 'ready':
-        return { message: 'Your order is ready for pickup!', color: '#4CAF50' };
+        return { message: 'Your order is ready for pickup!', color: '#4CAF50' }; // Green
       case 'delivering':
-        return { message: 'Your order is on the way to you', color: '#2196F3' };
+        return { message: 'Your order is on the way to you', color: '#2196F3' }; // Blue
       case 'completed':
-        return { message: 'Order delivered successfully!', color: '#4CAF50' };
+        return { message: 'Order delivered successfully!', color: '#4CAF50' }; // Green
       case 'cancelled':
-        return { message: 'This order has been cancelled', color: '#F44336' };
+        return { message: 'This order has been cancelled', color: '#F44336' }; // Red
       default:
-        return { message: 'Processing your order...', color: '#757575' };
+        return { message: 'Processing your order...', color: '#757575' }; // Gray
     }
   };
 
-  const trackingSteps = getTrackingSteps(order.status);
-  const statusInfo = getStatusMessage(order.status);
+
+  const trackingSteps = getTrackingSteps(currentOrderStatus);
+  const statusInfo = getStatusMessage(currentOrderStatus);
+        
+//           Refund LanNhi
+           const refundStatus = getRefundStatus();
 
   const handleCallSupport = () => {
-    console.log('Calling support...');
+    if (order.phone) {
+      Linking.openURL(`tel:${order.phone}`); // Use Linking to open phone dialer
+    } else {
+      console.log('No phone number available for support.');
+      // You might want to show an alert or a default support number
+    }
+
   };
 
   const handleViewDetails = () => {
@@ -158,6 +258,7 @@ const OrderTrackingScreen: React.FC<Props> = ({ route, navigation }) => {
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* Adjust StatusBar for Android to avoid content overlapping */}
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
       <View style={styles.header}>
@@ -173,8 +274,9 @@ const OrderTrackingScreen: React.FC<Props> = ({ route, navigation }) => {
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 70 }}>
         <View style={styles.orderInfoCard}>
           <View style={styles.orderInfoHeader}>
-            <Text style={styles.orderNumber}>{order.orderNumber}</Text>
-            <Text style={styles.orderDate}>{order.date} • {order.time}</Text>
+            <Text style={styles.orderNumber}>Order #{order.orderNumber}</Text>
+            {/* ✅ Fixed: Use formatDateTime helper for createdAt */}
+            <Text style={styles.orderDate}>{formatDateTime(order.createdAt)}</Text>
           </View>
 
           <View style={[styles.statusMessageContainer, { backgroundColor: statusInfo.color + '20' }]}>
@@ -184,10 +286,29 @@ const OrderTrackingScreen: React.FC<Props> = ({ route, navigation }) => {
             </Text>
           </View>
 
-          {order.estimatedDelivery && order.status !== 'completed' && order.status !== 'cancelled' && (
+
+
+          {/* Trạng thái refund (nếu có) */}
+          {refundStatus && (
+            <View style={[
+              styles.statusMessageContainer,
+              { backgroundColor: refundStatus.color + '20', marginTop: 0 }
+            ]}>
+              <Ionicons name={refundStatus.icon} size={20} color={refundStatus.color} />
+              <Text style={[styles.statusMessage, { color: refundStatus.color }]}>
+                {refundStatus.label}
+              </Text>
+            </View>
+          )}
+
+          
+
+          {/* ✅ Fixed: Use order.deliveryTime and check for "completed" or "cancelled" status */}
+          {order.deliveryTime && currentOrderStatus !== 'completed' && currentOrderStatus !== 'cancelled' && (
+
             <View style={styles.estimatedTimeContainer}>
               <Ionicons name="time-outline" size={16} color="#8E8E93" />
-              <Text style={styles.estimatedTime}>Estimated delivery: {order.estimatedDelivery}</Text>
+              <Text style={styles.estimatedTime}>Estimated delivery: {order.deliveryTime}</Text>
             </View>
           )}
         </View>
@@ -201,8 +322,14 @@ const OrderTrackingScreen: React.FC<Props> = ({ route, navigation }) => {
                   <View style={[styles.stepCircle, { backgroundColor: getStepColor(step.status) }]}>
                     <Ionicons name={step.status === 'cancelled' ? 'close' : step.icon} size={20} color="#FFFFFF" />
                   </View>
+                  {/* Render line only if it's not the last step AND not cancelled (unless it's the first step of a cancelled order) */}
                   {index < trackingSteps.length - 1 && (
-                    <View style={[styles.stepLine, { backgroundColor: getStepColor(trackingSteps[index + 1].status) }]} />
+                    <View style={[
+                      styles.stepLine,
+                      { backgroundColor: getStepColor(trackingSteps[index + 1].status) },
+                      // If the current step is completed and the next is pending/current, make the line active
+                      (step.status === 'completed' || step.status === 'current') && trackingSteps[index + 1].status !== 'cancelled' && styles.activeStepLine
+                    ]} />
                   )}
                 </View>
                 <View style={styles.stepContent}>
@@ -223,10 +350,11 @@ const OrderTrackingScreen: React.FC<Props> = ({ route, navigation }) => {
                 <Ionicons name="location-outline" size={20} color="#8E8E93" />
                 <Text style={styles.deliveryText}>{order.deliveryAddress}</Text>
               </View>
-              {order.phoneNumber && (
+              {/* ✅ Fixed: Use order.phone property from Order type */}
+              {order.phone && (
                 <View style={styles.deliveryRow}>
                   <Ionicons name="call-outline" size={20} color="#8E8E93" />
-                  <Text style={styles.deliveryText}>{order.phoneNumber}</Text>
+                  <Text style={styles.deliveryText}>{order.phone}</Text>
                 </View>
               )}
             </View>
@@ -245,7 +373,9 @@ const OrderTrackingScreen: React.FC<Props> = ({ route, navigation }) => {
             <Text style={styles.detailsButtonText}>View Order Details</Text>
           </TouchableOpacity>
 
-          {(order.status === 'preparing' || order.status === 'ready' || order.status === 'delivering') && (
+
+          {(currentOrderStatus === 'preparing' || currentOrderStatus === 'ready' || currentOrderStatus === 'delivering') && (
+
             <TouchableOpacity style={styles.supportButton2} onPress={handleCallSupport}>
               <Ionicons name="headset-outline" size={20} color="#007AFF" />
               <Text style={styles.supportButtonText}>Contact Support</Text>
@@ -256,7 +386,6 @@ const OrderTrackingScreen: React.FC<Props> = ({ route, navigation }) => {
     </SafeAreaView>
   );
 };
-
 
 const styles = StyleSheet.create({
   container: {
@@ -272,6 +401,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
     borderBottomColor: '#E5E5EA',
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0, // Handle Android status bar
   },
   backButton: {
     padding: 8,
@@ -373,6 +503,10 @@ const styles = StyleSheet.create({
     width: 2,
     height: 30,
     marginTop: 8,
+    backgroundColor: '#E0E0E0', // Default color for pending lines
+  },
+  activeStepLine: {
+    backgroundColor: '#2196F3', // Color for active/completed lines
   },
   stepContent: {
     flex: 1,

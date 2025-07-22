@@ -21,7 +21,7 @@ interface OrderProduct {
 }
 
 // Định nghĩa kiểu dữ liệu cho một mục sản phẩm trong đơn hàng
-interface OrderItem {
+export interface OrderItem {
   productId: OrderProduct; // Đối tượng sản phẩm đã được populate từ backend
   name: string; // Tên sản phẩm, có thể dùng productId.name
   size?: string; // Kích cỡ sản phẩm (ví dụ: "L", "M", "S")
@@ -29,6 +29,18 @@ interface OrderItem {
   quantity: number;
   price: number; // Giá đã tính cho item này (quantity * basePrice + toppingPrices)
   _id: string;
+}
+
+// Định nghĩa kiểu dữ liệu cho yêu cầu hoàn tiền
+export interface RefundRequest {
+  _id: string; // ID của yêu cầu hoàn tiền
+  status: 'Pending' | 'Approved' | 'Rejected'; // Trạng thái của yêu cầu hoàn tiền
+  reason?: string; // Lý do yêu cầu hoàn tiền (tùy chọn)
+  requestedAt: string; // Thời gian yêu cầu hoàn tiền
+  processedAt?: string; // Thời gian xử lý yêu cầu (nếu có)
+  // Bạn có thể thêm các trường khác nếu cần, ví dụ:
+  // amount?: number; // Số tiền hoàn lại
+  // processedBy?: string; // ID của người xử lý yêu cầu (admin/shipper)
 }
 
 // Định nghĩa kiểu dữ liệu đầy đủ cho một đơn hàng (như trả về từ API getOrderById)
@@ -47,13 +59,15 @@ export interface Order {
   phone: string;
   paymentMethod: 'vnpay' | 'cod';
   deliveryTime: string; // Thời gian giao hàng ước tính (ví dụ: "25-35 phút")
-  status: 'pending' | 'confirmed' | 'shipping' | 'delivered' | 'cancelled'; // Trạng thái đơn hàng
+  status: 'pending'| 'processing'| 'preparing'| 'ready'| 'delivering'| 'completed'| 'cancelled'; // Trạng thái đơn hàng
   cancelReason: string | null;
   shipperAssigned: string | null; // ID của shipper nếu có
   appliedPromoCode?: string | null; // Mã khuyến mãi đã áp dụng
   createdAt: string;
   updatedAt?: string;
   __v: number;
+  // Thêm thuộc tính refundRequests vào đây
+  refundRequests?: RefundRequest[]; // Mảng các yêu cầu hoàn tiền
 }
 
 // Payload cho action createOrder

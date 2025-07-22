@@ -1,11 +1,25 @@
 // data/orders.tsx
+
+import { ImageSourcePropType } from 'react-native';
+
+// Kiểu cho từng sản phẩm trong đơn hàng
 export interface OrderItem {
   name: string;
   quantity: number;
   price: number;
-  image?: any;
+  image?: ImageSourcePropType;
 }
 
+// Kiểu cho một yêu cầu hoàn tiền
+export interface RefundRequest {
+  id: string;
+  reason: string;
+  note?: string;
+  status: 'Pending' | 'Approved' | 'Rejected';
+  createdAt: string; // ví dụ: '2024-01-12 09:30'
+}
+
+// Kiểu cho một đơn hàng
 export interface Order {
   id: string;
   orderNumber: string;
@@ -18,7 +32,9 @@ export interface Order {
   deliveryAddress?: string;
   phoneNumber?: string;
   rejectionReason?: string;
+  refundRequests?: RefundRequest[];
 }
+
 // Dữ liệu mẫu ban đầu
 const mockOrderHistory: Order[] = [
   {
@@ -59,6 +75,15 @@ const mockOrderHistory: Order[] = [
       { name: 'Americano', quantity: 1, price: 37500 },
       { name: 'Sandwich', quantity: 1, price: 85000 },
     ],
+    refundRequests: [
+      {
+        id: 'refund-1',
+        reason: 'Đồ uống bị lỗi',
+        status: 'Approved',
+        createdAt: '2024-01-14 09:30',
+        note: 'Ly cà phê đổ ra ngoài',
+      },
+    ],
   },
   {
     id: '4',
@@ -81,6 +106,14 @@ const mockOrderHistory: Order[] = [
     items: [
       { name: 'Frappuccino', quantity: 1, price: 65000 },
       { name: 'Cake', quantity: 1, price: 115000 },
+    ],
+    refundRequests: [
+      {
+        id: 'refund-2',
+        reason: 'Không nhận được đơn',
+        status: 'Pending',
+        createdAt: '2024-01-12 08:00',
+      },
     ],
   },
   {
@@ -121,17 +154,27 @@ const mockOrderHistory: Order[] = [
   },
 ];
 
-// ✅ Mảng này có thể thay đổi trong runtime (dùng khi thêm order mới)
+// Biến runtime để lưu các order hiện tại (có thể bị mutate)
 export let orders: Order[] = [...mockOrderHistory];
 
-// ✅ Hàm thêm order mới (để gọi sau khi đặt hàng thành công)
+// Hàm thêm order mới
 export const addOrder = (newOrder: Order) => {
-  orders.unshift(newOrder); // thêm lên đầu
+  orders.unshift(newOrder);
 };
 
+// Hàm cập nhật trạng thái đơn hàng
 export const updateOrderStatus = (id: string, newStatus: Order['status']) => {
   const index = orders.findIndex((o) => o.id === id);
   if (index >= 0) {
     orders[index].status = newStatus;
+  }
+};
+
+// Hàm thêm request hoàn tiền cho đơn hàng
+export const addRefundRequest = (orderId: string, refund: RefundRequest) => {
+  const order = orders.find((o) => o.id === orderId);
+  if (order) {
+    if (!order.refundRequests) order.refundRequests = [];
+    order.refundRequests.unshift(refund);
   }
 };
