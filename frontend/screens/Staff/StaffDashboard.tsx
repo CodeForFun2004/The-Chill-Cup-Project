@@ -1,16 +1,17 @@
 "use client"
 
 import type React from "react"
-import { View, Text, ScrollView, StyleSheet, SafeAreaView, StatusBar, TouchableOpacity, Dimensions } from "react-native"
+import { View, Text, ScrollView, StyleSheet, SafeAreaView, StatusBar, TouchableOpacity, Dimensions, Alert } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import { useSelector, useDispatch } from "react-redux"
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack"
 import { fetchStaffOrders } from "../../redux/slices/staffSlice"
-import { useFocusEffect } from "@react-navigation/native"
+import { CommonActions, useFocusEffect } from "@react-navigation/native"
 import { useCallback, useState } from "react"
 import type { RootState } from "../../redux/rootReducer"
 import { PieChart } from "react-native-chart-kit"
 import type { StaffStackParamList } from "../../navigation/staff/StaffNavigator"
+import { logoutUser } from "../../redux/slices/authSlice"
 // import { useAppDispatch } from "../../redux/hooks"
 
 
@@ -30,6 +31,29 @@ const StaffDashboard: React.FC<StaffDashboardScreenProps> = ({ navigation }) => 
   const [timeFilter, setTimeFilter] = useState<"week" | "month">("week")
 
   // const [selectedDate, setSelectedDate] = useState(new Date())
+
+
+  // handle logout
+    const handleLogout = () => {
+      Alert.alert('Đăng xuất', 'Bạn có chắc chắn muốn đăng xuất?', [
+        { text: 'Huỷ' },
+        {
+          text: 'Đăng xuất',
+          onPress: async () => { // <--- Thêm async vào đây
+            await dispatch(logoutUser() as any); // <-- Dispatch thunk logoutUser
+            // Sau khi logout thành công (cả Redux và AsyncStorage đã được clear)
+            // Điều hướng người dùng về màn hình khách hoặc màn hình bắt đầu
+            navigation.dispatch(
+              CommonActions.reset({
+                index: 0,
+                routes: [{ name: 'Main' }], // <-- Đảm bảo đây là Guest Navigator hoặc màn hình khởi đầu cho khách
+              })
+            );
+          },
+          style: 'destructive',
+        },
+      ]);
+    };
 
 
   // Safe selector with fallback values
@@ -164,13 +188,7 @@ const StaffDashboard: React.FC<StaffDashboardScreenProps> = ({ navigation }) => 
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.logoutButton}
-            onPress={() => {
-              // Navigate to Auth
-              navigation.reset({
-                index: 0,
-                routes: [{ name: "Auth" }],
-              })
-            }}
+            onPress={handleLogout}
           >
             <Ionicons name="log-out-outline" size={24} color="#DC2626" />
           </TouchableOpacity>

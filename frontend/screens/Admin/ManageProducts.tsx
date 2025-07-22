@@ -267,7 +267,7 @@ function ToppingSelector({ toppings, selectedToppings, onChangeSelected }: {
   return (
     <View style={{ marginBottom: 16 }}>
       <Text style={{ fontWeight: '600', marginBottom: 8, color: '#222' }}>Chọn topping:</Text>
-      <ScrollView style={{ maxHeight: 200 }}>
+      <ScrollView style={{ maxHeight: 400 }}>
         {toppings.map((topping) => {
           const selected = selectedToppings.includes(topping._id);
           return (
@@ -457,6 +457,7 @@ export default function ManageProducts() {
       aspect: [4, 3],
       quality: 0.8,
     });
+
     if (!result.canceled) {
       setImage(result.assets[0].uri);
     }
@@ -574,6 +575,8 @@ export default function ManageProducts() {
 
       Alert.alert('Thành công', `${newBanStatus ? 'Ngừng bán' : 'Bán lại'} sản phẩm thành công`);
     } catch (error: any) {
+      console.log('Error updating ban status:', error);
+      
       Alert.alert('Lỗi', 'Không thể cập nhật trạng thái sản phẩm');
     } finally {
       setLoading(false);
@@ -594,6 +597,8 @@ export default function ManageProducts() {
             setSelectedDrink(null);
             await loadProducts();
           } catch (error: any) {
+            console.log(error);
+            
             Alert.alert('Lỗi', 'Không thể xoá sản phẩm');
           } finally {
             setLoading(false);
@@ -668,8 +673,8 @@ export default function ManageProducts() {
         />
         {searchLoading && (
           <ActivityIndicator 
-            size="small" 
-            color="#007AFF" 
+            size="small"
+            color="#007AFF"
             style={styles.searchLoader}
           />
         )}
@@ -760,13 +765,14 @@ export default function ManageProducts() {
         <Text style={{ color: '#fff', fontSize: 24 }}>+</Text>
       </TouchableOpacity>
 
-      {/* DETAIL MODAL */}
+      {/* DETAIL MODAL - UPDATED */}
       <Modal visible={!!selectedDrink} animationType="slide" transparent={true}>
         <View style={styles.modalOverlay}>
-          <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', alignItems: 'center' }}>
-            <View style={styles.detailContainer}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
-                <Text style={styles.title}>{selectedDrink?.name}</Text>
+          <View style={styles.detailContainer}>
+            {/* Header cố định */}
+            <View style={styles.detailHeader}>
+              <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}>
+                <Text style={styles.detailTitle}>{selectedDrink?.name}</Text>
                 {selectedDrink?.rating && (
                   <View style={{ flexDirection: 'row', alignItems: 'center', marginLeft: 8 }}>
                     <Text style={{ color: '#FFD700', fontSize: 16 }}>⭐</Text>
@@ -774,33 +780,51 @@ export default function ManageProducts() {
                   </View>
                 )}
               </View>
-              
+              <TouchableOpacity onPress={() => setSelectedDrink(null)} style={styles.closeButton}>
+                <Text style={styles.closeButtonText}>✕</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Nội dung cuộn được */}
+            <ScrollView 
+              style={styles.detailScrollView}
+              showsVerticalScrollIndicator={true}
+              contentContainerStyle={styles.detailScrollContent}
+            >
               {renderImage(selectedDrink?.image || null, styles.previewImage)}
-              <Text style={{ fontSize: 16, marginBottom: 8 }}>Giá: {selectedDrink?.basePrice.toLocaleString()} VNĐ</Text>
-              <Text style={{ fontSize: 14, marginBottom: 8 }}>
-                Loại: {selectedDrink ? getCategoryNames(selectedDrink.categoryId) : ''}
-              </Text>
               
-              {selectedDrink && selectedDrink.sizeOptions.length > 0 && (
-                <Text style={{ fontSize: 14, marginBottom: 8 }}>
-                  Size: {getSizeNames(selectedDrink.sizeOptions)}
+              <View style={styles.detailInfoSection}>
+                <Text style={styles.detailInfoText}>
+                  Giá: {selectedDrink?.basePrice.toLocaleString()} VNĐ
                 </Text>
-              )}
-              
-              {selectedDrink && selectedDrink.toppingOptions.length > 0 && (
-                <Text style={{ fontSize: 14, marginBottom: 8 }}>
-                  Topping: {getToppingNames(selectedDrink.toppingOptions)}
+                <Text style={styles.detailInfoText}>
+                  Loại: {selectedDrink ? getCategoryNames(selectedDrink.categoryId) : ''}
                 </Text>
-              )}
-              
-              <Text style={{ fontSize: 14, marginBottom: 12, color: '#666' }}>{selectedDrink?.description}</Text>
-              
-              {selectedDrink?.status === 'new' && (
-                <Text style={{ color: '#FF6B35', fontWeight: 'bold', marginBottom: 8 }}>Món mới phải thử</Text>
-              )}
-              
-              <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 12 }}>
-                <Text style={{ fontWeight: '600', marginRight: 8 }}>
+                
+                {selectedDrink && selectedDrink.sizeOptions.length > 0 && (
+                  <Text style={styles.detailInfoText}>
+                    Size: {getSizeNames(selectedDrink.sizeOptions)}
+                  </Text>
+                )}
+                
+                {selectedDrink && selectedDrink.toppingOptions.length > 0 && (
+                  <Text style={styles.detailInfoText}>
+                    Topping: {getToppingNames(selectedDrink.toppingOptions)}
+                  </Text>
+                )}
+                
+                {selectedDrink?.description && (
+                  <Text style={styles.detailDescription}>{selectedDrink.description}</Text>
+                )}
+                
+                {selectedDrink?.status === 'new' && (
+                  <Text style={styles.newProductLabel}>Món mới phải thử</Text>
+                )}
+              </View>
+
+              {/* Ban/Unban Switch */}
+              <View style={styles.banSwitchContainer}>
+                <Text style={styles.banSwitchLabel}>
                   {selectedDrink?.isBanned ? "Đang NGỪNG bán" : "Đang BÁN"}
                 </Text>
                 <Switch
@@ -813,32 +837,30 @@ export default function ManageProducts() {
                   disabled={loading}
                 />
               </View>
+            </ScrollView>
+
+            {/* Buttons cố định ở dưới */}
+            <View style={styles.detailButtonContainer}>
+              <TouchableOpacity
+                style={[styles.detailButton, styles.editButton]}
+                onPress={() => {
+                  if (selectedDrink) startEdit(selectedDrink);
+                  setSelectedDrink(null);
+                }}
+                disabled={loading}
+              >
+                <Text style={styles.detailButtonText}>Sửa</Text>
+              </TouchableOpacity>
               
-              <View style={{ flexDirection: 'row', marginTop: 20, justifyContent: 'space-between' }}>
-                <TouchableOpacity
-                  style={[styles.saveButton, { flex: 1, marginRight: 8 }]}
-                  onPress={() => {
-                    if (selectedDrink) startEdit(selectedDrink);
-                    setSelectedDrink(null);
-                  }}
-                  disabled={loading}
-                >
-                  <Text style={styles.buttonText}>Sửa</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.cancelButton, { flex: 1 }]}
-                  onPress={() => confirmDelete(selectedDrink!._id)}
-                  disabled={loading}
-                >
-                  <Text style={styles.buttonText}>Xoá</Text>
-                </TouchableOpacity>
-              </View>
-              
-              <TouchableOpacity onPress={() => setSelectedDrink(null)} style={{ marginTop: 10 }}>
-                <Text style={{ color: '#007AFF', textAlign: 'center' }}>Đóng</Text>
+              <TouchableOpacity
+                style={[styles.detailButton, styles.deleteButton]}
+                onPress={() => confirmDelete(selectedDrink!._id)}
+                disabled={loading}
+              >
+                <Text style={styles.detailButtonText}>Xoá</Text>
               </TouchableOpacity>
             </View>
-          </ScrollView>
+          </View>
         </View>
       </Modal>
 
@@ -897,7 +919,7 @@ export default function ManageProducts() {
               />
               
               <TouchableOpacity 
-                style={[styles.uploadBtn, { marginTop: 10, marginBottom: 12 }]} 
+                style={[styles.uploadBtn, { marginTop: 10, marginBottom: 12 }]}
                 onPress={pickImage}
                 disabled={loading}
               >
@@ -906,14 +928,14 @@ export default function ManageProducts() {
               
               {image && (
                 <Image 
-                  source={{ uri: image }} 
-                  style={{ width: '100%', height: 180, borderRadius: 14, marginBottom: 10, alignSelf: 'center' }} 
-                  resizeMode="cover" 
+                  source={{ uri: image }}
+                  style={{ width: '100%', height: 180, borderRadius: 14, marginBottom: 10, alignSelf: 'center' }}
+                  resizeMode="cover"
                 />
               )}
               
               <TouchableOpacity 
-                style={[styles.saveButton, { marginTop: 8 }]} 
+                style={[styles.saveButton, { marginTop: 8 }]}
                 onPress={() => {
                   Alert.alert('Xác nhận', 'Bạn muốn lưu thay đổi?', [
                     { text: 'Không', style: 'cancel' },
@@ -930,7 +952,7 @@ export default function ManageProducts() {
               </TouchableOpacity>
               
               <TouchableOpacity 
-                style={styles.cancelButton} 
+                style={styles.cancelButton}
                 onPress={() => {
                   Alert.alert('Xác nhận', 'Bạn có chắc muốn huỷ và xoá dữ liệu đã nhập?', [
                     { text: 'Không', style: 'cancel' },
@@ -952,7 +974,134 @@ export default function ManageProducts() {
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16, backgroundColor: '#fff' },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
-  detailContainer: { width: '90%', backgroundColor: '#fff', borderRadius: 12, padding: 20, maxHeight: '80%' },
+  
+  // CẬP NHẬT detailContainer
+  detailContainer: { 
+    width: '90%', 
+    backgroundColor: '#fff', 
+    borderRadius: 12, 
+    maxHeight: '85%', // Giới hạn chiều cao
+    flexDirection: 'column' // Đảm bảo layout dọc
+  },
+  
+  // THÊM MỚI - Header của detail modal
+  detailHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  
+  detailTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#007AFF',
+    flex: 1,
+  },
+  
+  closeButton: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: '#f0f0f0',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 10,
+  },
+  
+  closeButtonText: {
+    fontSize: 18,
+    color: '#666',
+    fontWeight: 'bold',
+  },
+  
+  // THÊM MỚI - Scrollable content area
+  detailScrollView: {
+    flex: 1,
+    paddingHorizontal: 20,
+  },
+  
+  detailScrollContent: {
+    paddingVertical: 10,
+  },
+  
+  detailInfoSection: {
+    marginBottom: 20,
+  },
+  
+  detailInfoText: {
+    fontSize: 16,
+    marginBottom: 8,
+    color: '#333',
+  },
+  
+  detailDescription: {
+    fontSize: 14,
+    marginTop: 8,
+    marginBottom: 12,
+    color: '#666',
+    lineHeight: 20,
+  },
+  
+  newProductLabel: {
+    color: '#FF6B35',
+    fontWeight: 'bold',
+    marginTop: 8,
+    fontSize: 14,
+  },
+  
+  banSwitchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 15,
+    borderTopWidth: 1,
+    borderTopColor: '#f0f0f0',
+    marginTop: 10,
+  },
+  
+  banSwitchLabel: {
+    fontWeight: '600',
+    fontSize: 16,
+    color: '#333',
+  },
+  
+  // THÊM MỚI - Fixed bottom buttons
+  detailButtonContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    borderTopWidth: 1,
+    borderTopColor: '#f0f0f0',
+    gap: 10,
+  },
+  
+  detailButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  
+  editButton: {
+    backgroundColor: '#007AFF',
+  },
+  
+  deleteButton: {
+    backgroundColor: '#FF4747',
+  },
+  
+  detailButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+
   formContainer: {
     width: '92%',
     backgroundColor: '#fff',
@@ -972,10 +1121,10 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   searchInput: { 
-    borderWidth: 1, 
-    borderColor: '#ddd', 
-    borderRadius: 8, 
-    padding: 12, 
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    padding: 12,
     backgroundColor: '#f9f9f9',
     paddingRight: 40,
   },
