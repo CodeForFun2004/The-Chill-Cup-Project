@@ -11,14 +11,13 @@ import {
   Image,
 } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
+import type { CompositeNavigationProp } from "@react-navigation/native"
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack"
+import type { BottomTabNavigationProp } from "@react-navigation/bottom-tabs"
 import { useSelector, useDispatch } from "react-redux"
 import type { CustomerStackParamList } from "../../navigation/customer/CustomerStackNavigator"
 import type { Notification } from "../../data/notifications"
 import { markAsRead, markAllAsRead, setActiveFilter } from "../../redux/slices/notificationSlice"
-
-// Types
-type FilterType = "all" | "order" | "promotion"
 
 type NotificationScreenNavigationProp = NativeStackNavigationProp<CustomerStackParamList, "Notifications">
 
@@ -26,7 +25,10 @@ interface NotificationScreenProps {
   navigation: NotificationScreenNavigationProp
 }
 
-// RootState type (bạn cần định nghĩa này trong store)
+// Types
+type FilterType = "all" | "order" | "promotion"
+
+// RootState type
 interface RootState {
   notification: {
     notifications: Notification[]
@@ -43,7 +45,7 @@ const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) =
   const filterOptions: { key: FilterType; title: string; icon: keyof typeof Ionicons.glyphMap }[] = [
     { key: "all", title: "Tất cả", icon: "notifications-outline" },
     { key: "order", title: "Đơn hàng", icon: "receipt-outline" },
-    { key: "promotion", title: "Khuyến mãi", icon: "pricetag-outline" },
+    { key: "promotion", title: "Sales", icon: "pricetag-outline" },
   ]
 
   // Get filtered notifications
@@ -60,16 +62,16 @@ const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) =
       case "order":
         return {
           icon: "receipt",
-          color: "#10B981", // Emerald-500
-          bgColor: "#D1FAE5", // Emerald-100
-          lightBg: "#ECFDF5", // Emerald-50
+          color: "#10B981",
+          bgColor: "#D1FAE5",
+          lightBg: "#ECFDF5",
         }
       case "promotion":
         return {
           icon: "pricetag",
-          color: "#059669", // Emerald-600
-          bgColor: "#A7F3D0", // Emerald-200
-          lightBg: "#F0FDF4", // Emerald-50
+          color: "#059669",
+          bgColor: "#A7F3D0",
+          lightBg: "#F0FDF4",
         }
       default:
         return {
@@ -87,7 +89,6 @@ const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) =
 
     switch (notification.actionType) {
       case "track_order":
-        // Navigate to order tracking với mock order data
         const mockOrder = {
           id: notification.orderNumber?.replace("#", "") || "1",
           orderNumber: notification.orderNumber || "#ORD-001",
@@ -102,10 +103,10 @@ const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) =
           estimatedDelivery: "15 phút",
           deliveryAddress: "123 Đường Cà Phê, Thành phố Brew",
         }
-        navigation.navigate("OrderTracking", { order: mockOrder })
+
+        navigation.navigate("OrderTracking", {order: mockOrder})
         break
       case "view_promotion":
-        // Navigate to promotions/menu screen (placeholder)
         console.log("Điều hướng đến khuyến mãi:", notification.promotionCode)
         break
       default:
@@ -142,13 +143,15 @@ const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) =
         onPress={() => handleFilterChange(filter.key)}
         activeOpacity={0.7}
       >
-        <Ionicons name={filter.icon} size={18} color={isActive ? "#10B981" : "#6B7280"} />
-        <Text style={[styles.filterTabText, { color: isActive ? "#10B981" : "#6B7280" }]}>{filter.title}</Text>
-        {count > 0 && (
-          <View style={[styles.filterBadge, { backgroundColor: isActive ? "#10B981" : "#6B7280" }]}>
-            <Text style={styles.filterBadgeText}>{count}</Text>
-          </View>
-        )}
+        <View style={styles.filterTabContent}>
+          <Ionicons name={filter.icon} size={18} color={isActive ? "#10B981" : "#6B7280"} />
+          <Text style={[styles.filterTabText, { color: isActive ? "#10B981" : "#6B7280" }]}>{filter.title}</Text>
+          {count > 0 && (
+            <View style={[styles.filterBadge, { backgroundColor: isActive ? "#10B981" : "#6B7280" }]}>
+              <Text style={styles.filterBadgeText}>{count}</Text>
+            </View>
+          )}
+        </View>
       </TouchableOpacity>
     )
   }
@@ -224,27 +227,31 @@ const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) =
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
-      {/* Header */}
+      {/* Header - Fixed alignment */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="#1F2937" />
-        </TouchableOpacity>
+        <View style={styles.headerLeft}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+            <Ionicons name="arrow-back" size={24} color="#1F2937" />
+          </TouchableOpacity>
+        </View>
 
         <View style={styles.headerCenter}>
           <Text style={styles.headerTitle}>Thông báo</Text>
-          {unreadCount > 0 && (
+          {/* {unreadCount > 0 && (
             <View style={styles.headerBadge}>
               <Text style={styles.headerBadgeText}>{unreadCount}</Text>
             </View>
-          )}
+          )} */}
         </View>
 
-        <TouchableOpacity onPress={handleMarkAllAsRead} style={styles.markAllButton} disabled={unreadCount === 0}>
-          <Text style={[styles.markAllText, { color: unreadCount > 0 ? "#10B981" : "#9CA3AF" }]}>Đánh dấu</Text>
-        </TouchableOpacity>
+        <View style={styles.headerRight}>
+          <TouchableOpacity onPress={handleMarkAllAsRead} style={styles.markAllButton} disabled={unreadCount === 0}>
+            <Text style={[styles.markAllText, { color: unreadCount > 0 ? "#10B981" : "#9CA3AF" }]}>Đánh dấu</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
-      {/* Filter Tabs */}
+      {/* Filter Tabs - Fixed alignment */}
       <View style={styles.filterContainer}>
         <View style={styles.filterTabs}>{filterOptions.map(renderFilterTab)}</View>
       </View>
@@ -277,12 +284,13 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#F9FAFB",
   },
+  // 🔧 Fixed Header Styles
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 16,
     backgroundColor: "#FFFFFF",
     borderBottomWidth: 1,
     borderBottomColor: "#E5E7EB",
@@ -291,20 +299,34 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 2,
     elevation: 2,
+    minHeight: 60, // Ensure consistent height
+  },
+  headerLeft: {
+    width: 60,
+    alignItems: "flex-start",
+    justifyContent: "center",
+  },
+  headerCenter: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  headerRight: {
+    width: 80,
+    alignItems: "flex-end",
+    justifyContent: "center",
   },
   backButton: {
     padding: 8,
-  },
-  headerCenter: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1,
-    justifyContent: "center",
+    borderRadius: 8,
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: "600",
     color: "#1F2937",
+    textAlign: "center",
+    marginLeft: 14
   },
   headerBadge: {
     backgroundColor: "#EF4444",
@@ -323,53 +345,65 @@ const styles = StyleSheet.create({
   },
   markAllButton: {
     padding: 8,
+    borderRadius: 8,
   },
   markAllText: {
     fontSize: 14,
     fontWeight: "500",
+    textAlign: "center",
   },
-  // Filter Tabs
+  // 🔧 Fixed Filter Tabs Styles
   filterContainer: {
     backgroundColor: "#FFFFFF",
     borderBottomWidth: 1,
     borderBottomColor: "#E5E7EB",
-    paddingHorizontal: 16,
+    paddingVertical: 6,
   },
   filterTabs: {
     flexDirection: "row",
-    justifyContent: "space-around",
+    justifyContent: "space-between", // Changed from space-around to space-evenly
+    alignItems: "center",
+    // paddingHorizontal: 16,
   },
   filterTab: {
-    flexDirection: "row",
+    flex: 1, // Equal width for all tabs
     alignItems: "center",
-    paddingVertical: 14,
-    paddingHorizontal: 20,
+    justifyContent: "center",
+    paddingVertical: 12,
+    paddingHorizontal: 8,
     borderRadius: 25,
-    position: "relative",
+    marginHorizontal: 4, // Small margin between tabs
   },
   activeFilterTab: {
     backgroundColor: "#ECFDF5",
   },
+  filterTabContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    flexWrap: "wrap", // Allow wrapping if needed
+  },
   filterTabText: {
-    fontSize: 14,
+    fontSize: 13, // Slightly smaller to fit better
     fontWeight: "500",
     marginLeft: 6,
+    textAlign: "center",
   },
   filterBadge: {
     borderRadius: 10,
-    minWidth: 20,
-    height: 20,
+    minWidth: 18,
+    height: 18,
     alignItems: "center",
     justifyContent: "center",
-    marginLeft: 6,
-    paddingHorizontal: 6,
+    marginLeft: 4,
+    paddingHorizontal: 4,
   },
   filterBadgeText: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: "600",
     color: "#FFFFFF",
   },
-  // Notifications List
+  // Notifications List Styles (unchanged)
   listContainer: {
     padding: 16,
     flexGrow: 1,
@@ -457,7 +491,6 @@ const styles = StyleSheet.create({
   actionContainer: {
     padding: 4,
   },
-  // Promotion Image
   promotionImageContainer: {
     marginTop: 12,
     position: "relative",
@@ -482,7 +515,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#FFFFFF",
   },
-  // Empty State
   emptyContainer: {
     flex: 1,
     alignItems: "center",

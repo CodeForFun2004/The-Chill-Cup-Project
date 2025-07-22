@@ -1,21 +1,52 @@
 import React from 'react';
-import { View, Text, Image, StyleSheet, ImageSourcePropType, TouchableOpacity } from 'react-native';
+
+import { View, Text, Image, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { useDispatch } from 'react-redux';
+import { AppDispatch } from '../../redux/store';
+import { addItemToCart } from '../../redux/slices/cartSlice';
+import splash from '../../assets/images/bubble-tea/hong-tra-sua-tran-chau.png'; 
 
 type ProductCardProps = {
-  image: ImageSourcePropType;
-  name: string;
-  price: string;
+  product: any; // Should be typed properly, but using any for now
   onPress?: () => void;
 };
 
-const ProductCard = ({ image, name, price, onPress }: ProductCardProps) => {
+const ProductCard = ({ product, onPress }: ProductCardProps) => {
+  const dispatch = useDispatch<AppDispatch>();
+
+  const handleAddToCart = async () => {
+    if (!product) return;
+    // Use default size/toppings if available, else fallback
+    const size = product.sizeOptions?.[0]?.size || "M";
+    const itemToSend = {
+      productId: product.id,
+      size,
+      toppings: [],
+      quantity: 1,
+    };
+    try {
+      await dispatch(addItemToCart(itemToSend)).unwrap();
+      Alert.alert('Thành công', `Đã thêm 1 ${product.name} vào giỏ hàng!`);
+    } catch {
+      Alert.alert('Lỗi', 'Không thể thêm sản phẩm vào giỏ hàng.');
+    }
+  };
+
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.8} style={styles.card}>
-      <Image source={image} style={styles.image} />
-      <Text style={styles.name}>{name}</Text>
+      {/* <Image source={{ uri: product.image }} style={styles.image} /> */}
+      <Image
+  source={
+    typeof product.image === 'string' && product.image
+      ? { uri: product.image }
+      :splash // Đường dẫn ảnh mặc định
+  }
+  style={styles.image}
+/>
+      <Text style={styles.name}>{product.name}</Text>
       <View style={styles.bottomContainer}>
-        <Text style={styles.price}>{price}</Text>
-        <TouchableOpacity style={styles.addButton}>
+        <Text style={styles.price}>{product.price ? `${product.price}₫` : ''}</Text>
+        <TouchableOpacity style={styles.addButton} onPress={handleAddToCart}>
           <Text style={styles.addButtonText}>+</Text>
         </TouchableOpacity>
       </View>

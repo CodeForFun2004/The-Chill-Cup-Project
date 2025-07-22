@@ -8,9 +8,10 @@ import {
   SafeAreaView,
   ScrollView,
   Dimensions,
+  Modal,
 } from 'react-native';
 import { useDispatch } from 'react-redux';
-import { logout } from '../../redux/slices/authSlice';
+import { logoutUser } from '../../redux/slices/authSlice'; 
 import { CommonActions, useNavigation } from '@react-navigation/native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LineChart, BarChart } from 'react-native-chart-kit';
@@ -25,18 +26,22 @@ const AdminDashboard = () => {
   const dispatch = useDispatch();
   const navigation = useNavigation<BottomTabNavigationProp<AdminTabParamList>>();
   const [isActionsExpanded, setIsActionsExpanded] = useState(true);
+  // Thêm state cho popup cảnh báo hết hàng
+  const [showLowStockModal, setShowLowStockModal] = useState(false);
 
   const handleLogout = () => {
     Alert.alert('Đăng xuất', 'Bạn có chắc chắn muốn đăng xuất?', [
       { text: 'Huỷ' },
       {
         text: 'Đăng xuất',
-        onPress: () => {
-          dispatch(logout());
+        onPress: async () => { // <--- Thêm async vào đây
+          await dispatch(logoutUser() as any); // <-- Dispatch thunk logoutUser
+          // Sau khi logout thành công (cả Redux và AsyncStorage đã được clear)
+          // Điều hướng người dùng về màn hình khách hoặc màn hình bắt đầu
           navigation.dispatch(
             CommonActions.reset({
               index: 0,
-              routes: [{ name: 'Login' }],
+              routes: [{ name: 'Main' }], // <-- Đảm bảo đây là Guest Navigator hoặc màn hình khởi đầu cho khách
             })
           );
         },
@@ -49,14 +54,68 @@ const AdminDashboard = () => {
     (navigation as any).navigate(task.screen);
   };
 
+  // Đếm số lượng cảnh báo hết hàng
+  const lowStockCount = mockLowStock.length;
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Dashboard</Text>
-        <TouchableOpacity onPress={handleLogout}>
-          <Ionicons name="log-out-outline" size={26} color="#e84118" />
-        </TouchableOpacity>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          {/* Icon chuông cảnh báo */}
+          <TouchableOpacity onPress={() => setShowLowStockModal(true)} style={{ marginRight: 18 }}>
+            <View>
+              <Ionicons name="notifications-outline" size={26} color={lowStockCount > 0 ? '#e67e22' : '#636e72'} />
+              {lowStockCount > 0 && (
+                <View style={{
+                  position: 'absolute',
+                  top: -4,
+                  right: -4,
+                  backgroundColor: '#e74c3c',
+                  borderRadius: 8,
+                  minWidth: 16,
+                  height: 16,
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  paddingHorizontal: 3,
+                }}>
+                  <Text style={{ color: '#fff', fontSize: 10, fontWeight: 'bold' }}>{lowStockCount}</Text>
+                </View>
+              )}
+            </View>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={handleLogout}>
+            <Ionicons name="log-out-outline" size={26} color="#e84118" />
+          </TouchableOpacity>
+        </View>
       </View>
+
+      {/* Modal cảnh báo hết hàng */}
+      <Modal
+        visible={showLowStockModal}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setShowLowStockModal(false)}
+      >
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.25)', justifyContent: 'center', alignItems: 'center' }}>
+          <View style={{ backgroundColor: '#fff', borderRadius: 14, padding: 22, width: '85%', maxWidth: 400 }}>
+            <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#d35400', marginBottom: 12 }}>Cảnh báo sắp hết hàng</Text>
+            {mockLowStock.length === 0 ? (
+              <Text style={{ color: '#636e72' }}>Tất cả nguyên liệu đều đủ tồn kho.</Text>
+            ) : (
+              mockLowStock.map(item => (
+                <View key={item.name} style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <Text style={{ color: '#e17055', fontWeight: 'bold' }}>{item.name}</Text>
+                  <Text style={{ color: '#e74c3c' }}>Còn lại: {item.stock}</Text>
+                </View>
+              ))
+            )}
+            <TouchableOpacity onPress={() => setShowLowStockModal(false)} style={{ marginTop: 18, alignSelf: 'flex-end' }}>
+              <Text style={{ color: '#007AFF', fontWeight: 'bold', fontSize: 15 }}>Đóng</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
 
       <ScrollView
         style={styles.scrollView}
@@ -86,16 +145,15 @@ const AdminDashboard = () => {
 // Sub-components for better structure
 const StatsGrid = () => {
   const statsData = [
-    { value: '3.5M', label: 'Doanh thu', icon: 'cash-outline', color: '#1abc9c' },
-    { value: '235', label: 'Đơn hàng', icon: 'receipt-outline', color: '#3498db' },
-    { value: '12', label: 'Sản phẩm mới', icon: 'cube-outline', color: '#9b59b6' },
-    { value: '85%', label: 'Tăng trưởng', icon: 'trending-up-outline', color: '#e67e22' },
+    { value: mockStats.totalSales, label: 'Doanh thu', icon: 'cash-outline', color: '#1abc9c' },
+    { value: mockStats.totalOrders, label: 'Đơn hàng', icon: 'receipt-outline', color: '#3498db' },
+    { value: mockStats.activeUsers, label: 'Active users/ngày', icon: 'people-outline', color: '#e17055' },
+    { value: mockStats.growth, label: 'Tăng trưởng', icon: 'trending-up-outline', color: '#e67e22' },
   ];
-
   return (
     <View style={styles.statsGridContainer}>
       {statsData.map(item => (
-        <View key={item.label} style={[styles.statCard, { borderLeftColor: item.color }]}>
+        <View key={item.label} style={[styles.statCard, { borderLeftColor: item.color }]}> 
           <Ionicons name={item.icon as any} size={28} color={item.color} />
           <View style={styles.statCardText}>
             <Text style={styles.statCardValue}>{item.value}</Text>
@@ -108,24 +166,19 @@ const StatsGrid = () => {
 };
 
 const ChartsSection = () => {
-  const lineChartData = {
-    labels: ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'],
-    datasets: [{ data: [2.1, 3.5, 2.8, 4.2, 3.9, 5.1, 4.5] }],
-  };
-
+  const lineChartData = mockDailyRevenue;
   const barChartData = {
     labels: ['Th1', 'Th2', 'Th3', 'Th4', 'Th5', 'Th6'],
     datasets: [{ data: [20, 45, 28, 80, 99, 43] }],
   };
-
   return (
     <>
       <View style={styles.chartContainer}>
-        <Text style={styles.sectionTitle}>Doanh thu tuần (triệu)</Text>
+        <Text style={styles.sectionTitle}>Doanh thu từng ngày (triệu)</Text>
         <LineChart
           data={lineChartData}
           width={screenWidth - 60}
-          height={220}
+          height={180}
           chartConfig={chartConfig}
           style={styles.chartStyle}
           yAxisLabel=""
@@ -138,7 +191,7 @@ const ChartsSection = () => {
         <BarChart
           data={barChartData}
           width={screenWidth - 60}
-          height={220}
+          height={180}
           chartConfig={chartConfig}
           style={styles.chartStyle}
           yAxisLabel=""
@@ -146,6 +199,8 @@ const ChartsSection = () => {
           fromZero
         />
       </View>
+      <BestSellingDrinks />
+      {/* Đã bỏ LowStockAlerts khỏi đây */}
     </>
   );
 };
@@ -187,6 +242,34 @@ const ActionsGrid = ({ onTaskPress }: { onTaskPress: (task: any) => void }) => {
   );
 };
 
+// Hiển thị top đồ uống bán chạy nhất
+const BestSellingDrinks = () => (
+  <View style={styles.chartContainer}>
+    <Text style={styles.sectionTitle}>Top đồ uống bán chạy</Text>
+    {mockBestSellingDrinks.map((item, idx) => (
+      <View key={item.name} style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+        <Text style={{ fontWeight: 'bold' }}>{idx + 1}. {item.name}</Text>
+        <Text style={{ color: '#636e72' }}>{item.sold} ly</Text>
+      </View>
+    ))}
+  </View>
+);
+// Hiển thị cảnh báo hết hàng
+const LowStockAlerts = () => (
+  <View style={styles.chartContainer}>
+    <Text style={[styles.sectionTitle, { color: '#d35400' }]}>Cảnh báo sắp hết hàng</Text>
+    {mockLowStock.length === 0 ? (
+      <Text style={{ color: '#636e72' }}>Tất cả nguyên liệu đều đủ tồn kho.</Text>
+    ) : (
+      mockLowStock.map(item => (
+        <View key={item.name} style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+          <Text style={{ color: '#e17055', fontWeight: 'bold' }}>{item.name}</Text>
+          <Text style={{ color: '#e74c3c' }}>Còn lại: {item.stock}</Text>
+        </View>
+      ))
+    )}
+  </View>
+);
 
 
 // Chart Configuration
@@ -341,5 +424,27 @@ statCardText: {
 /* Removed duplicate actionButton style */
 
 });
+
+// ===== MOCK DATA (có thể thay bằng API sau này) =====
+const mockStats = {
+  totalSales: '3.5M',
+  totalOrders: 235,
+  activeUsers: 120, // Số người dùng hoạt động/ngày
+  growth: '85%',
+  newProducts: 12,
+};
+const mockDailyRevenue = {
+  labels: ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'],
+  datasets: [{ data: [1.2, 2.5, 1.8, 3.2, 2.9, 4.1, 3.5] }],
+};
+const mockBestSellingDrinks = [
+  { name: 'Trà sữa truyền thống', sold: 120 },
+  { name: 'Cà phê muối', sold: 98 },
+  { name: 'Matcha Latte', sold: 87 },
+];
+const mockLowStock = [
+  { name: 'Trân châu đen', stock: 8 },
+  { name: 'Sữa tươi', stock: 5 },
+];
 
 export default AdminDashboard;

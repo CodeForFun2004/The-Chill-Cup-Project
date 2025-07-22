@@ -1,15 +1,19 @@
 import React from 'react';
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import ProductCard from './ProductCard';
-import { ImageSourcePropType } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { CustomerHomeStackParamList } from '../../navigation/customer/CustomerHomeStack';
 
 type Product = {
+  id: string;
   name: string;
-  image: ImageSourcePropType;
+  image: string; // Sửa kiểu về string (uri)
   price: string;
+  description?: string;
+  basePrice?: number;
+  sizeOptions?: any;
+  toppingOptions?: any;
 };
 
 type ProductSectionProps = {
@@ -26,18 +30,11 @@ const ProductSection = ({ title, products }: ProductSectionProps) => {
       <ScrollView contentContainerStyle={styles.productContainer}>
         {products.map((item: Product, index: number) => (
           <ProductCard
-            key={index}
-            image={item.image}
-            name={item.name}
-            price={item.price}
+            key={item.id || index}
+            product={item}
             onPress={() =>
               navigation.navigate('DrinkDetailScreen', {
-                drink: {
-                  name: item.name,
-                  image: item.image,
-                  price: item.price,
-                  id: String(index),
-                },
+                drink: item,
               })
             }
           />
