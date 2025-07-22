@@ -14,6 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { formatCurrency } from '../../utils/formatCurrency'; // Assuming this path is correct
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { CustomerStackParamList } from '../../navigation/customer/CustomerStackNavigator';
+import { useSelector } from 'react-redux';
 
 
 // ✅ Import the Order type directly from your Redux slice
@@ -49,7 +50,13 @@ const formatDateTime = (isoString: string | undefined): string => {
 };
 
 const OrderTrackingScreen: React.FC<Props> = ({ route, navigation }) => {
-  const { order } = route.params;
+  const { order: passedOrder } = route.params;
+  
+  // Try to get the latest order data from Redux store
+  const orders = useSelector((state: any) => state.user.orders);
+  
+  // Find the current order in Redux store or use the passed order
+  const order = orders.find((o: any) => o.id === (passedOrder as any).id) || passedOrder;
 
 
 // <!--    Larefundrefund      -->
@@ -94,7 +101,9 @@ const OrderTrackingScreen: React.FC<Props> = ({ route, navigation }) => {
         id: '1',
         title: 'Order Confirmed',
         description: 'Your order has been confirmed',
+
         status: 'pending',
+
         icon: 'checkmark-circle',
       },
       {
@@ -278,6 +287,7 @@ const OrderTrackingScreen: React.FC<Props> = ({ route, navigation }) => {
           </View>
 
 
+
           {/* Trạng thái refund (nếu có) */}
           {refundStatus && (
             <View style={[
@@ -363,7 +373,9 @@ const OrderTrackingScreen: React.FC<Props> = ({ route, navigation }) => {
             <Text style={styles.detailsButtonText}>View Order Details</Text>
           </TouchableOpacity>
 
+
           {(currentOrderStatus === 'preparing' || currentOrderStatus === 'ready' || currentOrderStatus === 'delivering') && (
+
             <TouchableOpacity style={styles.supportButton2} onPress={handleCallSupport}>
               <Ionicons name="headset-outline" size={20} color="#007AFF" />
               <Text style={styles.supportButtonText}>Contact Support</Text>

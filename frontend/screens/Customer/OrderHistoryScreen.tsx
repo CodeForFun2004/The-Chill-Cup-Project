@@ -10,6 +10,7 @@ import {
   ListRenderItem,
   Dimensions,
   RefreshControl,
+
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -19,6 +20,7 @@ import { formatCurrency } from "../../utils/formatCurrency";
 
 
 const { width: screenWidth } = Dimensions.get("window");
+
 const TAB_WIDTH = (screenWidth - 32) / 4;
 
 
@@ -32,6 +34,7 @@ type OrderHistoryScreenNavigationProp = NativeStackNavigationProp<
 interface OrderHistoryScreenProps {
   navigation: OrderHistoryScreenNavigationProp;
 }
+
 
 
 type TabType = 'Preparing' | 'Delivering' | 'Completed' | 'Cancelled' | 'Refunded';
@@ -163,18 +166,24 @@ const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({
     }
   };
 
+
+  // Log errors to console
   useEffect(() => {
-    fetchOrders();
-  }, []); // Run only once on mount
+    if (error) {
+      console.error('Order History Error:', error);
+    }
+  }, [error]);
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await fetchOrders();
+    await dispatch(fetchUserOrders());
     setRefreshing(false);
   };
 
   const getFilteredOrders = (): Order[] => {
+
     const filtered = orders.filter((order) => {
+
       switch (activeTab) {
         case "Preparing":
           return ["processing", "preparing", "ready", "pending"].includes(
@@ -193,13 +202,13 @@ const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({
           return true;
       }
     });
-    // console.log(`Filtered Orders for ${activeTab}:`, filtered);
     return filtered;
   };
 
   const getTabCount = (tabKey: TabType): number => {
     let count: number;
     switch (tabKey) {
+
       case "Preparing":
         count = orders.filter((order) =>
           ["processing", "preparing", "ready", "pending"].includes(order.status)
@@ -220,7 +229,6 @@ const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({
         count = 0;
 
     }
-    // console.log(`Tab Count for ${tabKey}:`, count);
     return count;
   };
 
@@ -325,7 +333,9 @@ const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({
   const renderOrderItem: ListRenderItem<Order> = ({ item }) => (
     <TouchableOpacity
       style={styles.orderCard}
+
       onPress={() => navigation.navigate("OrderTracking", { order: item })}
+
       activeOpacity={0.7}
     >
       <View style={styles.orderHeader}>
