@@ -45,7 +45,7 @@ const ProductCard = ({ product, onPress }: ProductCardProps) => {
 />
       <Text style={styles.name}>{product.name}</Text>
       <View style={styles.bottomContainer}>
-        <Text style={styles.price}>{product.price ? `${product.price}₫` : ''}</Text>
+        <Text style={styles.price}>{product.price ? `${product.price}` : ''}</Text>
         <TouchableOpacity style={styles.addButton} onPress={handleAddToCart}>
           <Text style={styles.addButtonText}>+</Text>
         </TouchableOpacity>
