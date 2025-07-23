@@ -20,7 +20,7 @@ import { Order } from '../../redux/slices/orderSlice';
 // vì chúng ta sẽ dùng định nghĩa đầy đủ từ orderSlice.ts
 
 
-import VNPayGatewayScreen from '../../screens/Customer/VNPayGatewayScreen';
+import VietQRGatewayScreen from '../../screens/Customer/VietQRGatewayScreen';
 
 
 export type CustomerStackParamList = {
@@ -32,7 +32,7 @@ export type CustomerStackParamList = {
 
   RequestRefund: { order: Order };
 
-  VNPayGateway: undefined;
+ VietQRGateway: { orderId: string };
   OrderSuccess: { orderId: string };
   OrderHistory: undefined;
   Notifications: undefined;
@@ -57,7 +57,7 @@ const CustomerStackNavigator = () => {
       <Stack.Screen name="Checkout" component={CheckoutScreen} />
       <Stack.Screen name="Vouchers" component={VouchersScreen} />
       <Stack.Screen name="LoyaltyScreen" component={LoyaltyScreen} />
-      <Stack.Screen name="VNPayGateway" component={VNPayGatewayScreen} />
+      <Stack.Screen name="VietQRGateway" component={VietQRGatewayScreen} options={{ headerShown: false }}/>
       <Stack.Screen name="OrderSuccess" component={OrderSuccessScreen} options={{ headerShown: false }} />
       <Stack.Screen name="OrderHistory" component={OrderHistoryScreen} />
       <Stack.Screen name="OrderDetail" component={OrderDetailScreen} options={{ headerShown: false }}/>

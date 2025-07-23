@@ -4,7 +4,8 @@ import { useSelector } from 'react-redux';
 import { useNavigation } from '@react-navigation/native';
 import { useAppDispatch } from '../../redux/hooks';
 import { RootState } from '../../redux/rootReducer';
-import { createOrder, fetchOrderById, resetOrderState } from '../../redux/slices/orderSlice';
+//import { createOrder, fetchOrderById, resetOrderState } from '../../redux/slices/orderSlice';
+import { createOrder, resetOrderState } from '../../redux/slices/orderSlice';
 
 import LocationInfo from '../../components/checkout/LocationInfo';
 import OrderSummary from '../../components/checkout/OrderSummary';
@@ -19,7 +20,7 @@ const CheckoutScreen = () => {
     const navigation = useNavigation<StackNavigationProp<CustomerStackParamList, 'OrderSuccess'>>(); 
     const dispatch = useAppDispatch();
 
-    const [paymentMethod, setPaymentMethod] = useState<'vnpay' | 'cod'>('cod');
+    const [paymentMethod, setPaymentMethod] = useState<'vietqr' | 'cod'>('cod');
     const [location, setLocation] = useState<string>('');
     const [phone, setPhone] = useState<string>('');
 
@@ -49,20 +50,51 @@ const { subtotal, delivery, discountAmount, total, storeId: cartStoreId } = cart
     // (Đây là phần quan trọng nhất để điều hướng đến OrderSuccessScreen)
     // Lưu lại orderId cũ để tránh điều hướng nhầm đơn cũ
     const prevOrderIdRef = useRef<string | undefined>(undefined);
-    useEffect(() => {
-        // Nếu đơn hàng đã được tạo thành công và currentOrder mới
-        if (orderCreatedSuccessfully && currentOrder && currentOrder._id !== prevOrderIdRef.current) {
-            console.log('Order created and details fetched. Navigating to OrderSuccess.');
-            prevOrderIdRef.current = currentOrder._id;
-            navigation.navigate('OrderSuccess', { orderId: currentOrder._id });
-        } 
-        // Nếu có lỗi ở bất kỳ bước nào (tạo đơn hoặc fetch chi tiết)
-        else if (orderError) {
-            console.log('Order error:', orderError);
-            Alert.alert('Lỗi đặt hàng', orderError);
-            dispatch(resetOrderState()); 
+    // useEffect(() => {
+    //     // Nếu đơn hàng đã được tạo thành công và currentOrder mới
+    //     if (orderCreatedSuccessfully && currentOrder && currentOrder._id !== prevOrderIdRef.current) {
+    //         console.log('Order created and details fetched. Navigating to OrderSuccess.');
+    //         prevOrderIdRef.current = currentOrder._id;
+    //         navigation.navigate('OrderSuccess', { orderId: currentOrder._id });
+    //     } 
+    //     // Nếu có lỗi ở bất kỳ bước nào (tạo đơn hoặc fetch chi tiết)
+    //     else if (orderError) {
+    //         console.log('Order error:', orderError);
+    //         Alert.alert('Lỗi đặt hàng', orderError);
+    //         dispatch(resetOrderState()); 
+    //     }
+    // }, [orderCreatedSuccessfully, currentOrder, orderError, navigation, dispatch]);
+
+
+
+    // Trong CheckoutScreen.tsx
+useEffect(() => {
+    // Nếu đơn hàng đã được tạo thành công và currentOrder đã có dữ liệu
+    if (orderCreatedSuccessfully && currentOrder && currentOrder._id !== prevOrderIdRef.current) {
+        prevOrderIdRef.current = currentOrder._id; // Lưu orderId cũ
+
+        const { paymentMethod, _id: orderId } = currentOrder;
+
+        if (paymentMethod === 'cod') {
+            console.log('Order created with COD. Navigating to OrderSuccess.');
+            // Điều hướng đến màn hình OrderSuccess với orderId
+            navigation.navigate('OrderSuccess', { orderId });
+        } else if (paymentMethod === 'vietqr') {
+            console.log('Order created with VietQR. Navigating to VietQRGateway.');
+            // Điều hướng đến màn hình VietQRGatewayScreen với orderId
+            navigation.navigate('VietQRGateway', { orderId }); 
+        } else {
+            console.warn('Unknown payment method. Navigating to OrderSuccess as a fallback.');
+            navigation.navigate('OrderSuccess', { orderId });
         }
-    }, [orderCreatedSuccessfully, currentOrder, orderError, navigation, dispatch]);
+    } 
+    // Xử lý lỗi như bình thường
+    else if (orderError) {
+        console.log('Order error:', orderError);
+        Alert.alert('Lỗi đặt hàng', orderError);
+        dispatch(resetOrderState());
+    }
+}, [orderCreatedSuccessfully, currentOrder, orderError, navigation, dispatch]);
 
     // handlePlaceOrder không thay đổi nhiều, chỉ thêm một số kiểm tra
     const handlePlaceOrder = async () => {
@@ -104,7 +136,7 @@ const { subtotal, delivery, discountAmount, total, storeId: cartStoreId } = cart
             const newOrderId = resultAction.payload;
             console.log('createOrder fulfilled, new orderId:', newOrderId);
             // Tiếp tục dispatch `fetchOrderById` ngay lập tức để lấy chi tiết đơn hàng
-            dispatch(fetchOrderById(newOrderId));
+            //dispatch(fetchOrderById(newOrderId));
         } 
         // Không cần `else if (createOrder.rejected.match(resultAction))` ở đây
         // vì `orderError` sẽ được set trong `orderSlice` và `useEffect` phía trên sẽ bắt lỗi
