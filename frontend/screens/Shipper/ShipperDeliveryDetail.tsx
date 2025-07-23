@@ -1,92 +1,106 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, StatusBar, Alert, Linking } from "react-native"
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  StatusBar,
+  Alert,
+  Linking,
+  Modal,
+  TextInput,
+} from "react-native"
 import { useNavigation, useRoute } from "@react-navigation/native"
 import type { StackNavigationProp } from "@react-navigation/stack"
 import type { ShipperStackParamList } from "../../navigation/shipper/ShipperNavigator"
+import { shipperAPI } from "../../api/axios"
 
 type NavigationProp = StackNavigationProp<ShipperStackParamList, "DeliveryDetail">
 
 interface DeliveryOrder {
-  id: string
-  customerName: string
-  customerPhone: string
-  pickupAddress: string
-  deliveryAddress: string
-  distance: string
-  estimatedTime: string
-  fee: number
+  _id: string
   items: Array<{
     name: string
     quantity: number
     price: number
-    note?: string
   }>
-  status:
-    | "accepted"
-    | "going_to_pickup"
-    | "arrived_pickup"
-    | "picked_up"
-    | "going_to_delivery"
-    | "arrived_delivery"
-    | "delivered"
-  orderTime: string
-  totalAmount: number
-  customerNote?: string
-  storePhone: string
-  storeName: string
+  status: "ready" | "delivering" | "completed" | "cancelled"
+  total: number
+  deliveryAddress: string
+  phone: string
+  createdAt: string
+  deliveryFee: number
 }
 
 const DeliveryDetail = () => {
   const navigation = useNavigation<NavigationProp>()
   const route = useRoute()
   const { deliveryId } = route.params as { deliveryId: string }
-
-  const [order, setOrder] = useState<DeliveryOrder>({
-    id: deliveryId,
-    customerName: "Nguyễn Văn A",
-    customerPhone: "0901234567",
-    pickupAddress: "The Coffee House - 123 Nguyễn Huệ, Q1",
-    deliveryAddress: "456 Lê Lợi, Quận 1, TP.HCM",
-    distance: "2.5 km",
-    estimatedTime: "15 phút",
-    fee: 25000,
-    items: [
-      { name: "Trà sữa truyền thống", quantity: 2, price: 45000, note: "Ít đường" },
-      { name: "Bánh flan", quantity: 1, price: 15000 },
-    ],
-    status: "accepted",
-    orderTime: "14:30",
-    totalAmount: 105000,
-    customerNote: "Giao lên tầng 3, gọi trước khi đến",
-    storePhone: "0281234567",
-    storeName: "The Coffee House",
-  })
-
-  const [currentStep, setCurrentStep] = useState(0)
+  const [order, setOrder] = useState<DeliveryOrder | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [updating, setUpdating] = useState(false)
+  const [showCancelModal, setShowCancelModal] = useState(false)
+  const [cancelReason, setCancelReason] = useState("")
 
   const deliverySteps = [
-    { key: "accepted", label: "Đã nhận đơn", action: "Đi lấy hàng" },
-    { key: "going_to_pickup", label: "Đang đi lấy hàng", action: "Đã đến cửa hàng" },
-    { key: "arrived_pickup", label: "Đã đến cửa hàng", action: "Đã lấy hàng" },
-    { key: "picked_up", label: "Đã lấy hàng", action: "Đi giao hàng" },
-    { key: "going_to_delivery", label: "Đang giao hàng", action: "Đã đến nơi giao" },
-    { key: "arrived_delivery", label: "Đã đến nơi giao", action: "Hoàn thành giao hàng" },
-    { key: "delivered", label: "Đã giao hàng", action: "" },
+    { key: "ready", label: "Đã nhận đơn", action: "Bắt đầu giao hàng" },
+    { key: "delivering", label: "Đang giao hàng", action: "Hoàn thành giao hàng" },
+    { key: "completed", label: "Đã giao hàng", action: "" },
   ]
 
+  // Fetch order details
+  const fetchOrderDetails = async () => {
+    try {
+      setLoading(true)
+      // Vì API không có endpoint get single order, ta sẽ fetch từ danh sách orders
+      const response = await shipperAPI.getOrders({
+        status: "ready,delivering,completed",
+        limit: 100,
+      })
+
+      const foundOrder = response.orders.find((o: DeliveryOrder) => o._id === deliveryId)
+      if (foundOrder) {
+        setOrder(foundOrder)
+      } else {
+        Alert.alert("Lỗi", "Không tìm thấy đơn hàng")
+        navigation.goBack()
+      }
+    } catch (error) {
+      console.error("Error fetching order details:", error)
+      Alert.alert("Lỗi", "Không thể tải thông tin đơn hàng")
+      navigation.goBack()
+    } finally {
+      setLoading(false)
+    }
+  }
+
   useEffect(() => {
-    const stepIndex = deliverySteps.findIndex((step) => step.key === order.status)
-    setCurrentStep(stepIndex)
-  }, [order.status])
+    fetchOrderDetails()
+  }, [deliveryId])
 
-  const handleNextStep = () => {
-    if (currentStep < deliverySteps.length - 1) {
-      const nextStatus = deliverySteps[currentStep + 1].key as DeliveryOrder["status"]
-      setOrder((prev) => ({ ...prev, status: nextStatus }))
+  const getCurrentStepIndex = () => {
+    if (!order) return 0
+    return deliverySteps.findIndex((step) => step.key === order.status)
+  }
 
-      if (nextStatus === "delivered") {
+  const handleNextStep = async () => {
+    if (!order || updating) return
+
+    const currentStepIndex = getCurrentStepIndex()
+    if (currentStepIndex >= deliverySteps.length - 1) return
+
+    const nextStatus = deliverySteps[currentStepIndex + 1].key as DeliveryOrder["status"]
+
+    try {
+      setUpdating(true)
+      await shipperAPI.updateOrderStatus(order._id, nextStatus)
+
+      setOrder((prev) => (prev ? { ...prev, status: nextStatus } : null))
+
+      if (nextStatus === "completed") {
         Alert.alert("Hoàn thành!", "Bạn đã giao hàng thành công. Tiền công đã được cộng vào tài khoản.", [
           {
             text: "OK",
@@ -94,6 +108,35 @@ const DeliveryDetail = () => {
           },
         ])
       }
+    } catch (error) {
+      console.error("Error updating order status:", error)
+      Alert.alert("Lỗi", "Không thể cập nhật trạng thái đơn hàng")
+    } finally {
+      setUpdating(false)
+    }
+  }
+
+  const handleCancelOrder = () => {
+    if (!order) return
+    setShowCancelModal(true)
+  }
+
+  const confirmCancelOrder = async () => {
+    if (!order || !cancelReason.trim()) {
+      Alert.alert("Lỗi", "Vui lòng nhập lý do hủy đơn")
+      return
+    }
+
+    try {
+      setUpdating(true)
+      await shipperAPI.updateOrderStatus(order._id, "cancelled", cancelReason.trim())
+      setShowCancelModal(false)
+      Alert.alert("Thông báo", "Đã hủy đơn hàng", [{ text: "OK", onPress: () => navigation.goBack() }])
+    } catch (error) {
+      console.error("Error cancelling order:", error)
+      Alert.alert("Lỗi", "Không thể hủy đơn hàng")
+    } finally {
+      setUpdating(false)
     }
   }
 
@@ -107,23 +150,72 @@ const DeliveryDetail = () => {
   }
 
   const getStatusColor = (stepIndex: number) => {
-    if (stepIndex < currentStep) return "#4CAF50"
-    if (stepIndex === currentStep) return "#FF6B35"
+    const currentIndex = getCurrentStepIndex()
+    if (stepIndex < currentIndex) return "#4CAF50"
+    if (stepIndex === currentIndex) return "#FF6B35"
     return "#E0E0E0"
   }
 
   const getStatusTextColor = (stepIndex: number) => {
-    if (stepIndex <= currentStep) return "#333333"
+    const currentIndex = getCurrentStepIndex()
+    if (stepIndex <= currentIndex) return "#333333"
     return "#999999"
   }
+
+  const formatOrderTime = (createdAt: string) => {
+    const date = new Date(createdAt)
+    return date.toLocaleString("vi-VN")
+  }
+
+  const getCustomerName = (phone: string) => {
+    return `Khách hàng ${phone.slice(-4)}`
+  }
+
+  const handleBackPress = () => {
+    if (order?.status === "delivering") {
+      Alert.alert("Đơn hàng đang giao", "Bạn đang có đơn hàng chưa hoàn thành. Bạn muốn:", [
+        { text: "Tiếp tục giao", style: "cancel" },
+        {
+          text: "Hủy đơn hàng",
+          style: "destructive",
+          onPress: () => setShowCancelModal(true),
+        },
+        {
+          text: "Quay lại dashboard",
+          onPress: () => navigation.goBack(),
+        },
+      ])
+    } else {
+      navigation.goBack()
+    }
+  }
+
+  if (loading) {
+    return (
+      <View style={[styles.container, { justifyContent: "center", alignItems: "center" }]}>
+        <Text>Đang tải...</Text>
+      </View>
+    )
+  }
+
+  if (!order) {
+    return (
+      <View style={[styles.container, { justifyContent: "center", alignItems: "center" }]}>
+        <Text>Không tìm thấy đơn hàng</Text>
+      </View>
+    )
+  }
+
+  const currentStepIndex = getCurrentStepIndex()
+  const canProceed = currentStepIndex < deliverySteps.length - 1
+  const canCancel = order.status === "ready" || order.status === "delivering"
 
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#FF6B35" />
-
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
+        <TouchableOpacity onPress={handleBackPress}>
           <Text style={styles.backButton}>←</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Chi tiết đơn hàng</Text>
@@ -144,7 +236,7 @@ const DeliveryDetail = () => {
                       style={[
                         styles.timelineLine,
                         {
-                          backgroundColor: index < currentStep ? "#4CAF50" : "#E0E0E0",
+                          backgroundColor: index < currentStepIndex ? "#4CAF50" : "#E0E0E0",
                         },
                       ]}
                     />
@@ -161,33 +253,13 @@ const DeliveryDetail = () => {
           <Text style={styles.cardTitle}>Thông tin khách hàng</Text>
           <View style={styles.customerInfo}>
             <View style={styles.customerDetails}>
-              <Text style={styles.customerName}>{order.customerName}</Text>
-              <Text style={styles.customerPhone}>{order.customerPhone}</Text>
-              {order.customerNote && <Text style={styles.customerNote}>Ghi chú: {order.customerNote}</Text>}
+              <Text style={styles.customerName}>{getCustomerName(order.phone)}</Text>
+              <Text style={styles.customerPhone}>{order.phone}</Text>
+              <Text style={styles.orderTime}>Đặt lúc: {formatOrderTime(order.createdAt)}</Text>
             </View>
-            <TouchableOpacity style={styles.callButton} onPress={() => handleCall(order.customerPhone)}>
+            <TouchableOpacity style={styles.callButton} onPress={() => handleCall(order.phone)}>
               <Text style={styles.callButtonText}>📞</Text>
             </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Pickup Info */}
-        <View style={styles.infoCard}>
-          <Text style={styles.cardTitle}>Thông tin lấy hàng</Text>
-          <View style={styles.addressInfo}>
-            <View style={styles.addressDetails}>
-              <Text style={styles.storeName}>{order.storeName}</Text>
-              <Text style={styles.addressText}>{order.pickupAddress}</Text>
-              <Text style={styles.storePhone}>{order.storePhone}</Text>
-            </View>
-            <View style={styles.addressActions}>
-              <TouchableOpacity style={styles.actionButton} onPress={() => handleCall(order.storePhone)}>
-                <Text style={styles.actionButtonText}>📞</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.actionButton} onPress={() => handleOpenMap(order.pickupAddress)}>
-                <Text style={styles.actionButtonText}>🗺️</Text>
-              </TouchableOpacity>
-            </View>
           </View>
         </View>
 
@@ -197,9 +269,6 @@ const DeliveryDetail = () => {
           <View style={styles.addressInfo}>
             <View style={styles.addressDetails}>
               <Text style={styles.addressText}>{order.deliveryAddress}</Text>
-              <Text style={styles.deliveryMeta}>
-                {order.distance} • {order.estimatedTime}
-              </Text>
             </View>
             <TouchableOpacity style={styles.actionButton} onPress={() => handleOpenMap(order.deliveryAddress)}>
               <Text style={styles.actionButtonText}>🗺️</Text>
@@ -216,7 +285,6 @@ const DeliveryDetail = () => {
                 <Text style={styles.itemName}>
                   {item.quantity}x {item.name}
                 </Text>
-                {item.note && <Text style={styles.itemNote}>Ghi chú: {item.note}</Text>}
               </View>
               <Text style={styles.itemPrice}>{item.price.toLocaleString("vi-VN")}đ</Text>
             </View>
@@ -224,24 +292,84 @@ const DeliveryDetail = () => {
           <View style={styles.orderSummary}>
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>Tổng tiền hàng:</Text>
-              <Text style={styles.summaryValue}>{order.totalAmount.toLocaleString("vi-VN")}đ</Text>
+              <Text style={styles.summaryValue}>{order.total.toLocaleString("vi-VN")}đ</Text>
             </View>
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>Phí giao hàng:</Text>
-              <Text style={[styles.summaryValue, { color: "#4CAF50" }]}>{order.fee.toLocaleString("vi-VN")}đ</Text>
+              <Text style={[styles.summaryValue, { color: "#4CAF50" }]}>
+                {order.deliveryFee.toLocaleString("vi-VN")}đ
+              </Text>
             </View>
           </View>
         </View>
       </ScrollView>
 
-      {/* Action Button */}
-      {currentStep < deliverySteps.length - 1 && (
+      {/* Action Buttons */}
+      {(canProceed || canCancel) && (
         <View style={styles.actionContainer}>
-          <TouchableOpacity style={styles.nextButton} onPress={handleNextStep}>
-            <Text style={styles.nextButtonText}>{deliverySteps[currentStep].action}</Text>
-          </TouchableOpacity>
+          {canCancel && (
+            <TouchableOpacity
+              style={[styles.cancelButton, { marginBottom: canProceed ? 12 : 0 }]}
+              onPress={handleCancelOrder}
+              disabled={updating}
+            >
+              <Text style={styles.cancelButtonText}>Hủy đơn hàng</Text>
+            </TouchableOpacity>
+          )}
+
+          {canProceed && (
+            <TouchableOpacity style={styles.nextButton} onPress={handleNextStep} disabled={updating}>
+              <Text style={styles.nextButtonText}>
+                {updating ? "Đang cập nhật..." : deliverySteps[currentStepIndex].action}
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
       )}
+      {/* Cancel Order Modal */}
+      <Modal
+        visible={showCancelModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowCancelModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Hủy đơn hàng</Text>
+            <Text style={styles.modalSubtitle}>Vui lòng nhập lý do hủy đơn:</Text>
+
+            <TextInput
+              style={styles.reasonInput}
+              placeholder="Nhập lý do hủy đơn..."
+              value={cancelReason}
+              onChangeText={setCancelReason}
+              multiline={true}
+              numberOfLines={3}
+              textAlignVertical="top"
+            />
+
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={styles.modalCancelButton}
+                onPress={() => {
+                  setShowCancelModal(false)
+                  setCancelReason("")
+                }}
+              >
+                <Text style={styles.modalCancelText}>Đóng</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.modalConfirmButton}
+                onPress={confirmCancelOrder}
+                disabled={updating || !cancelReason.trim()}
+              >
+                <Text style={styles.modalConfirmText}>{updating ? "Đang hủy..." : "Xác nhận hủy"}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   )
 }
@@ -357,10 +485,9 @@ const styles = StyleSheet.create({
     color: "#666666",
     marginBottom: 8,
   },
-  customerNote: {
-    fontSize: 14,
-    color: "#FF6B35",
-    fontStyle: "italic",
+  orderTime: {
+    fontSize: 12,
+    color: "#999999",
   },
   callButton: {
     backgroundColor: "#4CAF50",
@@ -381,29 +508,11 @@ const styles = StyleSheet.create({
   addressDetails: {
     flex: 1,
   },
-  storeName: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#333333",
-    marginBottom: 4,
-  },
   addressText: {
     fontSize: 14,
     color: "#333333",
     lineHeight: 20,
     marginBottom: 4,
-  },
-  storePhone: {
-    fontSize: 14,
-    color: "#666666",
-  },
-  deliveryMeta: {
-    fontSize: 12,
-    color: "#666666",
-  },
-  addressActions: {
-    flexDirection: "row",
-    gap: 8,
   },
   actionButton: {
     backgroundColor: "#E3F2FD",
@@ -431,11 +540,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#333333",
     marginBottom: 2,
-  },
-  itemNote: {
-    fontSize: 12,
-    color: "#666666",
-    fontStyle: "italic",
   },
   itemPrice: {
     fontSize: 14,
@@ -479,6 +583,82 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 16,
     fontWeight: "bold",
+  },
+  cancelButton: {
+    backgroundColor: "#FF5722",
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: "center",
+  },
+  cancelButtonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  modalContent: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 12,
+    padding: 20,
+    width: "100%",
+    maxWidth: 400,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#333333",
+    marginBottom: 8,
+    textAlign: "center",
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    color: "#666666",
+    marginBottom: 16,
+    textAlign: "center",
+  },
+  reasonInput: {
+    borderWidth: 1,
+    borderColor: "#E0E0E0",
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 14,
+    color: "#333333",
+    minHeight: 80,
+    marginBottom: 20,
+  },
+  modalButtons: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  modalCancelButton: {
+    flex: 1,
+    backgroundColor: "#E0E0E0",
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  modalCancelText: {
+    color: "#666666",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  modalConfirmButton: {
+    flex: 1,
+    backgroundColor: "#FF5722",
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  modalConfirmText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "600",
   },
 })
 

@@ -52,4 +52,58 @@ export const setupAxiosInterceptors = (dispatch: any, authActions: AuthActions) 
   );
 };
 
+// API Services cho Shipper
+export const shipperAPI = {
+  // Lấy danh sách đơn hàng được phân công
+  getOrders: async (params?: {
+    status?: string
+    page?: number
+    limit?: number
+    sortBy?: string
+    sortOrder?: string
+  }) => {
+    const response = await apiInstance.get("/shipper", { params })
+    return response.data
+  },
+
+  // Cập nhật trạng thái giao hàng
+  updateOrderStatus: async (orderId: string, status: string, cancelReason?: string) => {
+    const response = await apiInstance.put(`/shipper/${orderId}/status`, {
+      status,
+      cancelReason,
+    })
+    return response.data
+  },
+
+  // Lấy lịch sử giao hàng
+  getDeliveryHistory: async (params?: {
+    page?: number
+    limit?: number
+    startDate?: string
+    endDate?: string
+    filter?: string
+  }) => {
+    const response = await apiInstance.get("/shipper/history", { params })
+    return response.data
+  },
+
+  // Lấy tổng quan thu nhập
+  getEarningsSummary: async (params?: {
+    startDate?: string
+    endDate?: string
+    filter?: string
+  }) => {
+    const response = await apiInstance.get("/shipper/earnings", { params })
+    return response.data
+  },
+
+  // Bật/tắt trạng thái sẵn sàng
+  toggleAvailability: async (isAvailable: boolean) => {
+    const response = await apiInstance.put("/shipper/toggle-availability", {
+      isAvailable,
+    })
+    return response.data
+  },
+}
+
 export default apiInstance;

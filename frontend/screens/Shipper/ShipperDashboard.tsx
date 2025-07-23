@@ -1,123 +1,187 @@
-import { useState } from "react"
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, StatusBar, Switch, Alert } from "react-native"
-import { useNavigation, CommonActions } from "@react-navigation/native"
+import { useState, useEffect, useCallback } from "react"
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Image,
+  StatusBar,
+  Switch,
+  Alert,
+  RefreshControl,
+} from "react-native"
+import { useNavigation, CommonActions, useFocusEffect } from "@react-navigation/native"
 import type { StackNavigationProp } from "@react-navigation/stack"
 import type { ShipperStackParamList } from "../../navigation/shipper/ShipperNavigator"
-import { useDispatch } from 'react-redux';
-import { logoutUser } from '../../redux/slices/authSlice'; // <-- Import thunk này
+import { useDispatch } from "react-redux"
+import { logoutUser } from "../../redux/slices/authSlice"
+import { shipperAPI } from "../../api/axios"
 
 type NavigationProp = StackNavigationProp<ShipperStackParamList, "ShipperDashboard">
 
 interface DeliveryOrder {
-  id: string
-  customerName: string
-  customerPhone: string
-  pickupAddress: string
-  deliveryAddress: string
-  distance: string
-  estimatedTime: string
-  fee: number
+  _id: string
   items: Array<{
     name: string
     quantity: number
     price: number
   }>
-  status: "pending" | "accepted" | "picked_up" | "delivered"
-  orderTime: string
-  totalAmount: number
+  status: "ready" | "delivering" | "completed" | "cancelled"
+  total: number
+  deliveryAddress: string
+  phone: string
+  createdAt: string
+  deliveryFee: number
 }
 
 const ShipperDashboard = () => {
   const navigation = useNavigation<NavigationProp>()
   const [isOnline, setIsOnline] = useState(true)
-  const [currentEarnings, setCurrentEarnings] = useState(125000)
-  const [completedOrders, setCompletedOrders] = useState(8)
-  const dispatch = useDispatch();
+  const [currentEarnings, setCurrentEarnings] = useState(0)
+  const [completedOrders, setCompletedOrders] = useState(0)
+  const [pendingOrders, setPendingOrders] = useState<DeliveryOrder[]>([])
+  const [deliveringOrders, setDeliveringOrders] = useState<DeliveryOrder[]>([])
+  const [loading, setLoading] = useState(false)
+  const [refreshing, setRefreshing] = useState(false)
+  const dispatch = useDispatch()
 
-  const pendingOrders: DeliveryOrder[] = [
-    {
-      id: "1",
-      customerName: "Nguyễn Văn A",
-      customerPhone: "0901234567",
-      pickupAddress: "The Coffee House - 123 Nguyễn Huệ, Q1",
-      deliveryAddress: "456 Lê Lợi, Quận 1, TP.HCM",
-      distance: "2.5 km",
-      estimatedTime: "15 phút",
-      fee: 25000,
-      items: [
-        { name: "Trà sữa truyền thống", quantity: 2, price: 45000 },
-        { name: "Bánh flan", quantity: 1, price: 15000 },
-      ],
-      status: "pending",
-      orderTime: "14:30",
-      totalAmount: 105000,
-    },
-    {
-      id: "2",
-      customerName: "Trần Thị B",
-      customerPhone: "0907654321",
-      pickupAddress: "Highlands Coffee - 789 Đồng Khởi, Q1",
-      deliveryAddress: "321 Pasteur, Quận 3, TP.HCM",
-      distance: "3.2 km",
-      estimatedTime: "20 phút",
-      fee: 30000,
-      items: [
-        { name: "Cà phê đen đá", quantity: 1, price: 25000 },
-        { name: "Bánh croissant", quantity: 2, price: 35000 },
-      ],
-      status: "pending",
-      orderTime: "14:45",
-      totalAmount: 95000,
-    },
-  ]
+  // Fetch dữ liệu từ API
+  const fetchData = async () => {
+    try {
+      setLoading(true)
+
+      // Fetch pending orders (ready)
+      const pendingResponse = await shipperAPI.getOrders({
+        status: "ready",
+        page: 1,
+        limit: 20,
+      })
+      setPendingOrders(pendingResponse.orders || [])
+
+      // Fetch delivering orders
+      const deliveringResponse = await shipperAPI.getOrders({
+        status: "delivering",
+        page: 1,
+        limit: 20,
+      })
+      setDeliveringOrders(deliveringResponse.orders || [])
+
+      // Fetch earnings summary
+      const earningsResponse = await shipperAPI.getEarningsSummary({
+        filter: "day",
+      })
+      setCurrentEarnings(earningsResponse.totalEarnings || 0)
+      setCompletedOrders(earningsResponse.totalOrders || 0)
+    } catch (error) {
+      console.error("Error fetching data:", error)
+      Alert.alert("Lỗi", "Không thể tải dữ liệu. Vui lòng thử lại.")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Refresh data
+  const onRefresh = async () => {
+    setRefreshing(true)
+    await fetchData()
+    setRefreshing(false)
+  }
+
+  // Load data khi component mount và khi focus
+  useEffect(() => {
+    fetchData()
+  }, [])
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchData()
+    }, []),
+  )
 
   const handleAcceptOrder = (orderId: string) => {
     Alert.alert("Xác nhận", "Bạn có muốn nhận đơn hàng này không?", [
       { text: "Hủy", style: "cancel" },
       {
         text: "Nhận đơn",
-        onPress: () => {
-          navigation.navigate("DeliveryDetail", { deliveryId: orderId })
+        onPress: async () => {
+          try {
+            // Cập nhật status thành delivering
+            await shipperAPI.updateOrderStatus(orderId, "delivering")
+            navigation.navigate("DeliveryDetail", { deliveryId: orderId })
+            // Refresh data sau khi accept
+            fetchData()
+          } catch (error) {
+            console.error("Error accepting order:", error)
+            Alert.alert("Lỗi", "Không thể nhận đơn hàng. Vui lòng thử lại.")
+          }
         },
       },
     ])
   }
 
-  const toggleOnlineStatus = () => {
-    setIsOnline(!isOnline)
-    if (!isOnline) {
-      Alert.alert("Thông báo", "Bạn đã online và sẵn sàng nhận đơn!")
-    } else {
-      Alert.alert("Thông báo", "Bạn đã offline. Sẽ không nhận được đơn mới.")
+  const toggleOnlineStatus = async () => {
+    try {
+      const newStatus = !isOnline
+      await shipperAPI.toggleAvailability(newStatus)
+      setIsOnline(newStatus)
+
+      if (newStatus) {
+        Alert.alert("Thông báo", "Bạn đã online và sẵn sàng nhận đơn!")
+        // Refresh orders khi online
+        fetchData()
+      } else {
+        Alert.alert("Thông báo", "Bạn đã offline. Sẽ không nhận được đơn mới.")
+      }
+    } catch (error) {
+      console.error("Error toggling availability:", error)
+      Alert.alert("Lỗi", "Không thể cập nhật trạng thái. Vui lòng thử lại.")
     }
   }
 
-
   const handleLogout = () => {
-    Alert.alert('Đăng xuất', 'Bạn có chắc chắn muốn đăng xuất?', [
-      { text: 'Huỷ' },
+    Alert.alert("Đăng xuất", "Bạn có chắc chắn muốn đăng xuất?", [
+      { text: "Huỷ" },
       {
-        text: 'Đăng xuất',
-        onPress: async () => { // <--- Thêm async vào đây
-          await dispatch(logoutUser() as any); // <-- Dispatch thunk logoutUser
-          // Sau khi logout thành công (cả Redux và AsyncStorage đã được clear)
-          // Điều hướng người dùng về màn hình khách hoặc màn hình bắt đầu
+        text: "Đăng xuất",
+        onPress: async () => {
+          await dispatch(logoutUser() as any)
           navigation.dispatch(
             CommonActions.reset({
               index: 0,
-              routes: [{ name: 'Main' }], // <-- Đảm bảo đây là Guest Navigator hoặc màn hình khởi đầu cho khách
-            })
-          );
+              routes: [{ name: "Main" }],
+            }),
+          )
         },
-        style: 'destructive',
+        style: "destructive",
       },
-    ]);
-  };
+    ])
+  }
+
+  const formatOrderTime = (createdAt: string) => {
+    const date = new Date(createdAt)
+    return date.toLocaleTimeString("vi-VN", {
+      hour: "2-digit",
+      minute: "2-digit",
+    })
+  }
+
+  const getCustomerName = (phone: string) => {
+    // Tạm thời dùng số điện thoại, có thể cải thiện sau
+    return `Khách hàng ${phone.slice(-4)}`
+  }
+
+  const handleContinueDelivery = (orderId: string) => {
+    navigation.navigate("DeliveryDetail", { deliveryId: orderId })
+  }
+
+  const handleViewHistory = () => {
+    navigation.navigate("DeliveryHistory")
+  }
 
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#FF6B35" />
-
       {/* Header */}
       <View style={styles.header}>
         {/* Left: Avatar + Tên */}
@@ -133,15 +197,9 @@ const ShipperDashboard = () => {
             <Text style={styles.shipperName}>Shipper</Text>
           </View>
         </View>
-
         {/* Center: Online Toggle */}
         <View style={styles.headerCenter}>
-          <Text
-            style={[
-              styles.statusText,
-              { color: isOnline ? "#4CAF50" : "#757575" },
-            ]}
-          >
+          <Text style={[styles.statusText, { color: isOnline ? "#4CAF50" : "#757575" }]}>
             {isOnline ? "Online" : "Offline"}
           </Text>
           <Switch
@@ -151,7 +209,10 @@ const ShipperDashboard = () => {
             thumbColor="#FFFFFF"
           />
         </View>
-
+        {/* Right: History Button */}
+        <TouchableOpacity style={styles.historyButton} onPress={handleViewHistory}>
+          <Text style={styles.historyText}>📋</Text>
+        </TouchableOpacity>
         {/* Right: Logout */}
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
           <Text style={styles.logoutText}>Đăng xuất</Text>
@@ -160,76 +221,133 @@ const ShipperDashboard = () => {
 
       {/* Stats Cards */}
       <View style={styles.statsContainer}>
-        <View style={styles.statCard}>
+        <TouchableOpacity style={styles.statCard} onPress={handleViewHistory}>
           <Text style={styles.statValue}>{currentEarnings.toLocaleString("vi-VN")}đ</Text>
           <Text style={styles.statLabel}>Thu nhập hôm nay</Text>
-        </View>
-        <View style={styles.statCard}>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.statCard} onPress={handleViewHistory}>
           <Text style={styles.statValue}>{completedOrders}</Text>
           <Text style={styles.statLabel}>Đơn đã giao</Text>
-        </View>
+        </TouchableOpacity>
       </View>
 
       {/* Orders Section */}
-      <ScrollView style={styles.ordersSection} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.ordersSection}
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+      >
+        {/* Delivering Orders Section */}
+        {deliveringOrders.length > 0 && (
+          <>
+            <Text style={styles.sectionTitle}>Đơn đang giao ({deliveringOrders.length})</Text>
+            {deliveringOrders.map((order) => (
+              <View key={order._id} style={[styles.orderCard, { borderLeftWidth: 4, borderLeftColor: "#FF6B35" }]}>
+                <View style={styles.orderHeader}>
+                  <View style={styles.orderInfo}>
+                    <Text style={styles.customerName}>{getCustomerName(order.phone)}</Text>
+                    <Text style={styles.orderTime}>{formatOrderTime(order.createdAt)}</Text>
+                  </View>
+                  <View style={styles.feeContainer}>
+                    <Text style={styles.feeAmount}>{order.deliveryFee.toLocaleString("vi-VN")}đ</Text>
+                    <Text style={styles.feeLabel}>Phí giao hàng</Text>
+                  </View>
+                </View>
+
+                <View style={styles.addressContainer}>
+                  <View style={styles.addressRow}>
+                    <View style={[styles.addressDot, { backgroundColor: "#FF6B35" }]} />
+                    <View style={styles.addressContent}>
+                      <Text style={styles.addressLabel}>Giao đến</Text>
+                      <Text style={styles.addressText}>{order.deliveryAddress}</Text>
+                    </View>
+                  </View>
+                </View>
+
+                <View style={styles.orderDetails}>
+                  <Text style={styles.orderItems}>
+                    {order.items.map((item) => `${item.quantity}x ${item.name}`).join(", ")}
+                  </Text>
+                  <View style={styles.orderMeta}>
+                    <Text style={styles.metaText}>{order.phone}</Text>
+                    <Text style={styles.totalAmount}>Tổng: {order.total.toLocaleString("vi-VN")}đ</Text>
+                  </View>
+                </View>
+
+                <TouchableOpacity
+                  style={[styles.acceptButton, { backgroundColor: "#FF6B35" }]}
+                  onPress={() => handleContinueDelivery(order._id)}
+                >
+                  <Text style={styles.acceptButtonText}>Tiếp tục giao hàng</Text>
+                </TouchableOpacity>
+              </View>
+            ))}
+          </>
+        )}
+
+        {/* Pending Orders Section */}
         <Text style={styles.sectionTitle}>Đơn hàng mới ({pendingOrders.length})</Text>
 
-        {pendingOrders.map((order) => (
-          <View key={order.id} style={styles.orderCard}>
-            <View style={styles.orderHeader}>
-              <View style={styles.orderInfo}>
-                <Text style={styles.customerName}>{order.customerName}</Text>
-                <Text style={styles.orderTime}>{order.orderTime}</Text>
-              </View>
-              <View style={styles.feeContainer}>
-                <Text style={styles.feeAmount}>{order.fee.toLocaleString("vi-VN")}đ</Text>
-                <Text style={styles.feeLabel}>Phí giao hàng</Text>
-              </View>
-            </View>
-
-            <View style={styles.addressContainer}>
-              <View style={styles.addressRow}>
-                <View style={styles.addressDot} />
-                <View style={styles.addressContent}>
-                  <Text style={styles.addressLabel}>Lấy hàng</Text>
-                  <Text style={styles.addressText}>{order.pickupAddress}</Text>
-                </View>
-              </View>
-
-              <View style={styles.addressLine} />
-
-              <View style={styles.addressRow}>
-                <View style={[styles.addressDot, { backgroundColor: "#FF6B35" }]} />
-                <View style={styles.addressContent}>
-                  <Text style={styles.addressLabel}>Giao đến</Text>
-                  <Text style={styles.addressText}>{order.deliveryAddress}</Text>
-                </View>
-              </View>
-            </View>
-
-            <View style={styles.orderDetails}>
-              <Text style={styles.orderItems}>
-                {order.items.map((item) => `${item.quantity}x ${item.name}`).join(", ")}
-              </Text>
-              <View style={styles.orderMeta}>
-                <Text style={styles.metaText}>
-                  {order.distance} • {order.estimatedTime}
-                </Text>
-                <Text style={styles.totalAmount}>Tổng: {order.totalAmount.toLocaleString("vi-VN")}đ</Text>
-              </View>
-            </View>
-
-            <TouchableOpacity style={styles.acceptButton} onPress={() => handleAcceptOrder(order.id)}>
-              <Text style={styles.acceptButtonText}>Nhận đơn</Text>
-            </TouchableOpacity>
-          </View>
-        ))}
-
-        {pendingOrders.length === 0 && (
+        {loading && pendingOrders.length === 0 ? (
           <View style={styles.emptyState}>
-            <Text style={styles.emptyText}>Không có đơn hàng mới</Text>
-            <Text style={styles.emptySubtext}>Hãy chờ đợi, đơn hàng sẽ xuất hiện sớm thôi!</Text>
+            <Text style={styles.emptyText}>Đang tải...</Text>
           </View>
+        ) : (
+          <>
+            {pendingOrders.map((order) => (
+              <View key={order._id} style={styles.orderCard}>
+                <View style={styles.orderHeader}>
+                  <View style={styles.orderInfo}>
+                    <Text style={styles.customerName}>{getCustomerName(order.phone)}</Text>
+                    <Text style={styles.orderTime}>{formatOrderTime(order.createdAt)}</Text>
+                  </View>
+                  <View style={styles.feeContainer}>
+                    <Text style={styles.feeAmount}>{order.deliveryFee.toLocaleString("vi-VN")}đ</Text>
+                    <Text style={styles.feeLabel}>Phí giao hàng</Text>
+                  </View>
+                </View>
+
+                <View style={styles.addressContainer}>
+                  <View style={styles.addressRow}>
+                    <View style={styles.addressDot} />
+                    <View style={styles.addressContent}>
+                      <Text style={styles.addressLabel}>Lấy hàng</Text>
+                      <Text style={styles.addressText}>Cửa hàng</Text>
+                    </View>
+                  </View>
+                  <View style={styles.addressLine} />
+                  <View style={styles.addressRow}>
+                    <View style={[styles.addressDot, { backgroundColor: "#FF6B35" }]} />
+                    <View style={styles.addressContent}>
+                      <Text style={styles.addressLabel}>Giao đến</Text>
+                      <Text style={styles.addressText}>{order.deliveryAddress}</Text>
+                    </View>
+                  </View>
+                </View>
+
+                <View style={styles.orderDetails}>
+                  <Text style={styles.orderItems}>
+                    {order.items.map((item) => `${item.quantity}x ${item.name}`).join(", ")}
+                  </Text>
+                  <View style={styles.orderMeta}>
+                    <Text style={styles.metaText}>{order.phone}</Text>
+                    <Text style={styles.totalAmount}>Tổng: {order.total.toLocaleString("vi-VN")}đ</Text>
+                  </View>
+                </View>
+
+                <TouchableOpacity style={styles.acceptButton} onPress={() => handleAcceptOrder(order._id)}>
+                  <Text style={styles.acceptButtonText}>Nhận đơn</Text>
+                </TouchableOpacity>
+              </View>
+            ))}
+
+            {pendingOrders.length === 0 && !loading && (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyText}>Không có đơn hàng mới</Text>
+                <Text style={styles.emptySubtext}>Hãy chờ đợi, đơn hàng sẽ xuất hiện sớm thôi!</Text>
+              </View>
+            )}
+          </>
         )}
       </ScrollView>
     </View>
@@ -244,6 +362,8 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: "#FF6B35",
     paddingHorizontal: 20,
+    paddingTop: 50,
+    paddingBottom: 16,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -267,7 +387,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    marginRight: 12,
+    marginRight: 4,
   },
   greeting: {
     color: "#FFFFFF",
@@ -282,6 +402,16 @@ const styles = StyleSheet.create({
   onlineToggle: {
     alignItems: "center",
     marginRight: 12,
+  },
+  historyButton: {
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    borderRadius: 6,
+    marginRight: 8,
+  },
+  historyText: {
+    fontSize: 16,
   },
   logoutButton: {
     paddingHorizontal: 12,
