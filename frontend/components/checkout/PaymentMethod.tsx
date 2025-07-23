@@ -1,10 +1,11 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import vnpay from '../../assets/images/vn-pay/vietqr-logo.png'; // Ensure this path is correct
 
 type Props = {
-  selected: 'vnpay' | 'cod';
-  onSelect: (method: 'vnpay' | 'cod') => void;
+  selected: 'vietqr' | 'cod';
+  onSelect: (method: 'vietqr' | 'cod') => void;
 };
 
 const PaymentMethod: React.FC<Props> = ({ selected, onSelect }) => {
@@ -13,17 +14,17 @@ const PaymentMethod: React.FC<Props> = ({ selected, onSelect }) => {
       <Text style={styles.title}>Phương thức thanh toán</Text>
 
       <TouchableOpacity
-        style={[styles.card, selected === 'vnpay' && styles.selected]}
-        onPress={() => onSelect('vnpay')}
+        style={[styles.card, selected === 'vietqr' && styles.selected]}
+        onPress={() => onSelect('vietqr')}
       >
         <View style={styles.row}>
           <Image
-            source={require('../../assets/images/vn-pay/vnpay-logo.png')}
+            source={vnpay}
             style={styles.icon}
             resizeMode="contain"
           />
-          <Text style={styles.method}>Thanh toán VNPay</Text>
-          {selected === 'vnpay' && <MaterialIcons name="check-circle" size={20} color="#4AA366" />}
+          <Text style={styles.method}>Thanh toán VietQR</Text>
+          {selected === 'vietqr' && <MaterialIcons name="check-circle" size={20} color="#4AA366" />}
         </View>
       </TouchableOpacity>
 

@@ -6,7 +6,7 @@ type Props = {
   // vì logic kiểm tra và xử lý đã nằm ở CheckoutScreen
   location: string; // Vẫn giữ để khớp với Type Props, nhưng không cần dùng trong JSX
   phone: string; // Vẫn giữ để khớp với Type Props, nhưng không cần dùng trong JSX
-  paymentMethod: 'cod' | 'vnpay'; // Vẫn giữ để khớp với Type Props, nhưng không cần dùng trong JSX
+  paymentMethod: 'cod' | 'vietqr'; // Vẫn giữ để khớp với Type Props, nhưng không cần dùng trong JSX
   onPress: () => void;
   isLoading: boolean;
 };

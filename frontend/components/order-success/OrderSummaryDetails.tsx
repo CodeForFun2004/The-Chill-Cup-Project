@@ -274,7 +274,7 @@ const OrderSummaryDetails: React.FC<OrderSummaryDetailsProps> = ({ order }) => {
       <Row label="Thời gian giao hàng" value={order.deliveryTime || 'N/A'} />
       <Row label="Địa chỉ giao hàng" value={order.deliveryAddress || 'N/A'} />
       <Row label="Số điện thoại" value={order.phone || 'N/A'} />
-      <Row label="Hình thức thanh toán" value={order.paymentMethod === 'cod' ? 'Thanh toán khi nhận hàng' : 'VNPAY'} />
+      <Row label="Hình thức thanh toán" value={order.paymentMethod === 'cod' ? 'Thanh toán khi nhận hàng' : 'VietQR'} />
       <Row label="Trạng thái" value={order.status || 'N/A'} />
       <Row label="Thời gian đặt" value={order.createdAt ? new Date(order.createdAt).toLocaleString('vi-VN') : 'N/A'} />
     </View>

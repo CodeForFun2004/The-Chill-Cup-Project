@@ -91,7 +91,10 @@ const CustomerNavigator = () => {
         return {
           tabBarStyle: [
             styles.tabBar,
+            routeName === 'VietQRGateway' ? { display: 'none' } : {},
             routeName === 'OrderSuccess' ? { display: 'none' } : {},
+              routeName === 'OrderDetail' ? { display: 'none' } : {},
+               routeName === 'OrderTracking' ? { display: 'none' } : {},
           ],
         };
       }}

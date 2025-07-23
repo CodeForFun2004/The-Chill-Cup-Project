@@ -4,7 +4,7 @@ import Header from "../../components/hompage/Header";
 import LoginBanner from "../../components/hompage/LoginBanner";
 import PromoBanner from "../../components/hompage/PromoBanner";
 import CategoryCardBlock from "../../components/hompage/search-card/CategoryCardBlock";
-import ProductSection from "../../components/hompage/ProductSection"; // Giữ nguyên nếu bạn muốn dùng lại component này
+//import ProductSection from "../../components/hompage/ProductSection"; // Giữ nguyên nếu bạn muốn dùng lại component này
 import ProductCard from "../../components/hompage/ProductCard"; // Hoặc dùng ProductCard trực tiếp như CustomerHomeScreen
 import OrderMethodBlock from '../../components/delivery-pickup/OrderMethodBlock';
 import DeliveryAddressBlock from '../../components/delivery-pickup/DeliveryAddressBlock';
@@ -143,5 +143,3 @@ const styles = StyleSheet.create({
   },
 
 });
-
-
