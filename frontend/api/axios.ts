@@ -2,12 +2,7 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-
-//const API_URL = 'http://192.168.110.7:8080/api';
-
-const API_URL = 'http://192.168.110.22:8080/api';
-
-
+const API_URL = 'http://192.168.11.108:8080/api';
 
 let apiInstance = axios.create({
   baseURL: API_URL,
@@ -107,6 +102,58 @@ export const shipperAPI = {
     const response = await apiInstance.put("/shipper/toggle-availability", {
       isAvailable,
     })
+    return response.data
+  },
+}
+
+// API Services cho Discount Management
+export const discountAPI = {
+  // Lấy tất cả mã giảm giá
+  getAllDiscounts: async () => {
+    const response = await apiInstance.get("/discounts")
+    return response.data
+  },
+
+  // Tạo mã giảm giá mới
+  createDiscount: async (discountData: {
+    title: string
+    description: string
+    discountPercent: number
+    expiryDate: string
+    minOrder: number
+    pointsRequired: number
+    image?: string
+  }) => {
+    const response = await apiInstance.post("/discounts", discountData)
+    return response.data
+  },
+
+  // Cập nhật mã giảm giá
+  updateDiscount: async (
+    id: string,
+    discountData: {
+      title?: string
+      description?: string
+      discountPercent?: number
+      expiryDate?: string
+      minOrder?: number
+      pointsRequired?: number
+      image?: string
+    },
+  ) => {
+    const response = await apiInstance.put(`/discounts/${id}`, discountData)
+    return response.data
+  },
+
+  // Xóa mã giảm giá
+  deleteDiscount: async (id: string) => {
+    const response = await apiInstance.delete(`/discounts/${id}`)
+    return response.data
+  },
+
+  // Khóa/mở khóa mã giảm giá
+  lockDiscount: async (id: string) => {
+    const response = await apiInstance.patch(`/discounts/lock/${id}`)
     return response.data
   },
 }
