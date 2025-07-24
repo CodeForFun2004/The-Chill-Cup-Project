@@ -37,6 +37,7 @@ type OrderDetailScreenNavigationProp = NativeStackNavigationProp<
   CustomerStackParamList,
   'OrderDetail'
 >;
+
 type OrderDetailScreenRouteProp = RouteProp<CustomerStackParamList, 'OrderDetail'>;
 
 interface OrderDetailScreenProps {
@@ -68,9 +69,18 @@ const formatDateTime = (isoString: string | undefined): string => {
 };
 
 
-const OrderDetailScreen: React.FC<OrderDetailScreenProps> = ({ route, navigation }) => {
 
-  const { order } = route.params;
+import { useEffect } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import { fetchOrderById } from '../../redux/slices/orderSlice';
+
+const OrderDetailScreen: React.FC<OrderDetailScreenProps> = ({ route, navigation }) => {
+  const dispatch = useDispatch();
+  // const orderId = route.params.order?._id || route.params.orderId;
+  const orderId = route.params.order?._id;
+  const order = useSelector((state: any) => state.order.currentOrder);
+  const loading = useSelector((state: any) => state.order.loading);
+  const error = useSelector((state: any) => state.order.error);
   const [showRefundPopup, setShowRefundPopup] = useState(false);
 
   // Refund form state
@@ -79,11 +89,18 @@ const OrderDetailScreen: React.FC<OrderDetailScreenProps> = ({ route, navigation
   const [image, setImage] = useState<string | null>(null);
   const [video, setVideo] = useState<string | null>(null);
 
+
+  useEffect(() => {
+    if (orderId) {
+      dispatch(fetchOrderById(orderId) as any);
+    }
+  }, [orderId, dispatch]);
+
   // Use the order.status directly, but convert to lowercase for internal comparisons
-  const currentOrderStatus = order.status.toLowerCase();
+  const currentOrderStatus = order?.status?.toLowerCase?.() || '';
 
   const getStatusColor = (status: Order['status']): string => {
-    switch (status.toLowerCase()) { // ✅ Consistent lowercase comparison
+    switch (status?.toLowerCase?.()) {
       case 'completed':
         return '#4CAF50'; // Green
       case 'cancelled':
@@ -126,11 +143,10 @@ const OrderDetailScreen: React.FC<OrderDetailScreenProps> = ({ route, navigation
   };
 
   const handleTrackOrder = (): void => {
-    navigation.navigate('OrderTracking', { order });
+    if (order) navigation.navigate('OrderTracking', { order });
   };
 
   const canTrackOrder = (): boolean => {
-    // ✅ Consistent lowercase comparison for trackable statuses
     const trackableStatuses = ['processing', 'preparing', 'ready', 'delivering'];
     return trackableStatuses.includes(currentOrderStatus);
   };
@@ -148,7 +164,7 @@ const OrderDetailScreen: React.FC<OrderDetailScreenProps> = ({ route, navigation
   };
 
   const showRequestRefund =
-    order.status.toLowerCase() === 'completed' || order.status.toLowerCase() === 'cancelled';
+    order?.status?.toLowerCase?.() === 'completed' || order?.status?.toLowerCase?.() === 'cancelled';
 
   // Mở popup refund form
   const handleRequestRefund = () => setShowRefundPopup(true);
@@ -202,6 +218,30 @@ const OrderDetailScreen: React.FC<OrderDetailScreenProps> = ({ route, navigation
     setVideo(null);
   };
 
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <Text>Loading order details...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+  if (error) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <Text style={{ color: 'red' }}>{error}</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+  if (!order) {
+    return null;
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
@@ -221,12 +261,12 @@ const OrderDetailScreen: React.FC<OrderDetailScreenProps> = ({ route, navigation
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 70 }}>
         <View style={styles.statusCard}>
-          <View style={styles.statusHeader}>
-            <Text style={styles.orderNumber}>{order.orderNumber}</Text>
-            <View style={[styles.statusBadge, { backgroundColor: getStatusColor(order.status) }]}>
-              <Text style={styles.statusText}>{order.status}</Text>
+            <View style={styles.statusHeader}>
+              <Text style={styles.orderNumber}>{order.orderNumber}</Text>
+              <View style={[styles.statusBadge, { backgroundColor: getStatusColor(order.status) }]}> 
+                <Text style={styles.statusText}>{order.status}</Text>
+              </View>
             </View>
-          </View>
           {/* ✅ Fixed: Use formatDateTime helper for createdAt */}
           <Text style={styles.orderDateTime}>{formatDateTime(order.createdAt)}</Text>
         </View>
@@ -247,9 +287,8 @@ const OrderDetailScreen: React.FC<OrderDetailScreenProps> = ({ route, navigation
                 {/* ✅ Fixed: Use item.productId.image which is a URL string */}
                 {item.productId?.image && <Image source={{ uri: item.productId.image }} style={styles.image} />}
               </View>
-              {/* Display total price for this specific item row (price per unit * quantity) */}
-              {/* <Text style={styles.itemPrice}>{formatCurrency(item.price * item.quantity)}</Text> */}
-              <Text style={styles.itemPrice}>{formatCurrency(item.productId?.basePrice * item.quantity)}</Text>
+              {/* Hiển thị giá đã tính cho từng item (snapshot khi order) */}
+              <Text style={styles.itemPrice}>{formatCurrency(item.price)}</Text>
             </View>
           ))}
         </View>
@@ -288,7 +327,7 @@ const OrderDetailScreen: React.FC<OrderDetailScreenProps> = ({ route, navigation
           <Text style={styles.sectionTitle}>Payment Method</Text>
           <View style={styles.paymentRow}>
             {/* Choose icon based on payment method */}
-            {order.paymentMethod === 'vnpay' ? (
+            {order.paymentMethod === 'vietqr' ? (
               <Ionicons name="card-outline" size={24} color="#007AFF" />
             ) : (
               <Ionicons name="cash-outline" size={24} color="#4CAF50" />
@@ -296,7 +335,7 @@ const OrderDetailScreen: React.FC<OrderDetailScreenProps> = ({ route, navigation
             <View style={styles.paymentInfo}>
               <Text style={styles.paymentMethod}>{getPaymentMethodDisplayName(order.paymentMethod)}</Text>
               {/* Display additional details if needed for specific payment methods */}
-              {order.paymentMethod === 'vnpay' && <Text style={styles.paymentDetails}>Online Payment</Text>}
+              {order.paymentMethod === 'vietqr' && <Text style={styles.paymentDetails}>Online Payment</Text>}
               {order.paymentMethod === 'cod' && <Text style={styles.paymentDetails}>Cash on delivery</Text>}
             </View>
           </View>

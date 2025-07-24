@@ -80,6 +80,7 @@ interface CreateOrderPayload {
 // Định nghĩa trạng thái của slice order
 interface OrderState {
     currentOrder: Order | null;
+    orders: Order[];
     loading: boolean;
     error: string | null;
     orderCreatedSuccessfully: boolean;
@@ -87,10 +88,34 @@ interface OrderState {
 
 const initialState: OrderState = {
     currentOrder: null,
+    orders: [],
     loading: false,
     error: null,
     orderCreatedSuccessfully: false,
 };
+/**
+ * @thunk fetchUserOrders
+ * @description Lấy danh sách đơn hàng của user hiện tại.
+ */
+export const fetchUserOrders = createAsyncThunk(
+    'order/fetchUserOrders',
+    async (_, thunkAPI) => {
+        try {
+            const token = await AsyncStorage.getItem('accessToken');
+            if (!token) {
+                return thunkAPI.rejectWithValue('No access token found. Please log in.');
+            }
+            const response = await api.get('/orders/user', {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            return response.data as Order[];
+        } catch (error: any) {
+            const message = error.response?.data?.error || error.response?.data?.message || 'Failed to fetch order history';
+            console.error('Error fetching order history:', error.response?.data || error.message || error);
+            return thunkAPI.rejectWithValue(message);
+        }
+    }
+);
 
 // --- THUNKS ---
 
@@ -181,7 +206,6 @@ const orderSlice = createSlice({
                 state.loading = false;
                 state.orderCreatedSuccessfully = true;
                 state.error = null;
-                // ✅ Cập nhật toàn bộ thông tin order, bao gồm cả qrCodeUrl
                 state.currentOrder = {
                     ...action.payload.order,
                     qrCodeUrl: action.payload.qrCodeUrl,
@@ -209,6 +233,21 @@ const orderSlice = createSlice({
                 state.error = action.payload as string;
                 state.currentOrder = null;
                 state.orderCreatedSuccessfully = false;
+            })
+            // --- Xử lý trạng thái của fetchUserOrders thunk ---
+            .addCase(fetchUserOrders.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(fetchUserOrders.fulfilled, (state, action: PayloadAction<Order[]>) => {
+                state.loading = false;
+                state.orders = action.payload;
+                state.error = null;
+            })
+            .addCase(fetchUserOrders.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload as string;
+                state.orders = [];
             });
     },
 });

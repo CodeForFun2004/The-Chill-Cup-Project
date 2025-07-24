@@ -94,7 +94,24 @@ const OrderManagementScreen: React.FC<OrderManagementScreenProps> = ({ navigatio
     { key: "ready", title: "Sẵn sàng lấy", icon: "bag-check-outline" },
     { key: "delivering", title: "Đang giao hàng", icon: "bicycle-outline" },
     { key: "completed", title: "Hoàn thành", icon: "checkmark-circle-outline" },
+    { key: "cancelled", title: "Hủy đơn hàng", icon: "close-circle-outline" },
   ]
+
+  // Get valid next status options based on current status (one-way flow)
+  const getValidStatusOptions = (currentStatus: StaffOrder["status"]) => {
+    const statusFlow: Record<StaffOrder["status"], string[]> = {
+      pending: ["processing", "cancelled"],
+      processing: ["preparing", "cancelled"],
+      preparing: ["ready", "cancelled"],
+      ready: ["delivering", "cancelled"],
+      delivering: ["completed", "cancelled"],
+      completed: [], // Final state - no further changes
+      cancelled: [], // Final state - no further changes
+    }
+    
+    const validKeys = statusFlow[currentStatus] || []
+    return statusOptions.filter(option => validKeys.includes(option.key))
+  }
 
   // Get filtered orders
   const getFilteredOrders = (): StaffOrder[] => {
@@ -136,7 +153,7 @@ const OrderManagementScreen: React.FC<OrderManagementScreenProps> = ({ navigatio
   const handleStatusUpdate = (status: StaffOrder["status"]) => {
     if (selectedOrder) {
       handleStatusChange(selectedOrder, status)
-      setSelectedOrder(null)
+      // Don't clear selectedOrder here - let individual handlers manage it
     }
   }
 
@@ -149,20 +166,25 @@ const OrderManagementScreen: React.FC<OrderManagementScreenProps> = ({ navigatio
   const handleStatusChange = async (order: StaffOrder, newStatus: string) => {
     if (newStatus === 'cancelled') {
       setSelectedOrder(order)
+      setShowStatusModal(false)
       setShowCancelModal(true)
     } else if (newStatus === 'delivering' && order.status === 'ready') {
       setSelectedOrder(order)
+      setShowStatusModal(false)
       dispatch(fetchAvailableShippers() as any)
       setShowShipperModal(true)
     } else {
       try {
         await dispatch(updateOrderStatusByStaff({ orderId: order._id, status: newStatus }) as any)
         dispatch(fetchStaffOrders({}) as any)
+        setShowStatusModal(false)
+        setSelectedOrder(null) // Clear selectedOrder for immediate status updates
       } catch (error) {
         console.error('Error updating order status:', error)
+        setShowStatusModal(false)
+        setSelectedOrder(null) // Clear selectedOrder on error too
       }
     }
-    setShowStatusModal(false)
   }
 
   const handleAssignShipper = async (shipperId: string) => {
@@ -186,8 +208,15 @@ const OrderManagementScreen: React.FC<OrderManagementScreenProps> = ({ navigatio
   }
 
   const handleCancelOrder = async () => {
+    console.log('handleCancelOrder called')
+    console.log('selectedOrder:', selectedOrder?._id)
+    console.log('cancelReason:', `"${cancelReason}"`)
+    console.log('cancelReason.trim():', `"${cancelReason.trim()}"`)
+    console.log('cancelReason.trim() length:', cancelReason.trim().length)
+    
     if (selectedOrder && cancelReason.trim()) {
       try {
+        console.log('Attempting to cancel order...')
         await dispatch(updateOrderStatusByStaff({ 
           orderId: selectedOrder._id, 
           status: 'cancelled',
@@ -195,10 +224,16 @@ const OrderManagementScreen: React.FC<OrderManagementScreenProps> = ({ navigatio
         }) as any)
         dispatch(fetchStaffOrders({}) as any)
         setShowCancelModal(false)
+        setSelectedOrder(null)
         setCancelReason("")
+        console.log('Order cancelled successfully')
       } catch (error) {
         console.error('Error canceling order:', error)
+        Alert.alert('Lỗi', 'Không thể hủy đơn hàng. Vui lòng thử lại.')
       }
+    } else {
+      console.log('Validation failed - missing selectedOrder or cancelReason')
+      Alert.alert('Lỗi', 'Vui lòng nhập lý do hủy đơn hàng.')
     }
   }
 
@@ -240,9 +275,10 @@ const OrderManagementScreen: React.FC<OrderManagementScreenProps> = ({ navigatio
         <View style={styles.orderHeader}>
           <View style={styles.orderInfo}>
             <Text style={styles.orderNumber}>{item.orderNumber}</Text>
-            <Text style={styles.customerName}>{item.customerName}</Text>
+            {/* <Text style={styles.customerName}>{item.userId.fullname}</Text> */}
+            <Text style={styles.customerName}>{item.userId?.fullname || "Ẩn danh"}</Text>
             <Text style={styles.orderTime}>
-              {item.orderTime} • {item.orderType}
+              {item.deliveryTime} • {item.userId?.phone || "Không có số điện thoại"}
             </Text>
           </View>
           <View style={styles.orderStatus}>
@@ -386,17 +422,28 @@ const OrderManagementScreen: React.FC<OrderManagementScreenProps> = ({ navigatio
               </TouchableOpacity>
             </View>
 
-            {statusOptions.map((status) => (
-              <TouchableOpacity
-                key={status.key}
-                style={styles.statusOption}
-                onPress={() => handleStatusUpdate(status.key as StaffOrder["status"])}
-              >
-                <Ionicons name={status.icon as any} size={20} color="#10B981" />
-                <Text style={styles.statusOptionText}>{status.title}</Text>
-                <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />
-              </TouchableOpacity>
-            ))}
+            {selectedOrder && getValidStatusOptions(selectedOrder.status).length > 0 ? (
+              getValidStatusOptions(selectedOrder.status).map((status) => (
+                <TouchableOpacity
+                  key={status.key}
+                  style={styles.statusOption}
+                  onPress={() => handleStatusUpdate(status.key as StaffOrder["status"])}
+                >
+                  <Ionicons name={status.icon as any} size={20} color="#10B981" />
+                  <Text style={styles.statusOptionText}>{status.title}</Text>
+                  <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />
+                </TouchableOpacity>
+              ))
+            ) : (
+              <View style={styles.noOptionsContainer}>
+                <Text style={styles.noOptionsText}>
+                  {selectedOrder?.status === 'completed' || selectedOrder?.status === 'cancelled' 
+                    ? 'Đơn hàng đã hoàn tất, không thể thay đổi trạng thái'
+                    : 'Không có trạng thái khả dụng để cập nhật'
+                  }
+                </Text>
+              </View>
+            )}
           </View>
         </View>
       </Modal>
@@ -474,6 +521,7 @@ const OrderManagementScreen: React.FC<OrderManagementScreenProps> = ({ navigatio
                 style={[styles.modalButton, styles.cancelButton]}
                 onPress={() => {
                   setShowCancelModal(false)
+                  setSelectedOrder(null)
                   setCancelReason("")
                 }}
               >
@@ -716,6 +764,17 @@ const styles = StyleSheet.create({
     color: "#1F2937",
     marginLeft: 12,
     flex: 1,
+  },
+  noOptionsContainer: {
+    padding: 20,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  noOptionsText: {
+    fontSize: 16,
+    color: "#6B7280",
+    textAlign: "center",
+    fontStyle: "italic",
   },
   noteInput: {
     margin: 16,
