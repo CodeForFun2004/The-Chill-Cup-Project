@@ -10,6 +10,7 @@ type CartItemProps = {
   image: any;
   onIncrease: () => void;
   onDecrease: () => void;
+  onRemove: () => void;
 };
 
 export const CartItem: React.FC<CartItemProps> = ({
@@ -20,6 +21,7 @@ export const CartItem: React.FC<CartItemProps> = ({
   image,
   onIncrease,
   onDecrease,
+  onRemove,
 }) => {
   return (
     <View style={styles.container}>
@@ -38,6 +40,9 @@ export const CartItem: React.FC<CartItemProps> = ({
           <Text style={styles.qtyText}>+</Text>
         </TouchableOpacity>
       </View>
+      <TouchableOpacity style={styles.removeButton} onPress={onRemove}>
+    <Text style={styles.removeText}>🗑</Text>
+  </TouchableOpacity>
     </View>
   );
 };
@@ -90,4 +95,12 @@ const styles = StyleSheet.create({
     marginHorizontal: 8,
     fontSize: 16,
   },
+  removeButton: {
+  marginLeft: 12,
+  padding: 6,
+},
+removeText: {
+  fontSize: 18,
+  color: '#ff3333',
+},
 });

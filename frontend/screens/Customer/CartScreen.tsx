@@ -1,28 +1,37 @@
-import React, { useEffect, useState } from 'react';
-import { View, ScrollView, StyleSheet, Text, ActivityIndicator } from 'react-native';
-import { useAppDispatch, useAppSelector } from '../../redux/hooks';
-import { RootState } from '../../redux/rootReducer';
+import React, { useEffect, useState } from "react";
+import {
+  View,
+  ScrollView,
+  StyleSheet,
+  Text,
+  ActivityIndicator,
+  Alert,
+} from "react-native";
+import { useAppDispatch, useAppSelector } from "../../redux/hooks";
+import { RootState } from "../../redux/rootReducer";
 import {
   loadCartFromAPI,
   clearCart,
   applyDiscount,
   removeAppliedPromotionCode,
   updateCartItemQuantity,
-} from '../../redux/slices/cartSlice';
+  removeItemFromCart,
+} from "../../redux/slices/cartSlice";
 
-import { CartItem } from '../../components/cart/CartItem';
-import { PromoCodeInput } from '../../components/cart/PromoCodeInput';
-import { CartSummary } from '../../components/cart/CartSummary';
-import { CartFooter } from '../../components/cart/CartFooter';
-import CartHeader from '../../components/cart/CardHeader';
+import { CartItem } from "../../components/cart/CartItem";
+import { PromoCodeInput } from "../../components/cart/PromoCodeInput";
+import { CartSummary } from "../../components/cart/CartSummary";
+import { CartFooter } from "../../components/cart/CartFooter";
+import CartHeader from "../../components/cart/CardHeader";
 
-import { useNavigation, useIsFocused } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { CustomerStackParamList } from '../../navigation/customer/CustomerStackNavigator';
-import Toast from 'react-native-toast-message';
+import { useNavigation, useIsFocused } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { CustomerStackParamList } from "../../navigation/customer/CustomerStackNavigator";
+import Toast from "react-native-toast-message";
 
 const CartScreen = () => {
-  const navigation = useNavigation<NativeStackNavigationProp<CustomerStackParamList>>();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<CustomerStackParamList>>();
   const isFocused = useIsFocused();
   const dispatch = useAppDispatch();
 
@@ -52,7 +61,7 @@ const CartScreen = () => {
     }
     return () => {
       isActive = false;
-      console.log('CartScreen unmounted');
+      console.log("CartScreen unmounted");
     };
   }, [dispatch, userLoading, authLoading, hasLoadedInitially]);
 
@@ -63,13 +72,14 @@ const CartScreen = () => {
   const handleCheckout = () => {
     if (items.length === 0) {
       Toast.show({
-        type: 'info',
-        text1: 'Giỏ hàng của bạn đang trống. Vui lòng thêm sản phẩm trước khi thanh toán.',
+        type: "info",
+        text1:
+          "Giỏ hàng của bạn đang trống. Vui lòng thêm sản phẩm trước khi thanh toán.",
       });
       return;
     }
     if (isFocused) {
-      navigation.navigate('Checkout');
+      navigation.navigate("Checkout");
     }
   };
 
@@ -87,16 +97,22 @@ const CartScreen = () => {
 
   const handleDecreaseQuantity = (itemId: string, currentQuantity: number) => {
     if (currentQuantity > 1) {
-      dispatch(updateCartItemQuantity({ itemId, quantity: currentQuantity - 1 }));
+      dispatch(
+        updateCartItemQuantity({ itemId, quantity: currentQuantity - 1 })
+      );
     } else {
       Toast.show({
-        type: 'info',
-        text1: 'Số lượng không thể nhỏ hơn 1. Vui lòng xóa sản phẩm khỏi giỏ hàng nếu bạn không muốn mua nữa.',
+        type: "info",
+        text1:
+          "Số lượng không thể nhỏ hơn 1. Vui lòng xóa sản phẩm khỏi giỏ hàng nếu bạn không muốn mua nữa.",
       });
     }
   };
 
-  const isLoading = (userLoading || authLoading || cartLoading) && items.length === 0 && !cartError;
+  const isLoading =
+    (userLoading || authLoading || cartLoading) &&
+    items.length === 0 &&
+    !cartError;
 
   return (
     <View style={styles.wrapper}>
@@ -121,10 +137,16 @@ const CartScreen = () => {
           </Text>
         </View>
       ) : (
-        <ScrollView key={`scrollview-${items.length}`} style={styles.container} contentContainerStyle={{ paddingBottom: 100 }}>
+        <ScrollView
+          key={`scrollview-${items.length}`}
+          style={styles.container}
+          contentContainerStyle={{ paddingBottom: 100 }}
+        >
           {items.length === 0 ? (
             <View style={styles.emptyCartCentered}>
-              <Text style={styles.emptyCartText}>🛒 Giỏ hàng của bạn đang trống</Text>
+              <Text style={styles.emptyCartText}>
+                🛒 Giỏ hàng của bạn đang trống
+              </Text>
             </View>
           ) : (
             <>
@@ -136,13 +158,39 @@ const CartScreen = () => {
                   price={item.price}
                   quantity={item.quantity}
                   image={item.image}
-                  onIncrease={() => handleIncreaseQuantity(item.id.toString(), item.quantity)}
-                  onDecrease={() => handleDecreaseQuantity(item.id.toString(), item.quantity)}
+                  onIncrease={() =>
+                    handleIncreaseQuantity(item.id.toString(), item.quantity)
+                  }
+                  onDecrease={() =>
+                    handleDecreaseQuantity(item.id.toString(), item.quantity)
+                  }
+                  onRemove={() => {
+                    Alert.alert(
+                      "Xác nhận",
+                      "Bạn có chắc chắn muốn xoá sản phẩm này?",
+                      [
+                        { text: "Huỷ" },
+                        {
+                          text: "Xoá",
+                          onPress: () => dispatch(removeItemFromCart(item.id)),
+                        },
+                      ]
+                    );
+                  }}
                 />
               ))}
 
-              <PromoCodeInput onApply={handleApplyPromoCode} onRemove={handleRemovePromoCode} appliedCode={appliedPromotionCode} />
-              <CartSummary subtotal={subtotal} delivery={delivery} discountAmount={discountAmount} total={total} />
+              <PromoCodeInput
+                onApply={handleApplyPromoCode}
+                onRemove={handleRemovePromoCode}
+                appliedCode={appliedPromotionCode}
+              />
+              <CartSummary
+                subtotal={subtotal}
+                delivery={delivery}
+                discountAmount={discountAmount}
+                total={total}
+              />
               <CartFooter total={total} onCheckout={handleCheckout} />
             </>
           )}
@@ -156,49 +204,46 @@ const CartScreen = () => {
 const styles = StyleSheet.create({
   wrapper: {
     flex: 1,
-    backgroundColor: '#F4F4F4',
+    backgroundColor: "#F4F4F4",
   },
   container: {
     flex: 1,
     padding: 16,
-    backgroundColor: '#F4F4F4',
+    backgroundColor: "#F4F4F4",
   },
   centered: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   loadingText: {
     marginTop: 10,
     fontSize: 16,
-    color: '#333',
+    color: "#333",
   },
   errorText: {
     marginTop: 10,
     fontSize: 16,
-    color: 'red',
-    textAlign: 'center',
+    color: "red",
+    textAlign: "center",
   },
   retryText: {
     marginTop: 5,
     fontSize: 14,
-    color: 'blue',
-    textDecorationLine: 'underline',
+    color: "blue",
+    textDecorationLine: "underline",
   },
   emptyCartCentered: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     minHeight: 200,
   },
   emptyCartText: {
     fontSize: 18,
-    color: '#666',
+    color: "#666",
     marginTop: 20,
   },
 });
 
 export default CartScreen;
-
-
-
