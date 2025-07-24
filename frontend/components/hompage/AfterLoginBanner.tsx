@@ -1,15 +1,30 @@
 // components/homepage/AfterLoginBanner.tsx
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, Image, Pressable } from 'react-native';
 import { useSelector } from 'react-redux';
-import { RootState } from '../../redux/store';
+import { RootState } from '../../redux/rootReducer';
 import { useNavigation } from '@react-navigation/native';
 
+import newImg from '../../assets/images/search-box/new.png'; // Import your image
+
+import { fetchMyPoints } from '../../redux/slices/loyaltySlice'; // ✅ import thunk
+
+import { useAppDispatch } from '../../redux/hooks';
+
 const AfterLoginBanner = () => {
-  const userInfo = useSelector((state: RootState) => state.auth.userInfo);
+  const userInfo = useSelector((state: RootState) => state.auth.user);
   const name = userInfo?.name?.trim() || 'Thành viên';
-  const memberId = userInfo?.id || 'M162445270';
+  const memberId = (userInfo?.id || 'M162445270').slice(-9);
   const navigation = useNavigation();
+
+  const totalPoints = useSelector((state: RootState) => state.loyalty.totalPoints);
+
+// Fetch BEAN điểm
+const dispatch = useAppDispatch();
+
+useEffect(() => {
+  dispatch(fetchMyPoints());
+}, []);
 
   return (
     <View style={styles.container}>
@@ -17,7 +32,7 @@ const AfterLoginBanner = () => {
         <View style={styles.headerRow}>
           <View style={styles.userInfo}>
             <Image
-              source={require('../../assets/images/search-box/new.png')} // hoặc URL avatar từ userInfo
+              source={newImg} // hoặc URL avatar từ userInfo
               style={styles.avatar}
             />
             <View>
@@ -27,7 +42,7 @@ const AfterLoginBanner = () => {
           </View>
           <View style={styles.rightBox}>
             <Text style={styles.beanText}>Đổi</Text>
-            <Text style={styles.beanCount}>0 BEAN</Text>
+            <Text style={styles.beanCount}>{totalPoints} PI</Text>
           </View>
         </View>
         <Text style={styles.memberId}>Mã thành viên: {memberId}</Text>
