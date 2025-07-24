@@ -111,20 +111,20 @@ const mapRawCartItemsToCartItems = (rawItems: RawCartItem[]): CartItem[] => {
 
   return rawItems.map(item => {
     const product = item.productId;
-    
-    // Lấy category đầu tiên (nếu có)
+
     let categoryName = 'Unknown';
     if (Array.isArray(product.categoryId) && product.categoryId.length > 0) {
       const firstCategory = product.categoryId[0];
-      categoryName = typeof firstCategory === 'object' && 'category' in firstCategory
-        ? firstCategory.category
-        : 'Unknown';
+      categoryName =
+        typeof firstCategory === 'object' && firstCategory !== null && 'category' in firstCategory
+          ? (firstCategory as any).category
+          : 'Unknown';
     }
 
     return {
       id: item._id,
       name: product.name,
-      category: categoryName, // ✅ đã fix chính xác
+      category: categoryName,
       price: ensureNumber(item.price),
       quantity: ensureNumber(item.quantity),
       image: product.image,
