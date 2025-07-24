@@ -38,15 +38,21 @@ export type UpdateItemQuantityPayload = {
 // Kiểu dữ liệu NHẬN ĐƯỢC TỪ BACKEND API (Raw items)
 // Đây là cấu trúc chung cho mọi phản hồi API liên quan đến giỏ hàng (load, add, remove, update, clear, apply-discount)
 type RawCartItem = {
-  _id: string; // ID của sản phẩm trong giỏ hàng (từ backend, cần map thành 'id' ở frontend)
-  name: string;
-  image: string;
+  _id: string;
+  userId: string;
+  productId: {
+    _id: string;
+    name: string;
+    basePrice: number;
+    image: string;
+    categoryId: string[] | { _id: string; name: string }[]; // Nếu backend populate category
+  };
   size?: string;
+  toppings: { _id: string; name: string; price: number; icon: string }[];
   quantity: number;
-  unitPrice: number; // Giá đơn vị từ backend (cần map thành 'price' ở frontend)
-  category?: string; // Tên category (hoặc ID nếu backend trả về)
-  toppings?: { _id: string; name: string; price: number; icon: string }[]; // Mảng đối tượng topping đầy đủ
+  price: number; // Tổng giá của item
 };
+
 
 // **CẤU TRÚC DỮ LIỆU TRẢ VỀ TỪ BACKEND CHO TẤT CẢ CÁC API GIỎ HÀNG**
 // (load, add, remove, clear, update quantity, apply-discount)
@@ -96,22 +102,39 @@ const initialState: CartState = {
 };
 
 // Hàm tiện ích để map RawCartItem[] từ backend sang CartItem[] cho frontend state
+// Hàm tiện ích để map RawCartItem[] từ backend sang CartItem[] cho frontend state
 const mapRawCartItemsToCartItems = (rawItems: RawCartItem[]): CartItem[] => {
   if (!rawItems || !Array.isArray(rawItems)) {
     console.warn('Invalid rawItems provided for mapping:', rawItems);
-    return []; // Trả về mảng rỗng nếu không phải là mảng hợp lệ
+    return [];
   }
-  return rawItems.map(item => ({
-    id: item._id,
-    name: item.name,
-    category: item.category || 'Unknown', // Cung cấp giá trị mặc định nếu category có thể null/undefined
-    price: ensureNumber(item.unitPrice),
-    quantity: ensureNumber(item.quantity),
-    image: item.image,
-    size: item.size,
-    toppings: item.toppings ? item.toppings.map(t => t.name) : [],
-  }));
+
+  return rawItems.map(item => {
+    const product = item.productId;
+    
+    // Lấy category đầu tiên (nếu có)
+    let categoryName = 'Unknown';
+    if (Array.isArray(product.categoryId) && product.categoryId.length > 0) {
+      const firstCategory = product.categoryId[0];
+      categoryName = typeof firstCategory === 'object' && 'category' in firstCategory
+        ? firstCategory.category
+        : 'Unknown';
+    }
+
+    return {
+      id: item._id,
+      name: product.name,
+      category: categoryName, // ✅ đã fix chính xác
+      price: ensureNumber(item.price),
+      quantity: ensureNumber(item.quantity),
+      image: product.image,
+      size: item.size,
+      toppings: item.toppings ? item.toppings.map(t => t.name) : [],
+    };
+  });
 };
+
+
 
 // Hàm tiện ích CHUNG để cập nhật state sau MỌI API call GIỎ HÀNG thành công
 // (load, add, remove, update quantity, clear, apply-discount)
@@ -339,3 +362,7 @@ const cartSlice = createSlice({
 export const { clearLocalCart, removeAppliedPromotionCode } = cartSlice.actions;
 
 export default cartSlice.reducer;
+
+
+
+
