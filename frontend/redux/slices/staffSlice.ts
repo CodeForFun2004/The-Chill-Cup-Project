@@ -5,7 +5,10 @@ import api from '../../api/axios'
 // Interfaces phù hợp với backend API
 export interface StaffOrder {
   _id: string
-  userId: string
+  userId: {
+    fullname: String
+    phone: String 
+  }
   storeId: string
   orderNumber: string
   items: Array<{
