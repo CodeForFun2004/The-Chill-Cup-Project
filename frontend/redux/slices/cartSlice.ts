@@ -309,6 +309,7 @@ const cartSlice = createSlice({
       .addCase(removeItemFromCart.pending, (state) => { state.loading = true; state.error = null; })
       .addCase(removeItemFromCart.fulfilled, (state, action: PayloadAction<CartApiResponse>) => {
         // ✅ Sử dụng hàm cập nhật chung
+        console.log('[DEBUG] removeItemFromCart result:', action.payload); // 👈 Kiểm tra items trả về
         updateCartStateFromApiResponse(state, action.payload);
       })
       .addCase(removeItemFromCart.rejected, (state, action) => { state.loading = false; state.error = action.payload || 'Failed to remove item'; })

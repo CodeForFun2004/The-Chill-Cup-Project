@@ -109,10 +109,8 @@ const CartScreen = () => {
     }
   };
 
-  const isLoading =
-    (userLoading || authLoading || cartLoading) &&
-    items.length === 0 &&
-    !cartError;
+  const isLoading = (userLoading || authLoading || cartLoading) && !cartError;
+
 
   return (
     <View style={styles.wrapper}>
