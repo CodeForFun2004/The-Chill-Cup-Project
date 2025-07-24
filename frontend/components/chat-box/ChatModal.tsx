@@ -25,7 +25,7 @@ import botAvatar from "../../assets/images/chat-box/avatar2.png";
 const { width } = Dimensions.get("window");
 
 // Define the API endpoint
-const API_ENDPOINT = "http://192.168.110.22:8080/api/chatbot"; // Corrected endpoint
+const API_ENDPOINT = "http://192.168.2.107:8080/api/chatbot"; // Corrected endpoint
 
 interface Message {
   text: string;
