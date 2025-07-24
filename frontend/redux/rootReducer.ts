@@ -8,6 +8,7 @@ import categoryReducer from './slices/categorySlice'
 import productReducer from './slices/productSlice'
 import staffReducer from './slices/staffSlice'
 import loyaltyReducer from './slices/loyaltySlice';
+import userVoucherReducer from './slices/userVoucherSlice';
 
 const rootReducer = combineReducers({
   auth: authReducer,
@@ -19,6 +20,7 @@ const rootReducer = combineReducers({
   product: productReducer,
   staff: staffReducer,
   loyalty: loyaltyReducer,
+  userVoucher: userVoucherReducer,
 });
 
 export type RootState = ReturnType<typeof rootReducer>;

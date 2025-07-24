@@ -10,7 +10,7 @@ interface PointHistoryItem {
   pointsEarned: number;
 }
 
-interface VoucherItem {
+export interface VoucherItem {
   _id: string;
   title: string;
   description: string;
