@@ -1,60 +1,103 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Image, FlatList, ActivityIndicator, RefreshControl } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import voucherImg from "../../assets/images/voucher/discount-20.png";
+import { useAppDispatch, useAppSelector } from '../../redux/hooks';
+import { fetchUserVouchers, UserVoucher, clearUserVoucherError } from '../../redux/slices/userVoucherSlice';
+import { RootState } from '../../redux/rootReducer';
+import Toast from 'react-native-toast-message';
 
-type Voucher = {
-  id: string;
-  title: string;
-  description: string;
-  discount: string;
-  expiryDate: string;
-  minOrder: string;
-  isUsed: boolean;
-  image?: any;
-};
+// Component con để hiển thị từng voucher
+const VoucherCard = ({ voucher, onUseVoucher }: { voucher: UserVoucher; onUseVoucher: (id: string) => void }) => (
+  <TouchableOpacity
+    style={[styles.voucherCard, voucher.isUsed !== false && styles.usedVoucher]}
+    onPress={() => !voucher.isUsed && onUseVoucher(voucher._id)} // Chuyển sang màn hình ProductList nếu chưa dùng
+    disabled={voucher.isUsed !== false} // Vô hiệu hóa khi đã dùng hoặc chưa nhận
+  >
+    <View style={styles.voucherContent}>
+      <View style={styles.voucherLeft}>
+        {voucher.image && (
+          <Image source={voucher.image ? { uri: voucher.image } : voucherImg} style={styles.voucherImage} />
+        )}
+        <View style={styles.voucherInfo}>
+          <Text style={styles.voucherTitle}>{voucher.title}</Text>
+          <Text style={styles.voucherDescription}>{voucher.description}</Text>
+          <View style={styles.voucherDetails}>
+            <View style={styles.detailItem}>
+              <MaterialIcons name="shopping-cart" size={14} color="#666" />
+              <Text style={styles.detailText}>Đơn tối thiểu: {voucher.minOrder.toLocaleString('vi-VN')}đ</Text>
+            </View>
+            <View style={styles.detailItem}>
+              <MaterialIcons name="event" size={14} color="#666" />
+              <Text style={styles.detailText}>HSD: {new Date(voucher.expiryDate).toLocaleDateString()}</Text>
+            </View>
+            <View style={styles.detailItem}>
+              <MaterialIcons name="local-offer" size={16} color="#e53935" />
+              <Text style={[styles.detailText, styles.promotionCodeText]}>Mã: {voucher.promotionCode}</Text>
+            </View>
+          </View>
+        </View>
+      </View>
+      
+    </View>
+    {voucher.isUsed === true && (
+      <View style={styles.usedOverlay}>
+        <MaterialIcons name="check-circle" size={24} color="#4AA366" />
+        <Text style={styles.usedText}>Đã sử dụng</Text>
+      </View>
+    )}
+  </TouchableOpacity>
+);
 
 const VouchersScreen = () => {
   const navigation = useNavigation();
+  const dispatch = useAppDispatch();
   const [activeTab, setActiveTab] = useState<'available' | 'used'>('available');
+  const [refreshing, setRefreshing] = useState(false);
 
-  // Mock data for vouchers
-  const vouchers: Voucher[] = [
-    {
-      id: '1',
-      title: 'Giảm 20% cho đơn hàng đầu tiên',
-      description: 'Áp dụng cho tất cả sản phẩm',
-      discount: '20%',
-      expiryDate: '31/12/2024',
-      minOrder: '100,000đ',
-      isUsed: false,
-      image: require('../../assets/images/voucher/discount-20.png'),
-    },
-    {
-      id: '2',
-      title: 'Mua 1 tặng 1',
-      description: 'Áp dụng cho menu Matcha',
-      discount: 'Mua 1 tặng 1',
-      expiryDate: '30/06/2024',
-      minOrder: '50,000đ',
-      isUsed: false,
-      image: require('../../assets/images/voucher/discount-20.png'),
-    },
-    {
-      id: '3',
-      title: 'Giảm 50K cho đơn từ 200K',
-      description: 'Áp dụng cho tất cả sản phẩm',
-      discount: '50,000đ',
-      expiryDate: '15/05/2024',
-      minOrder: '200,000đ',
-      isUsed: true,
-      image: require('../../assets/images/voucher/discount-20.png'),
-    },
-  ];
+  const { vouchers, loading, error } = useAppSelector((state: RootState) => state.userVoucher);
 
-  const filteredVouchers = vouchers.filter(voucher => 
-    activeTab === 'available' ? !voucher.isUsed : voucher.isUsed
-  );
+  // Tải danh sách voucher khi tab thay đổi
+  useEffect(() => {
+    if (activeTab === 'available') {
+      dispatch(fetchUserVouchers('false')); // Lấy các voucher chưa dùng
+    } else {
+      dispatch(fetchUserVouchers('true')); // Lấy các voucher đã dùng
+    }
+  }, [dispatch, activeTab]);
+
+  // Xử lý lỗi
+  useEffect(() => {
+    if (error) {
+      Toast.show({ type: 'error', text1: 'Lỗi', text2: error });
+      dispatch(clearUserVoucherError());
+    }
+  }, [error, dispatch]);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    if (activeTab === 'available') {
+      await dispatch(fetchUserVouchers('false'));
+    } else {
+      await dispatch(fetchUserVouchers('true'));
+    }
+    setRefreshing(false);
+  };
+  
+  const handleUseVoucher = (id: string) => {
+    // Logic này sẽ navigate sang màn hình sản phẩm
+    // Bạn có thể lưu ID voucher đã chọn vào Redux để sử dụng ở màn hình Cart
+    Toast.show({
+      type: 'info',
+      text1: 'Sử dụng voucher',
+      text2: `Bạn đã chọn voucher có ID: ${id}`,
+    });
+    // Ví dụ: navigation.navigate('ProductList', { voucherId: id });
+    navigation.navigate('ProductList' as never);
+  };
+
+  const filteredVouchers = vouchers.filter(v => v.isUsed !== null);
 
   const EmptyState = () => (
     <View style={styles.emptyContainer}>
@@ -68,49 +111,6 @@ const VouchersScreen = () => {
           : 'Các voucher đã sử dụng sẽ hiển thị ở đây'}
       </Text>
     </View>
-  );
-
-  const VoucherCard = ({ voucher }: { voucher: Voucher }) => (
-    <TouchableOpacity 
-      style={[styles.voucherCard, voucher.isUsed && styles.usedVoucher]}
-      onPress={() => !voucher.isUsed && navigation.navigate('ProductList' as never)}
-    >
-      <View style={styles.voucherContent}>
-        <View style={styles.voucherLeft}>
-          {voucher.image && (
-            <Image source={voucher.image} style={styles.voucherImage} />
-          )}
-          <View style={styles.voucherInfo}>
-            <Text style={styles.voucherTitle}>{voucher.title}</Text>
-            <Text style={styles.voucherDescription}>{voucher.description}</Text>
-            <View style={styles.voucherDetails}>
-              <View style={styles.detailItem}>
-                <MaterialIcons name="shopping-cart" size={14} color="#666" />
-                <Text style={styles.detailText}>Đơn tối thiểu: {voucher.minOrder}</Text>
-              </View>
-              <View style={styles.detailItem}>
-                <MaterialIcons name="event" size={14} color="#666" />
-                <Text style={styles.detailText}>HSD: {voucher.expiryDate}</Text>
-              </View>
-            </View>
-          </View>
-        </View>
-        <View style={styles.voucherRight}>
-          <Text style={styles.discountText}>{voucher.discount}</Text>
-          {!voucher.isUsed && (
-            <TouchableOpacity style={styles.useButton}>
-              <Text style={styles.useButtonText}>Sử dụng</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-      </View>
-      {voucher.isUsed && (
-        <View style={styles.usedOverlay}>
-          <MaterialIcons name="check-circle" size={24} color="#4AA366" />
-          <Text style={styles.usedText}>Đã sử dụng</Text>
-        </View>
-      )}
-    </TouchableOpacity>
   );
 
   return (
@@ -142,15 +142,20 @@ const VouchersScreen = () => {
         </TouchableOpacity>
       </View>
 
-      <ScrollView style={styles.voucherList}>
-        {filteredVouchers.length > 0 ? (
-          filteredVouchers.map(voucher => (
-            <VoucherCard key={voucher.id} voucher={voucher} />
-          ))
-        ) : (
-          <EmptyState />
-        )}
-      </ScrollView>
+      {loading && !refreshing ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#4AA366" />
+        </View>
+      ) : (
+        <FlatList
+          data={filteredVouchers}
+          keyExtractor={(item) => item._id}
+          renderItem={({ item }) => <VoucherCard voucher={item} onUseVoucher={handleUseVoucher} />}
+          contentContainerStyle={styles.voucherList}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+          ListEmptyComponent={<EmptyState />}
+        />
+      )}
     </View>
   );
 };
@@ -204,7 +209,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   voucherList: {
-    flex: 1,
     padding: 16,
   },
   voucherCard: {
@@ -261,6 +265,11 @@ const styles = StyleSheet.create({
   detailText: {
     fontSize: 12,
     color: '#666',
+  },
+  promotionCodeText: {
+    color: '#e53935',
+    fontWeight: 'bold',
+    fontSize: 14,
   },
   voucherRight: {
     alignItems: 'center',
@@ -320,6 +329,11 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     paddingHorizontal: 32,
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
 });
 
-export default VouchersScreen; 
+export default VouchersScreen;

@@ -18,6 +18,8 @@ import { MaterialIcons } from "@expo/vector-icons"
 import DateTimePicker from "@react-native-community/datetimepicker"
 import { discountAPI } from "../../api/axios"
 
+import voucherImg from "../../assets/images/voucher/discount-20.png"
+
 interface Voucher {
   id: string
   code: string
@@ -73,7 +75,7 @@ const ManagePromotions = () => {
       isExpired,
       isLock: backendData.isLock || false,
       pointsRequired: Number(pointsRequired),
-      image: backendData.image ? { uri: backendData.image } : require("../../assets/images/voucher/discount-20.png"),
+      image: backendData.image ? { uri: backendData.image } : {voucherImg},
     }
   }
 
