@@ -11,11 +11,14 @@ type Props = {
 
 const OrderSummary: React.FC<Props> = ({ subTotal, delivery, discountAmount , total }) => {
  
+  const tax = subTotal * 0.1; // Giả sử thuế là 10% của subtotal
+  const finalTotal = total + tax - discountAmount;
 
   return (
     <View style={styles.container}>
       <Text style={styles.heading}>Tóm tắt đơn hàng</Text>
       <Row label="Tạm tính" value={formatCurrency(subTotal)} />
+      <Row label="Thuế" value={formatCurrency(tax)} />
       <Row label="Phí giao hàng" value={formatCurrency(delivery)} />
       {discountAmount > 0 && ( // Chỉ hiển thị dòng giảm giá nếu có giảm giá
         <View style={styles.summaryRow}>
@@ -23,7 +26,7 @@ const OrderSummary: React.FC<Props> = ({ subTotal, delivery, discountAmount , to
           <Text style={styles.discountValue}>- {formatCurrency(discountAmount)}</Text>
         </View>
       )}
-      <Row label="Tổng cộng" value={formatCurrency(total)} bold green />
+      <Row label="Tổng cộng" value={formatCurrency(finalTotal)} bold green />
       <Text style={styles.estimated}>⏱ Thời gian giao hàng dự kiến: 25-35 phút</Text>
     </View>
   );
