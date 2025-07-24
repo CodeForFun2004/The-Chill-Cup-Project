@@ -24,7 +24,9 @@ const { width: screenWidth } = Dimensions.get("window");
 const TAB_WIDTH = (screenWidth - 32) / 4;
 
 
-import { Order } from "../../redux/slices/orderSlice"; // <--- ADD THIS LINE
+// removed duplicate useEffect import
+import { useSelector, useDispatch } from 'react-redux';
+import { Order, fetchUserOrders } from '../../redux/slices/orderSlice';
 
 type OrderHistoryScreenNavigationProp = NativeStackNavigationProp<
   CustomerStackParamList,
@@ -58,9 +60,10 @@ const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({
   navigation,
 }) => {
   const [activeTab, setActiveTab] = useState<TabType>("Preparing");
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const dispatch = useDispatch();
+  const orders = useSelector((state: any) => state.order.orders || []);
+  const loading = useSelector((state: any) => state.order.loading);
+  const error = useSelector((state: any) => state.order.error);
   const [refreshing, setRefreshing] = useState(false);
 
 
@@ -80,91 +83,10 @@ const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({
   const HARDCODED_TOKEN =
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4NzBjM2FlY2ZiMmJjNWE0MDEzMzZiYyIsImlhdCI6MTc1MjM2MDU5NiwiZXhwIjoxNzUyMzYxNDk2fQ.qs7UtXpAL3NboQO5qizDROBqufvZP6KFTqPurDnMvAk";
 
-  // Fetch all orders from backend
-  const fetchOrders = async () => {
-    try {
-      setLoading(true);
-      console.log("Fetching orders with token:", HARDCODED_TOKEN);
-      let attempts = 3;
-      let response: { data: any } | undefined;
-
-      while (attempts > 0) {
-        try {
-          response = await axios.get(
-            "http://192.168.1.122:8080/api/orders/user",
-            {
-              headers: {
-                Authorization: `Bearer ${HARDCODED_TOKEN}`,
-              },
-              timeout: 15000,
-            }
-          );
-          // console.log('API Response:', response.data);
-          break;
-        } catch (err) {
-          attempts--;
-          if (attempts === 0) {
-            throw err;
-          }
-          console.log(`Retrying... ${attempts} attempts left`);
-          await new Promise((resolve) => setTimeout(resolve, 1000));
-        }
-      }
-
-      if (!response || !response.data) {
-        setError("No data received from the server.");
-        setOrders([]);
-        return;
-      }
-
-      // Map backend response to frontend Order interface
-      const mappedOrders: Order[] = response.data.map((order: any) => ({
-        id: order._id,
-        orderNumber: order.orderNumber,
-        date: new Date(order.createdAt).toLocaleDateString("en-GB"),
-        time: new Date(order.createdAt).toLocaleTimeString("en-US", {
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
-        status: order.status, // Use lowercase status directly
-        total: order.total,
-        items: order.items.map((item: any) => ({
-          name: item.name,
-          quantity: item.quantity,
-          price: item.price,
-        })),
-        estimatedDelivery: order.deliveryTime,
-        deliveryAddress: order.deliveryAddress,
-        phoneNumber: order.phone,
-      }));
-
-      setOrders(mappedOrders);
-      console.log("Mapped Orders:", mappedOrders);
-      setError(null);
-    } catch (err) {
-      console.error("[Fetch Orders Error]", err);
-      if (axios.isAxiosError(err)) {
-        if (err.code === "ECONNABORTED") {
-          setError("Request timed out. Please check the server connection.");
-        } else if (err.response) {
-          setError(
-            `Error: ${err.response.status} - ${
-              err.response.data.error || "Failed to load orders"
-            }`
-          );
-        } else {
-          setError(
-            "Network error. Please check your connection or server status."
-          );
-        }
-      } else {
-        setError("An unexpected error occurred.");
-      }
-      setOrders([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Fetch orders on mount
+  useEffect(() => {
+    dispatch(fetchUserOrders() as any);
+  }, [dispatch]);
 
 
   // Log errors to console
@@ -176,60 +98,44 @@ const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await dispatch(fetchUserOrders());
+    await dispatch(fetchUserOrders() as any);
     setRefreshing(false);
   };
 
   const getFilteredOrders = (): Order[] => {
-
-    const filtered = orders.filter((order) => {
-
+    return orders.filter((order: Order) => {
       switch (activeTab) {
         case "Preparing":
-          return ["processing", "preparing", "ready", "pending"].includes(
-            order.status
-          );
+          return ["processing", "preparing", "ready", "pending"].includes(order.status);
         case "Delivering":
           return order.status === "delivering";
         case "Completed":
           return order.status === "completed";
         case "Cancelled":
           return order.status === "cancelled";
-           case 'Refunded':
-        // Lấy tất cả đơn có ít nhất 1 refundRequests (dù trạng thái nào)
-        return orders.filter(order => order.refundRequests && order.refundRequests.length > 0);
+        case 'Refunded':
+          return order.refundRequests && order.refundRequests.length > 0;
         default:
           return true;
       }
     });
-    return filtered;
   };
 
   const getTabCount = (tabKey: TabType): number => {
-    let count: number;
     switch (tabKey) {
-
       case "Preparing":
-        count = orders.filter((order) =>
-          ["processing", "preparing", "ready", "pending"].includes(order.status)
-        ).length;
-        break;
+        return orders.filter((order: Order) => ["processing", "preparing", "ready", "pending"].includes(order.status)).length;
       case "Delivering":
-        count = orders.filter((order) => order.status === "delivering").length;
-        break;
+        return orders.filter((order: Order) => order.status === "delivering").length;
       case "Completed":
-        count = orders.filter((order) => order.status === "completed").length;
-        break;
+        return orders.filter((order: Order) => order.status === "completed").length;
       case "Cancelled":
-        count = orders.filter((order) => order.status === "cancelled").length;
-        break;
-        case 'Refunded':
-        return orders.filter(order => order.refundRequests && order.refundRequests.length > 0).length;
+        return orders.filter((order: Order) => order.status === "cancelled").length;
+      case 'Refunded':
+        return orders.filter((order: Order) => order.refundRequests && order.refundRequests.length > 0).length;
       default:
-        count = 0;
-
+        return 0;
     }
-    return count;
   };
 
   const getStatusColor = (status: Order["status"]): string => {
@@ -333,9 +239,8 @@ const OrderHistoryScreen: React.FC<OrderHistoryScreenProps> = ({
   const renderOrderItem: ListRenderItem<Order> = ({ item }) => (
     <TouchableOpacity
       style={styles.orderCard}
-
-      onPress={() => navigation.navigate("OrderTracking", { order: item })}
-
+      // onPress={() => navigation.navigate("OrderDetail", { order: { _id: item._id } })}
+      onPress={() => navigation.navigate("OrderDetail", { order: item })}
       activeOpacity={0.7}
     >
       <View style={styles.orderHeader}>
